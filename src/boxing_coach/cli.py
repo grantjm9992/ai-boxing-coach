@@ -71,8 +71,13 @@ def _print_report(analysis: RoundAnalysis, style_label: str | None = None) -> No
 
         ranked = classify_school(m.values)
         if ranked and ranked[0][1] > 0:
-            school, score = ranked[0]
-            print(f"Reads as: {school.value} ({score:.0%} school match)")
+            (s1, sc1), (s2, sc2) = ranked[0], ranked[1]
+            # Only call it if one school leads clearly; a stationary ~6s shadow
+            # clip can't separate schools confidently, so don't overstate.
+            if sc1 - sc2 >= 0.25:
+                print(f"Style read: leans {s1.value}")
+            else:
+                print(f"Style read: mixed (closest {s1.value}/{s2.value})")
     print()
 
     if analysis.correction_priorities:

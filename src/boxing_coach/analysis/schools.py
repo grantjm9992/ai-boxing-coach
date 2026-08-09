@@ -78,10 +78,11 @@ _SCHOOL_PROFILES: dict[School, SchoolProfile] = {
     School.SOVIET: SchoolProfile(
         school=School.SOVIET,
         label="Soviet",
-        summary="Technical in-and-out game behind an educated jab; economical.",
+        summary="Technical, mobile game behind an educated jab.",
+        # NB: no net-displacement ("in-and-out") marker — a stationary-camera
+        # shadow clip can't show it, so it produced false 'you're planted' nudges
+        # even when mobility was high. Judged on footwork *amount* + jab lead.
         expectations=(
-            Expectation("ground_coverage", "high", 0.35,
-                        "The Soviet game is in-and-out — get your work and reset off the line, don't sit there.", _C.FOOTWORK),
             Expectation("mobility", "high", 0.30,
                         "Stay on your feet and move — the Soviet system is built on footwork.", _C.FOOTWORK),
             Expectation("jab_ratio", "high", 0.40,
@@ -104,14 +105,18 @@ _SCHOOL_PROFILES: dict[School, SchoolProfile] = {
     School.AMERICAN: SchoolProfile(
         school=School.AMERICAN,
         label="American",
-        summary="Athletic, fast and varied combinations. (Loosest to detect.)",
+        summary="Athletic, varied power combinations rather than a jab-led game.",
+        # `jab_ratio` low is the discriminator: without it, "busy + varied +
+        # mobile" is true of almost any active round and American wins by having
+        # the lowest bar. Requiring that it is NOT jab-led keeps it distinct from
+        # the jab-led European/Soviet schools.
         expectations=(
             Expectation("output_per_min", "high", 40.0,
                         "American boxing is busy — let your hands go in combination.", _C.COMBINATIONS),
             Expectation("punch_variety", "high", 3.0,
                         "Mix your punches — jab, cross, hook, uppercut — not one note.", _C.COMBINATIONS),
-            Expectation("mobility", "high", 0.30,
-                        "Use your athleticism — move, don't stand flat.", _C.FOOTWORK),
+            Expectation("jab_ratio", "low", 0.45,
+                        "Don't just pump the jab — American boxing turns over power combinations.", _C.COMBINATIONS),
         ),
     ),
 }
