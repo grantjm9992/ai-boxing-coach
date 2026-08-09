@@ -13,7 +13,7 @@ Emphasis on being a genuinely useful training tool, not gamified fitness content
 - **Coach behaviour is anticipatory.** The coach tells you what round you're in, what's coming next, gives cues at key moments, celebrates milestones. Not a passive timer.
 - **Technical analysis is the differentiator.** Recording, form analysis, and specific corrections are what makes this different from a boxing timer app.
 - **Style-aware coaching (v2).** v1 delivers competent general boxing coaching. v2 adapts to Mexican / Cuban / Soviet / American / European / Philippine styles.
-- **Backend-agnostic AI layer.** Adapter pattern lets us swap local models for API providers depending on device capability, privacy needs, and cost.
+- **Layered AI, cheapest-first.** Deterministic rules over on-device pose do the primary work; a swappable API model is an optional enrichment layer over the extracted data, never the foundation and never fed raw video.
 
 ---
 
@@ -215,68 +215,111 @@ For v1, focus on things that pose estimation + rule-based logic can reliably det
 
 ```
 Video capture (mobile camera)
-    ↓
-Frame extraction (every 100ms, or keyframes on motion)
-    ↓
-Pose estimation (MediaPipe or MMPose)
-    ↓ (33 keypoints per frame, tracked over time)
-Motion analysis (rule-based)
-    ↓ (guard position, punch retraction, stance, movement)
-VLM analysis (sparing, for higher-level context)
-    ↓ (e.g., "describe the last combination")
+    ↓  on-device
+Frame sampling (~every 30-40ms)
+    ↓  on-device
+Pose estimation (MediaPipe)            ← the ONLY step that touches every frame
+    ↓ (33 keypoints/frame → a few KB for the whole round; raw video never leaves here)
+Rule engine (deterministic boxing logic)
+    ↓ observations, metrics, flagged moments
+Correction adjudication (API model, AMBIGUOUS flags only)
+    ↓ (peak ± a sampled window of frames + pose context → confirm / soften / suppress)
+Phrasing & summary (API model, structured data only — no pixels)
+    ↓ (natural coaching language, session summary, trends)
 Feedback synthesis
     ↓
-Delivered as audio between rounds
+Delivered as audio between rounds + optional detailed view
     ↓
-Persisted with video for user review
+Persisted (pose data always; video local by default, cloud opt-in)
 ```
+
+Read the arrows as a cost gradient: everything above the rule engine runs locally at zero marginal cost, and the only things that ever reach a paid model are a few KB of structured data plus, for a handful of ambiguous moments, a few sampled frames. Video is never streamed to a model.
+
+### Capture hardware — single camera in v1, multi-view 3D as the differentiator
+
+**v1 baseline: one phone.** The recording flow above assumes a single mobile camera. This is the right starting point — no extra hardware, works with what the user owns — but it has one hard limitation worth stating plainly: a single camera is monocular. Depth (movement toward or away from the lens) is *estimated*, not measured. Anything that lives along the depth axis — hip and shoulder rotation on straight punches, front-to-back weight transfer — is the least reliable output. Front-on 2D simply cannot see it well.
+
+**v2 differentiator: multi-view 3D.** Two or more cameras at distinct angles (e.g. ~45° and ~135°, or four around the athlete) recording the same round *simultaneously* can be fused into a true 3D skeleton by triangulation: run pose estimation on each view independently, then reconstruct each joint's 3D position from the known geometry between the cameras. This is a demonstrated technique, not a research gamble — Stanford's OpenCap produces markerless 3D biomechanics from two calibrated iPhones, validated against gold-standard marker-based systems, and has been run with four phones. With measured depth, the rotation- and balance-dependent rules move from "unreliable" to "trustworthy." This is the honest justification for any hardware play: not a *better* camera, but *more angles*.
+
+**The two hard problems (neither is the camera):**
+
+- *Calibration.* Triangulation needs to know where each camera sits relative to the others. A dead-simple, living-room-grade calibration flow is the difference between a product and a pile of parts — this is the core UX problem, not an implementation detail.
+- *Synchronisation.* The views must be time-aligned, and boxing is unforgiving here: a jab lasts ~100–150ms, so even 30–40ms of drift between independent cameras smears the reconstruction of exactly the fast movements we care about. OpenCap's validated tasks (gait, squats, hops) are far slower; boxing is a harder sync problem than the existing literature has tackled. Prove sync tolerance on real punch footage early — it is the make-or-break for the whole rig.
+
+**Chosen approach — dock-and-place, software-first (decisions).**
+
+The instinct to solve sync and calibration with a rigid base where cameras sit while recording (a mat with retractable stands, or similar) is rejected: a mat shifts under a moving athlete and pins them to one spot, and a rigid rig is hard to manufacture, ship, store, and impossible to patch once it's in a living room. Instead, push the complexity out of hardware and into software — the right trade for a software-strong, hardware-light team, because auto-calibration is code we own and update over the air while the hardware stays cheap and flexible.
+
+- **Dock, not a recording base.** The cameras live in a dock to charge, store, and stay clock-disciplined together. During a session they are *free-standing units the user places around the room* (tripod, shelf, wherever) — not fixed to a base. More flexible, nothing to slide underfoot.
+- **Two cameras first; four later.** Front-left and front-right, quartering the athlete (~45° / ~135°), already removes the front-view depth blindness that motivates the whole rig. Fewer cameras are dramatically easier to place, sync, and auto-calibrate, so two is the first product; a four-camera "pro" tier follows once two-camera calibration is proven solid.
+- **Calibration is split.** Lens *intrinsics* (fixed per camera) are calibrated once, at the factory/dock. Only the *extrinsics* — where each camera sits relative to the others — are solved per session, because the cameras move. This is the cost of dropping the rigid base: calibration becomes a per-session software step rather than a hardware constant.
+- **Extrinsics auto-solve from the athlete's own body.** Every camera sees the same person; corresponding keypoints across views are enough to recover the relative camera poses by bundle adjustment. Flow: place the cameras roughly, stand in the capture volume for a few seconds, and the system triangulates *its own geometry* from your skeleton — no checkerboard, no wand. A guided fallback (hold a pose, turn slowly) covers shaky solves. Slightly less metrically precise than a printed target, but almost certainly good enough for technique analysis, and the UX is "put them down and stand there." **This is the single most important thing to prototype early — on a two-phone setup, before committing to any camera hardware.**
+- **Wireless sync, high frame rate as the real lever.** No shared wire means no hardware trigger, so: one master (the phone or a designated master camera) broadcasts session start and a periodic resync beacon; each camera timestamps against a WiFi-disciplined clock; a shared visual event (a flash all cameras catch) at the top of each round refines alignment. Frame rate does the heavy lifting — **60fps floor, 120fps preferred** — so that one frame of residual misalignment is a few milliseconds, comfortably inside tolerance for a ~120ms punch. Intrinsics and clock discipline can be re-established while docked.
+- **Each camera emits keypoints, not video.** Every camera runs pose estimation locally and sends only its skeleton (a few KB); the master fuses skeletons into 3D. Bandwidth stays trivial and the "never stream frames to a model" principle holds even at four cameras. BLE carries control, pairing, and (later) sensor telemetry — never video, which goes over WiFi.
+
+**v3 — sensor fusion (IMU punch trackers).** Wrist-worn six-axis IMUs (the FightCamp / Hykso / POWA class: ~1000Hz, BLE, measuring punch count, type, speed, and power) are *complementary*, not redundant — cameras see form (guard, stance, head, posture) and are weak on dynamics; IMUs see dynamics and are blind to form. Fusion bonus: an IMU spike is a rock-solid timestamp-and-hand marker per punch, which feeds the vision punch-detector and *shrinks* the set of moments the AI has to adjudicate rather than growing it. Sync is not the obstacle — complexity scales with the number of independent *clocks*, not streams, so once everything references one master clock, adding the IMU stream is roughly linear, and BLE handles their tiny high-rate data easily. Deferred to a final phase for sequencing and focus reasons, not technical ones: don't add a second hardware stream before the first is proven, each device multiplies setup friction, and punch-metrics are a distinct value proposition (output/power, closer to FightCamp's territory) that would dilute the form-first story if pulled in early.
+
+**Form-factor note — central-pole / panoramic camera.** An appealing idea is a single wide-angle or 360° camera on a mast (e.g. rising from a free-standing bag unit), seeing the athlete all the way around and steeply downward for footwork. Two cautions:
+
+1. A single optical centre is still monocular no matter how wide the field of view. A 360° camera buys *coverage*, not *depth* — and cameras stacked on one thin pole share almost no baseline, so they don't triangulate well either. It does **not** replace spatially-separated cameras for 3D.
+2. The steep top-down footwork view is optically the hardest angle there is: seeing the feet at the base and the torso above needs a fisheye, whose worst distortion sits exactly where the feet are; near-overhead angles are also out-of-distribution for pose models trained on horizontal views; and the athlete's own arms and shoulders occlude their feet while punching.
+
+Where a central mast *does* earn its place is as a dedicated **overhead footwork camera**. Top-down is genuinely the best view for foot placement, stance width, weight shift, and pivoting — the things horizontal cameras see worst. Treat it as a complement feeding footwork-specific rules, dewarped, not as the primary body-analysis camera. (Also: if the mast is mounted on a bag that gets struck, impact shake will blur footage — a shadow-boxing station and a hit bag are different hardware requirements.)
+
+**The free/paid split falls out of the hardware.** Single-camera 2D analysis can run on-device — the phone does pose estimation locally, at near-zero marginal cost — which makes a sustainable **free tier**, enough to feel the product. Multi-camera 3D needs calibration, sync, and cloud fusion: genuinely more valuable and genuinely more expensive to run, so it's the **paid tier**. The paywall sits exactly where both value and cost step up: front-view feedback free, true 3D technique scoring paid.
+
+**Architecture impact: none downstream.** All of this lives behind the `PoseEstimator` seam. A `MultiViewPoseEstimator` consumes N calibrated, synchronised videos and emits the same `PoseSequence` type, now carrying measured 3D. Every rule and adapter above it is unchanged — the rotation rules simply get better because `z` is real. A top-down footwork camera is just another estimator feeding footwork rules. The rule engine never learns where the keypoints came from.
 
 ### Model choices
 
-**Pose estimation (v1):**
-- **MediaPipe Pose** — fast, runs on-device, well-supported, adequate for gross motion
-- **MMPose** with a trained model — more accurate but heavier, requires more setup
-- Decision: start with MediaPipe, evaluate MMPose if accuracy insufficient
+**Pose estimation — the workhorse.**
+This is the one component that processes every frame, and it does so on-device, frame by frame, at zero marginal cost with nothing leaving the device. It compresses ~40,000 frames a session down to a few numbers per frame.
+- **Decision: MediaPipe Pose.** Fast, on-device, adequate for gross motion. Evaluate MMPose only if MediaPipe's accuracy proves insufficient on real footage.
+- Everything downstream consumes its keypoints, never raw video.
 
-**VLM for context (v1):**
-- **Local option:** Qwen2.5-VL 7B (Q4 quantised, ~10GB VRAM). Works offline, good privacy.
-- **API options:** Claude 3.5 Sonnet vision, GPT-4o vision, Gemini 2.0 Flash
-- Decision: adapter pattern lets us swap. Local for offline / privacy-focused users, API for capability / lower-hardware users.
+**The generative layer — optional, API-based, over extracted data.**
+General-purpose models are not good at boxing-specific judgment without domain prompting and likely fine-tuning, and almost all of the useful v1 signal comes from pose + rules. So a generative model is a polish-and-adjudication layer, not the foundation: **v0.5 ships with none of it**, and it never sees raw video.
+- **Decision: no local model.** The only things that ever leave the device are structured pose data (a few KB) and, for a few ambiguous moments, a handful of cropped keyframes. That privacy surface is tiny, so a hosted API is both cheaper and simpler than shipping and maintaining a quantised local model plus a companion device. (Local inference returns only if a fully-offline tier becomes a deliberate selling point — not a default.)
+- **Decision: API provider sits behind the adapter** (Claude / Gemini / GPT-class). Swappable per job on cost and quality.
 
-**Realistic assessment:** general-purpose VLMs are not great at boxing-specific analysis without fine-tuning. Most of the useful signal in v1 comes from pose estimation + boxing-domain rules, with the VLM adding contextual descriptions rather than doing the primary analysis. Setting expectations here is important.
+It has exactly two jobs, both over extracted data:
+1. **Phrasing & summary (text-only, a fraction of a cent).** Turn structured observations into natural, varied coaching language; write session-level summaries; spot cross-session trends; answer the user's own questions ("why does my cross keep landing short?"). No pixels.
+2. **Correction adjudication (a few images, gated).** Decide, for genuinely ambiguous flags, whether a deviation is a fault or a deliberate style — see next section.
+
+**Cost principle (decision).** Extract on-device; never stream video or bulk frames to a paid model; text in / text out for phrasing; send pixels only for the few flagged windows that need them. Image tokens dominate cost, so the two dials are frame count and resolution — sample sparsely, downscale hard.
+
+### Correction adjudication — style vs error
+
+The single hardest judgment in the product is whether a flagged deviation is a genuine mistake or a deliberate stylistic choice. A low lead hand is a hole *or* a Philadelphia shell depending entirely on what the rest of the body is doing. This is the one place a generative model earns its keep over the rules — but only if the design is disciplined.
+
+- **A window, not a frame.** A single frame can't distinguish style from error, because the discriminator lives in the motion and the whole-body context (is the low hand compensated — shoulder rolled, chin tucked behind it, head off-line, feet loaded — or just dropped?). For an ambiguous flag at peak time *t*, take a short window (roughly *t* − a few hundred ms to *t* + a few hundred ms) and **sample it sparsely** — every third frame, ~5-6 images. The arc and the compensation are visible; the cost isn't.
+- **Gate hard — adjudicate only the ambiguous.** Most flags are certain and stay with the rules: a hand that drops to the hip after every punch is a hole, decided deterministically. Escalate to the model only when a rule fired *near its threshold*, or in a *style-sensitive* category (guard height, head position, hand carriage) — never the unambiguous ones (did the punch retract at all, are the feet moving). That's a handful of moments per session, not every flag.
+- **Declared context first — cheapest of all.** If the user's profile or `DrillContext` declares a low-hand style, the rule **suppresses the flag itself** and no model is called. Order of defence: declared style → style-aware thresholds → model adjudication only for the residual "we don't know their intent" cases.
+- **Clean frames + pose as text, not annotated pixels.** The reason to escalate is precisely that the skeleton discarded the cues that decide intent — glove orientation, chin behind the shoulder, actual posture. Painting the skeleton back onto the frame can occlude the very thing the model needs to see. Send clean frames plus the measured pose as structured text ("joints measured X, rule fired because Y — is this intentional?"). A/B clean-vs-annotated on known clips; the prior is clean-plus-numbers.
+- **Determinism and trust.** Unlike the rules, a model's verdict varies run-to-run, and a correction that flip-flops erodes trust faster than one that's consistently wrong. Pin it down: low temperature, structured output (verdict enum + confidence + one-sentence reason), and surface the uncertainty in the UX ("this may be intentional — if you're working a shell guard, ignore it") rather than a hard ERROR.
+
+**Decision:** correction adjudication is an API-based *enrichment* step that wraps deterministic output — it confirms, softens, or suppresses `Correction`s and `FlaggedMoment`s the rules already produced. It never originates them. The rules stay the honest backbone; the model only rules on close calls.
 
 ### Adapter interface
 
 ```python
 class VisionAnalysisAdapter(ABC):
     @abstractmethod
-    async def analyse_round(
-        self,
-        video_path: str,
-        drill_context: DrillContext,
-    ) -> RoundAnalysis:
-        """
-        Analyse a recorded round.
-        drill_context tells the analyser what to look for
-        (e.g., 'jab-focused drill, watch retraction and guard return').
-        """
-        pass
-
-
-class LocalQwenAdapter(VisionAnalysisAdapter):
-    """Runs Qwen2.5-VL locally alongside pose estimation."""
-    pass
-
-
-class ClaudeAdapter(VisionAnalysisAdapter):
-    """Uses Claude's vision API for the VLM layer."""
-    pass
+    def analyse(self, sequence: PoseSequence, drill: DrillContext) -> RoundAnalysis:
+        """Analyse a round from extracted pose (not raw video).
+        drill tells the analyser what to look for and what style is declared."""
 
 
 class PoseOnlyAdapter(VisionAnalysisAdapter):
-    """Fallback: pose estimation + rules only, no VLM.
-    Fastest, most private, no external dependency."""
-    pass
+    """Default (v0.5). Pose estimation + rules only. Deterministic, private, ~free.
+    A complete, useful product on its own."""
+
+
+class EnrichedAdapter(VisionAnalysisAdapter):
+    """Wraps PoseOnlyAdapter, then calls an API model to (a) phrase and summarise
+    and (b) adjudicate ambiguous flagged moments. Enriches, never originates.
+    Constructed with a keyframe provider (source clip) so it can pull the
+    sampled window for the few flags that need visual adjudication."""
 ```
 
 The `RoundAnalysis` output is structured:
@@ -420,7 +463,7 @@ CREATE TABLE session_rounds (
 CREATE TABLE round_analyses (
     id TEXT PRIMARY KEY,
     round_id TEXT NOT NULL REFERENCES session_rounds(id) ON DELETE CASCADE,
-    adapter_used TEXT,  -- 'pose_only', 'local_qwen', 'claude', etc.
+    adapter_used TEXT,  -- 'pose_only' (free) or 'enriched' (API), etc.
     analysed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     overall_summary TEXT,
     metrics_json TEXT,  -- structured metrics
@@ -461,26 +504,17 @@ CREATE TABLE round_observations (
 
 ### AI processing options
 
-**Option A: fully local**
-- Pose estimation on device
-- Qwen2.5-VL 7B running on user's Mac/PC (via companion desktop app that phone syncs to for analysis)
-- Best for privacy, cost, offline use
-- Requires user has capable hardware
+The cost model is fixed by one rule: heavy work stays local, and the paid model only ever sees small extracted data.
 
-**Option B: hybrid**
-- Pose estimation on device
-- VLM analysis via API (Claude / GPT-4V / Gemini)
-- Better analysis quality
-- Costs per session (~€0.05-0.20 depending on provider and video length)
-- Requires network
+**On-device, every session (free tier):** frame sampling + MediaPipe pose + the rule engine. No network, no per-session cost. This is a complete, useful product on its own — it's what `PoseOnlyAdapter` ships.
 
-**Option C: pose-only**
-- No VLM, just pose estimation + rules
-- Fast, private, cheap
-- Less rich feedback
-- Fine for v0.5 / MVP
+**API, when enabled (paid tier):** phrasing and summary over structured data (text-only, a fraction of a cent) plus correction adjudication over a few sampled keyframes, for ambiguous flags only. Bounded cost — a handful of small calls per session, dominated by a few downscaled images rather than video. Rough order: comfortably under €0.05/session, versus the per-session blow-up you'd get streaming frames (explicitly not done).
 
-The adapter pattern lets users choose based on their situation.
+**Never:** stream video or bulk frames to a paid model; run a self-hosted model / companion-device path. The latter was considered and dropped — once only pose data and a few crops ever leave the device, the privacy gain doesn't justify the local-inference and companion-hardware complexity.
+
+**Multi-camera 3D (v2)** is the one place video does go to the cloud — calibration, sync, and triangulation need server-side fusion. That cost lives in the same tier as the hardware that creates it, which is why the paywall and the cloud bill both sit at the 3D tier.
+
+The adapter pattern means the free and paid tiers are the same pipeline with the enrichment step turned off or on — not two codebases.
 
 ### Backend
 
@@ -518,7 +552,7 @@ Explicitly deferred to later versions:
 
 ## Open questions worth deciding before build
 
-1. **Companion desktop app for local VLM?** Adds complexity but is the only way local Qwen works with mobile phone recording. Alternative: cloud VLM as default, "advanced" users can wire up local.
+1. **Adjudication quality without fine-tuning.** The style-vs-error call is the riskiest AI dependency. Open: how far a well-prompted general API model gets on real clips before boxing-specific fine-tuning (or a small labelled dataset of known style-vs-error examples) becomes necessary. Decide by prototyping on footage where the answer is known — not in front of users.
 
 2. **Recording storage duration.** Videos are sensitive (people don't want their sweaty bedroom sessions kept forever). Default policy: keep for 7 days, then delete unless user explicitly saves. Analysis persists.
 
@@ -528,7 +562,7 @@ Explicitly deferred to later versions:
 
 5. **Session generation.** Do users pick from templates, generate custom, or does the AI suggest based on their weekly balance? Recommend: templates for MVP, AI-suggested v0.9, custom builder v1.
 
-6. **Business model.** Free tier with basic timer + templates + pose-only analysis. Paid tier with VLM analysis, style coaching (v2), unlimited recording, etc. Or one-time purchase like traditional apps.
+6. **Business model.** Free tier = timer + templates + on-device pose-only analysis (single camera). Paid tier = API enrichment (natural phrasing, summaries, correction adjudication), and later multi-camera 3D + style coaching (v2). The free/paid line follows the cost gradient: on-device is ~free, API and cloud fusion cost money. Open: subscription vs one-time, and whether the 3D hardware is a bundle (see capture-hardware section).
 
 ---
 
@@ -565,13 +599,15 @@ The market is meaningful:
 
 3. **Camera setup will frustrate users.** The instructions matter enormously. Consider: pre-flight camera check with visual feedback, saved setup for repeat sessions, angle guidance.
 
-4. **Local Qwen requires a companion device.** Phones don't run 7B VLMs well yet. Realistic architecture: phone records, uploads to user's Mac/PC running local model, results come back. Adds complexity but preserves privacy story.
+4. **Style-vs-error is the hardest judgment, and it's the one non-deterministic call.** Deciding whether a deviation is a fault or a deliberate style is expert-coach territory, and a general API model will be mediocre at it without boxing-specific prompting and probably fine-tuning. Two failure modes: being wrong, and being *inconsistent* (a correction that flips between runs erodes trust faster than a steady wrong one). Mitigate with declared-style suppression first, hard gating to ambiguous flags, low-temperature structured output, and honest uncertainty in the UX. Prototype on known-answer clips before shipping.
 
-5. **Style differentiation is the marketing story but the hardest to deliver.** Being honest that v1 is "general amateur boxing" is better than shipping bad Mexican / Cuban / Soviet coaching that boxers will immediately dismiss.
+5. **Cost discipline is a design constraint, not an optimisation.** The moment the pipeline streams video or bulk frames to a paid model, per-session economics break. The architecture must keep heavy work on-device and send the model only structured data plus sparse, downscaled keyframes for gated flags. Any feature that would regress this needs to justify itself against the unit cost.
 
-6. **Injury and technique risk.** App can't stop a user hurting themselves. Include appropriate disclaimers, especially for high-intensity phases and for users who report joint pain in check-ins.
+6. **Style differentiation is the marketing story but the hardest to deliver.** Being honest that v1 is "general amateur boxing" is better than shipping bad Mexican / Cuban / Soviet coaching that boxers will immediately dismiss.
 
-7. **This is a bigger project than the recovery app.** More moving parts, more expertise needed, higher stakes on the AI quality. Worth being realistic about scope and MVP.
+7. **Injury and technique risk.** App can't stop a user hurting themselves. Include appropriate disclaimers, especially for high-intensity phases and for users who report joint pain in check-ins.
+
+8. **This is a bigger project than the recovery app.** More moving parts, more expertise needed, higher stakes on the AI quality. Worth being realistic about scope and MVP.
 
 ---
 
@@ -583,10 +619,12 @@ Rather than everything at once:
 
 **v0.5:** Add recording and pose-only analysis. Ship the "MVP" listed above. This validates the core value proposition.
 
-**v0.8:** Add VLM adapter (API-based first). Improved feedback quality. Beta with real boxers.
+**v0.8:** Add the API enrichment adapter — phrasing/summaries first, then correction adjudication over gated, sampled keyframes. Beta with real boxers to calibrate rule thresholds and test the style-vs-error verdicts on known clips.
 
-**v1.0:** Local model option. Session generation. Weekly reporting. Public launch.
+**v1.0:** Enrichment on by default for the paid tier. Session generation. Weekly reporting. Public launch.
 
-**v2:** Style-specific coaching and analysis.
+**v2:** Multi-view 3D capture — a two-camera dock-and-place rig with per-session auto-calibration from body pose, unlocking reliable rotation/depth analysis and the paid hardware tier. Only after single-camera feedback has proven it resonates, and only after the auto-calibration is validated on a two-phone prototype. Four-camera "pro" tier once two-camera calibration is solid.
+
+**v3:** Sensor fusion — wrist IMU punch trackers fused with the vision rig for punch dynamics (count, type, speed, power), using the master clock already established for the cameras. Last, deliberately: a second hardware stream only after the first earns its place.
 
 Ship each version to real users. Iterate on feedback. Don't try to build v2 before v0.5.
