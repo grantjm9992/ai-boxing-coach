@@ -1,0 +1,37 @@
+name: boxing_coach
+description: "AI Boxing Coach — v0.1 proof of concept: structured sessions, round timer and an anticipatory coach."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Device text-to-speech for the coach voice. English only in v0.1.
+  flutter_tts: ^4.2.3
+
+  # Short bell / tick cue sounds bundled as assets.
+  audioplayers: ^6.5.1
+
+  # A boxing timer that lets the screen sleep mid-round is useless.
+  wakelock_plus: ^1.4.0
+
+  # Persists the per-template session configuration between runs.
+  shared_preferences: ^2.5.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/audio/
