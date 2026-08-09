@@ -86,6 +86,32 @@ def _ankle_center(frame) -> np.ndarray:
     )
 
 
+def stance_speed_series(sequence: PoseSequence, scale: float) -> np.ndarray:
+    """Per-frame speed of the stance centre (ankle midpoint), torso-lengths/sec.
+
+    The in-and-out signal a rule reads to tell "planted" from "stepping in/out":
+    ~0 where the feet are rooted, high while the fighter is translating. Aligned
+    to `sequence.frames` — element i is the speed of the step *into* frame i;
+    frame 0 is 0.0, and gaps (a missing ankle either side) yield NaN so callers
+    treat "unknown" as not-moving rather than fabricating motion.
+    """
+    frames = sequence.frames
+    n = len(frames)
+    speeds = np.zeros(n, dtype=np.float64)
+    if n < 2 or scale <= 0:
+        return speeds
+    centres = np.vstack([_ankle_center(f) for f in frames])
+    ts = sequence.timestamps_ms()
+    for i in range(1, n):
+        step = centres[i] - centres[i - 1]
+        dt = (ts[i] - ts[i - 1]) / 1000.0
+        if np.any(np.isnan(step)) or dt <= 0:
+            speeds[i] = np.nan
+            continue
+        speeds[i] = (float(np.linalg.norm(step)) / scale) / dt
+    return speeds
+
+
 def _ground_coverage(sequence: PoseSequence) -> float:
     """Net displacement / total path length of the stance (ankle centre), 0..1.
 

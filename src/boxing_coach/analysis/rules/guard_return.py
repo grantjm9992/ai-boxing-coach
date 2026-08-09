@@ -39,6 +39,13 @@ class GuardReturnConfig:
     # so that style checks the rear hand only (check_lead=False).
     check_lead: bool = True
     check_rear: bool = True
+    # Soviet in-and-out: don't fault a hand that ends low/away when the fighter
+    # steps out through the return. It launched from its own guard (already the
+    # reference) and the low finish is distance management, not a dropped guard.
+    excuse_while_moving: bool = False
+    # Stance-centre speed (torso-lengths/sec) above which the fighter counts as
+    # stepping in/out during the return, for excuse_while_moving.
+    moving_speed: float = 0.6
 
 
 class GuardReturnRule(Rule):
@@ -136,6 +143,9 @@ class GuardReturnRule(Rule):
         if best_dist <= cfg.return_radius:
             return None
 
+        if cfg.excuse_while_moving and self._moving_through_return(context, punch, cfg):
+            return None  # stepped out through the return — in-and-out, not a drop
+
         # It didn't get back to guard — figure out how it failed for the cue.
         end_frame = seq.frames[min(punch.end_index, len(seq) - 1)]
         wrist = geo.frame_point(end_frame, punch.side.wrist)
@@ -151,6 +161,24 @@ class GuardReturnRule(Rule):
                 if reach > cfg.extended_reach:
                     return ("extended", worst_frame)
         return ("slow", worst_frame)
+
+    @staticmethod
+    def _moving_through_return(context: AnalysisContext, punch, cfg: GuardReturnConfig) -> bool:
+        """True if the fighter is stepping in/out anywhere in the return window.
+
+        Reads the shared per-frame stance speed; the arm's own motion doesn't move
+        the ankles, so this fires only on genuine footwork (a step out), which is
+        what the Soviet in-and-out uses to reset instead of pinning the hand back.
+        """
+        seq = context.sequence
+        speeds = context.stance_speed
+        deadline = seq.frames[punch.end_index].timestamp_ms + cfg.return_window_ms
+        for i in range(punch.peak_index, len(seq)):
+            if seq.frames[i].timestamp_ms > deadline:
+                break
+            if speeds[i] > cfg.moving_speed:  # NaN compares False -> unknown = not moving
+                return True
+        return False
 
     @staticmethod
     def _coaching_text(stance, side: Side, failure_mode: str) -> str:

@@ -13,8 +13,10 @@ from functools import cached_property
 from ..domain.drill import DrillContext
 from ..domain.landmarks import Side
 from ..domain.pose import PoseSequence
+import numpy as np
+
 from .features import PunchDetector, PunchDetectorConfig, PunchEvent, compute_body_scale
-from .round_profile import RoundProfile, compute_round_profile
+from .round_profile import RoundProfile, compute_round_profile, stance_speed_series
 from .style import DEFAULT_STYLE_PROFILE, StyleProfile
 
 
@@ -41,6 +43,16 @@ class AnalysisContext:
     @cached_property
     def round_profile(self) -> RoundProfile:
         return compute_round_profile(self.sequence, self.punches, self.body_scale)
+
+    @cached_property
+    def stance_speed(self) -> np.ndarray:
+        """Per-frame stance-centre speed (torso-lengths/sec); the in/out signal.
+
+        Index-aligned to `sequence.frames`. Computed once here so the guard
+        rules that read it (excusing a low hand while the feet step in/out)
+        share the work.
+        """
+        return stance_speed_series(self.sequence, self.body_scale)
 
     def punches_by(self, side: Side) -> list[PunchEvent]:
         return [p for p in self.punches if p.side is side]

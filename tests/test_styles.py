@@ -9,11 +9,15 @@ from boxing_coach.adapters import PoseOnlyAdapter
 from boxing_coach.analysis.context import AnalysisContext
 from boxing_coach.analysis.rules import (
     FootworkRule,
+    GuardReturnRule,
     HandsUpRule,
     HeadMovementRule,
 )
-from boxing_coach.analysis.style_profiles import all_profiles, profile_for
+from boxing_coach.analysis.rules.guard_return import GuardReturnConfig
+from boxing_coach.analysis.rules.hands_up import HandsUpConfig
+from boxing_coach.analysis.style_profiles import all_profiles, profile_for, resolve_profile
 from boxing_coach.domain.drill import DrillContext
+from boxing_coach.domain.school import School
 from boxing_coach.domain.style import Style
 
 import fixtures
@@ -22,6 +26,12 @@ import fixtures
 def _ctx(sequence, style: Style) -> AnalysisContext:
     drill = DrillContext(style=style)
     return AnalysisContext(sequence=sequence, drill=drill, style_profile=profile_for(style))
+
+
+def _soviet_ctx(sequence, style: Style = Style.HIGH_GUARD) -> AnalysisContext:
+    drill = DrillContext(style=style, school=School.SOVIET)
+    return AnalysisContext(sequence=sequence, drill=drill,
+                           style_profile=resolve_profile(style, School.SOVIET))
 
 
 def _faults(observations):
@@ -82,3 +92,53 @@ def test_peek_a_boo_demands_more_head_movement():
     assert _faults(HeadMovementRule().evaluate(_ctx(fixtures.slight_slipping_head(), Style.PEEK_A_BOO)))
     # ...while a genuinely bobbing fighter still satisfies peek-a-boo.
     assert not _faults(HeadMovementRule().evaluate(_ctx(fixtures.slipping_head(), Style.PEEK_A_BOO)))
+
+
+# -- Soviet school: "low hand" judged by own carriage + in/out, not the chin --
+
+def test_resolve_profile_layers_soviet_guard_overrides():
+    profile = resolve_profile(Style.HIGH_GUARD, School.SOVIET)
+    hands_up = profile.config_for("hands_up", HandsUpConfig())
+    assert hands_up.relative_to_baseline and hands_up.excuse_while_moving
+    guard_return = profile.config_for("guard_return", GuardReturnConfig())
+    assert guard_return.excuse_while_moving
+
+
+def test_resolve_profile_without_school_is_the_plain_style_profile():
+    assert resolve_profile(Style.PHILLY_SHELL) is profile_for(Style.PHILLY_SHELL)
+
+
+def test_soviet_overrides_preserve_style_set_fields():
+    # Philly shell already sets check_lead=False on the guard rules; the Soviet
+    # layer must keep that while adding its own fields on top.
+    profile = resolve_profile(Style.PHILLY_SHELL, School.SOVIET)
+    hands_up = profile.config_for("hands_up", HandsUpConfig())
+    assert hands_up.check_lead is False           # from the style
+    assert hands_up.relative_to_baseline is True   # from the school
+
+
+def test_soviet_allows_a_consistently_low_carry_between_punches():
+    # Default high guard nags a hand hanging low all round...
+    assert _faults(HandsUpRule().evaluate(_ctx(fixtures.hands_down_idle(), Style.HIGH_GUARD)))
+    # ...but the Soviet game judges "low" against the fighter's own carriage, so a
+    # consistent low carry isn't read as a drop.
+    assert not _faults(HandsUpRule().evaluate(_soviet_ctx(fixtures.hands_down_idle())))
+
+
+def test_soviet_still_flags_a_hand_sagging_below_its_own_carriage():
+    # A hand that starts at guard then sinks (feet planted) is a real drop — the
+    # Soviet allowance is for a low *carry*, not a sag below it.
+    assert _faults(HandsUpRule().evaluate(_soviet_ctx(fixtures.sagging_guard_idle())))
+
+
+def test_soviet_excuses_a_low_hand_while_stepping_out():
+    # Default: the hand ends low after the jab -> dropped-guard fault...
+    assert _faults(GuardReturnRule().evaluate(_ctx(fixtures.out_step_dropped_jab(), Style.HIGH_GUARD)))
+    # ...but under Soviet the feet step out through the return, so the low finish
+    # is distance management, not a dropped guard.
+    assert not _faults(GuardReturnRule().evaluate(_soviet_ctx(fixtures.out_step_dropped_jab())))
+
+
+def test_soviet_still_flags_a_planted_dropped_guard():
+    # A drop with the feet planted has no in/out to explain it -> still flagged.
+    assert _faults(GuardReturnRule().evaluate(_soviet_ctx(fixtures.dropped_guard_jab())))

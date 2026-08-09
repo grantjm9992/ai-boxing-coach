@@ -30,6 +30,19 @@ class HandsUpConfig:
     # so that style checks the rear hand only (check_lead=False).
     check_lead: bool = True
     check_rear: bool = True
+    # Soviet range game: judge "down" against the fighter's *own* settled carriage
+    # rather than the shoulder line, so a deliberately low, consistent carry isn't
+    # nagged as a drop — only a hand that sinks below where it lives is.
+    relative_to_baseline: bool = False
+    # Window (from the first idle frame) whose median wrist height defines that
+    # baseline carriage. Only used when relative_to_baseline is on.
+    baseline_window_ms: float = 1000.0
+    # ...and don't count frames where the fighter is stepping in/out: a hand
+    # carried low while translating is range management, not a dropped guard.
+    excuse_while_moving: bool = False
+    # Stance-centre speed (torso-lengths/sec) above which a frame counts as
+    # "stepping in/out" for excuse_while_moving.
+    moving_speed: float = 0.6
 
 
 class HandsUpRule(Rule):
@@ -89,19 +102,24 @@ class HandsUpRule(Rule):
     ) -> tuple[float | None, float | None]:
         seq = context.sequence
         scale = context.body_scale
+        speeds = context.stance_speed if cfg.excuse_while_moving else None
+        baseline = self._baseline_drop(context, side, idle, cfg) if cfg.relative_to_baseline else 0.0
         considered = 0
         down = 0
         worst_ms: float | None = None
         worst_drop = 0.0
         for i in idle:
+            if speeds is not None and speeds[i] > cfg.moving_speed:
+                continue  # stepping in/out — a low hand here is range management
             frame = seq.frames[i]
             wrist = geo.frame_point(frame, side.wrist)
             shoulder = geo.frame_point(frame, side.shoulder)
             if np.any(np.isnan(wrist)) or np.any(np.isnan(shoulder)):
                 continue
             considered += 1
-            # y grows downward, so wrist below shoulder => wrist.y larger.
-            drop = (wrist[1] - shoulder[1]) / scale
+            # y grows downward, so wrist below shoulder => wrist.y larger. `baseline`
+            # is 0 for the shoulder-line default, or the fighter's own carriage.
+            drop = (wrist[1] - shoulder[1]) / scale - baseline
             if drop > cfg.drop_margin:
                 down += 1
                 if drop > worst_drop:
@@ -110,3 +128,32 @@ class HandsUpRule(Rule):
         if considered == 0:
             return None, None
         return down / considered, worst_ms
+
+    def _baseline_drop(
+        self, context: AnalysisContext, side: Side, idle: list[int], cfg: HandsUpConfig
+    ) -> float:
+        """Median wrist-below-shoulder (torso-lengths) over the fighter's settled
+        early carriage — the reference a low hand is judged against under Soviet.
+
+        Prefers the first `baseline_window_ms` of idle; falls back to all idle if
+        that window is empty, and to 0 (the shoulder line) if there's no data.
+        """
+        seq = context.sequence
+        scale = context.body_scale
+        if not idle:
+            return 0.0
+        t0 = seq.frames[idle[0]].timestamp_ms
+        early: list[float] = []
+        overall: list[float] = []
+        for i in idle:
+            frame = seq.frames[i]
+            wrist = geo.frame_point(frame, side.wrist)
+            shoulder = geo.frame_point(frame, side.shoulder)
+            if np.any(np.isnan(wrist)) or np.any(np.isnan(shoulder)):
+                continue
+            drop = (wrist[1] - shoulder[1]) / scale
+            overall.append(drop)
+            if frame.timestamp_ms - t0 <= cfg.baseline_window_ms:
+                early.append(drop)
+        drops = early or overall
+        return float(np.median(drops)) if drops else 0.0

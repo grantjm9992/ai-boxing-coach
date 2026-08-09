@@ -141,6 +141,47 @@ def low_carry_jab() -> PoseSequence:
     )
 
 
+def out_step_dropped_jab() -> PoseSequence:
+    """A jab after which the lead hand carries low *while the fighter steps out* —
+    the Soviet in-and-out. The hand ends below where it launched, but the feet are
+    translating through the return, so it's distance management, not a dropped
+    guard. Default guard_return flags it; the Soviet school excuses it."""
+    la = list(BASE_POSE[Landmark.LEFT_ANKLE])
+    ra = list(BASE_POSE[Landmark.RIGHT_ANKLE])
+    out_la = (la[0] - 0.10, la[1], 0.0)  # both feet step back/out together
+    out_ra = (ra[0] - 0.10, ra[1], 0.0)
+    return (
+        PoseScript()
+        .hold(500)
+        .move(120, {Landmark.LEFT_WRIST: LEAD_JAB_EXTENDED})
+        .move(200, {
+            Landmark.LEFT_WRIST: LEAD_DROPPED,
+            Landmark.LEFT_ANKLE: out_la,
+            Landmark.RIGHT_ANKLE: out_ra,
+        })
+        .hold(400, left_wrist=LEAD_DROPPED)
+        .build()
+    )
+
+
+def sagging_guard_idle() -> PoseSequence:
+    """Hands start at guard, then the lead hand sinks below its own carriage and
+    stays there — feet planted the whole time. A genuine drop, not a low carry:
+    even the Soviet school (which forgives a consistently low hand, and a hand
+    lowered while moving) still flags this, because it's neither.
+
+    The sag settles clearly below the shoulder but only moderately low, so it
+    reads as a dropped guard and not as an extended punch to the detector."""
+    sag = (0.47, 0.52, 0.0)  # wrist well below the shoulder line, not hip-deep
+    return (
+        PoseScript()
+        .hold(1200)
+        .move(400, {Landmark.LEFT_WRIST: sag})
+        .hold(2400, left_wrist=sag)
+        .build()
+    )
+
+
 def rear_hand_down_idle() -> PoseSequence:
     """Standing with the *rear* hand hanging low the whole time (no punches).
 

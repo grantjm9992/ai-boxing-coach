@@ -18,7 +18,7 @@ from ..analysis.features import PunchDetectorConfig
 from ..analysis.rule import Rule
 from ..analysis.rules import default_rules
 from ..analysis.schools import round_feature_values
-from ..analysis.style_profiles import profile_for
+from ..analysis.style_profiles import resolve_profile
 from ..domain.analysis import (
     Correction,
     FlaggedMoment,
@@ -57,7 +57,7 @@ class PoseOnlyAdapter(VisionAnalysisAdapter):
             sequence=sequence,
             drill=drill,
             punch_config=self._punch_config,
-            style_profile=profile_for(drill.style),
+            style_profile=resolve_profile(drill.style, drill.school),
         )
         observations = self._engine.run(context)
 

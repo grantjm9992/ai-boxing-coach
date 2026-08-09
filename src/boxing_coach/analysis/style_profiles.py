@@ -20,6 +20,9 @@ What each profile encodes (and why):
 
 from __future__ import annotations
 
+from dataclasses import replace
+
+from ..domain.school import School
 from ..domain.style import Style
 from .rules.footwork import FootworkConfig
 from .rules.guard_return import GuardReturnConfig
@@ -76,3 +79,46 @@ def profile_for(style: Style) -> StyleProfile:
 def all_profiles() -> dict[Style, StyleProfile]:
     """Every built-in profile, keyed by style."""
     return dict(_PROFILES)
+
+
+# A national School tunes the *frame* guard rules only where its game changes
+# what "correct" means; everything else stays at the guard Style's config. Each
+# entry is rule_id -> field overrides layered onto that rule's config.
+#
+# Soviet: an in-and-out range game carries the hands off the textbook chin and
+# resets distance by stepping out, so a low hand is judged against the fighter's
+# own settled carriage (not the shoulder line) and forgiven while the feet are
+# translating — the same spirit as guard_return already judging return to the
+# launch position rather than an absolute cheek.
+_SCHOOL_RULE_OVERRIDES: dict[School, dict[str, dict[str, object]]] = {
+    School.SOVIET: {
+        "hands_up": {"relative_to_baseline": True, "excuse_while_moving": True},
+        "guard_return": {"excuse_while_moving": True},
+    },
+}
+
+# The rule's own default, layered under a School override when the Style set no
+# config for that rule itself.
+_DEFAULT_RULE_CONFIGS: dict[str, object] = {
+    "hands_up": HandsUpConfig(),
+    "guard_return": GuardReturnConfig(),
+}
+
+
+def resolve_profile(style: Style, school: School | None = None) -> StyleProfile:
+    """The StyleProfile for `style`, with any `school` guard-rule tuning layered on.
+
+    Style sets the base rule configs; a School (Soviet, ...) then adjusts the
+    guard rules whose notion of "correct" its game changes. Overrides are applied
+    field-wise, so a field the Style set (e.g. a Philly shell's check_lead=False)
+    survives unless the School overrides that same field.
+    """
+    profile = profile_for(style)
+    overrides = _SCHOOL_RULE_OVERRIDES.get(school) if school is not None else None
+    if not overrides:
+        return profile
+    configs = dict(profile.rule_configs)
+    for rule_id, changes in overrides.items():
+        base = configs.get(rule_id) or _DEFAULT_RULE_CONFIGS[rule_id]
+        configs[rule_id] = replace(base, **changes)
+    return replace(profile, rule_configs=configs)
