@@ -28,6 +28,7 @@ from ..domain.analysis import (
 )
 from ..domain.drill import DrillContext
 from ..domain.pose import PoseSequence
+from ..domain.punch import punch_name
 from .base import VisionAnalysisAdapter
 
 # Which drill to suggest for a given fault category. Placeholder mapping — in
@@ -118,8 +119,17 @@ class PoseOnlyAdapter(VisionAnalysisAdapter):
         return RoundMetrics(
             punches_thrown=n_punches,
             guard_return_rate=guard_rate,
+            punch_mix=self._punch_mix(context),
             values={"body_scale": round(context.body_scale, 4)},
         )
+
+    def _punch_mix(self, context: AnalysisContext) -> dict[str, int]:
+        stance = context.drill.stance
+        mix: dict[str, int] = {}
+        for punch in context.punches:
+            name = punch_name(punch.punch_type, punch.side, stance)
+            mix[name] = mix.get(name, 0) + 1
+        return mix
 
     def _flagged(self, faults: list[Observation]) -> list[FlaggedMoment]:
         moments = [

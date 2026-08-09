@@ -24,7 +24,9 @@ import numpy as np
 
 from ..domain.landmarks import Side
 from ..domain.pose import PoseSequence
+from ..domain.punch import PunchType
 from . import geometry as geo
+from .punch_classifier import PunchClassifierConfig, classify_punch
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +38,7 @@ class PunchEvent:
     peak_index: int    # frame of maximum extension
     end_index: int     # frame where the hand had retracted back to baseline
     peak_reach: float  # normalised wrist->shoulder distance at peak
+    punch_type: PunchType = PunchType.UNKNOWN  # motion class (straight/hook/uppercut)
 
     def peak_timestamp_ms(self, sequence: PoseSequence) -> float:
         return sequence.frames[self.peak_index].timestamp_ms
@@ -56,8 +59,13 @@ class PunchDetectorConfig:
 class PunchDetector:
     """Detects punch events from normalised wrist-reach signals."""
 
-    def __init__(self, config: PunchDetectorConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: PunchDetectorConfig | None = None,
+        classifier_config: PunchClassifierConfig | None = None,
+    ) -> None:
         self._config = config or PunchDetectorConfig()
+        self._classifier_config = classifier_config or PunchClassifierConfig()
 
     def detect(self, sequence: PoseSequence, body_scale: float) -> list[PunchEvent]:
         events: list[PunchEvent] = []
@@ -113,6 +121,10 @@ class PunchDetector:
 
             duration = sequence.frames[end].timestamp_ms - sequence.frames[start].timestamp_ms
             if duration >= self._config.min_duration_ms:
+                punch_type = classify_punch(
+                    sequence, side, start, peak, float(reach[peak]), body_scale,
+                    self._classifier_config,
+                )
                 events.append(
                     PunchEvent(
                         side=side,
@@ -120,6 +132,7 @@ class PunchDetector:
                         peak_index=peak,
                         end_index=end,
                         peak_reach=float(reach[peak]),
+                        punch_type=punch_type,
                     )
                 )
             i = end + 1

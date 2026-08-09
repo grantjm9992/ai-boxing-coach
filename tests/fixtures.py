@@ -200,6 +200,50 @@ def slight_slipping_head() -> PoseSequence:
     return s.build()
 
 
+def lead_hook() -> PoseSequence:
+    """A lead hook: bent arm, wrist arcs horizontally. Elbows included so the
+    classifier sees the ~90° bend (a straight would show a near-180° elbow)."""
+    chambered_elbow, chambered_wrist = (0.44, 0.52, 0.0), (0.46, 0.42, 0.0)
+    hook_elbow, hook_wrist = (0.58, 0.46, 0.0), (0.62, 0.36, 0.0)
+    return (
+        PoseScript()
+        .hold(600, left_elbow=chambered_elbow, left_wrist=chambered_wrist)
+        .move(120, {Landmark.LEFT_ELBOW: hook_elbow, Landmark.LEFT_WRIST: hook_wrist})
+        .move(120, {Landmark.LEFT_ELBOW: chambered_elbow, Landmark.LEFT_WRIST: chambered_wrist})
+        .hold(500)
+        .build()
+    )
+
+
+def lead_uppercut() -> PoseSequence:
+    """A lead uppercut: bent arm, wrist drives vertically upward."""
+    low_elbow, low_wrist = (0.44, 0.52, 0.0), (0.44, 0.44, 0.0)
+    up_elbow, up_wrist = (0.46, 0.40, 0.0), (0.52, 0.22, 0.0)
+    return (
+        PoseScript()
+        .hold(600, left_elbow=low_elbow, left_wrist=low_wrist)
+        .move(120, {Landmark.LEFT_ELBOW: up_elbow, Landmark.LEFT_WRIST: up_wrist})
+        .move(120, {Landmark.LEFT_ELBOW: low_elbow, Landmark.LEFT_WRIST: low_wrist})
+        .hold(500)
+        .build()
+    )
+
+
+def rear_hook() -> PoseSequence:
+    """A rear hook (right hand), squared/no rotation. Used to check that the
+    hip-rotation rule — which only judges the rear *straight* — leaves it be."""
+    chambered_elbow, chambered_wrist = (0.56, 0.52, 0.0), (0.54, 0.42, 0.0)
+    hook_elbow, hook_wrist = (0.42, 0.46, 0.0), (0.38, 0.36, 0.0)
+    return (
+        PoseScript()
+        .hold(600, right_elbow=chambered_elbow, right_wrist=chambered_wrist)
+        .move(120, {Landmark.RIGHT_ELBOW: hook_elbow, Landmark.RIGHT_WRIST: hook_wrist})
+        .move(120, {Landmark.RIGHT_ELBOW: chambered_elbow, Landmark.RIGHT_WRIST: chambered_wrist})
+        .hold(500)
+        .build()
+    )
+
+
 def _cross(*, rotated: bool) -> PoseSequence:
     """A rear straight, with or without shoulder rotation (z drive)."""
     peak_shoulder_z = -0.05 if rotated else 0.0

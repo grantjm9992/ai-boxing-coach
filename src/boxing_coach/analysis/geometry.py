@@ -51,6 +51,23 @@ def torso_length(frame: PoseFrame) -> float:
     return distance(shoulder_center(frame), hip_center(frame))
 
 
+def angle_deg(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> float:
+    """Angle at vertex `b` formed by a-b-c, in degrees (NaN if undetermined).
+
+    Used for joint angles like the elbow (shoulder-elbow-wrist): ~180° is a
+    straightened arm, ~90° a bent one.
+    """
+    ba = a - b
+    bc = c - b
+    if np.any(np.isnan(ba)) or np.any(np.isnan(bc)):
+        return float("nan")
+    denom = float(np.linalg.norm(ba) * np.linalg.norm(bc))
+    if denom == 0:
+        return float("nan")
+    cosine = float(np.dot(ba, bc)) / denom
+    return float(np.degrees(np.arccos(np.clip(cosine, -1.0, 1.0))))
+
+
 def nanmedian(values: list[float]) -> float:
     arr = np.array(values, dtype=np.float64)
     if arr.size == 0 or np.all(np.isnan(arr)):

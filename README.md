@@ -92,6 +92,22 @@ tunable config dataclass so you can calibrate against your own footage.
 | `head_movement` | head never leaving the centre line | head movement |
 | `hip_rotation` | rear straight thrown arm-only, no rotation | offence–straight |
 
+## Punch types
+
+The detector labels each punch with a **motion class** — `STRAIGHT`, `HOOK`,
+`UPPERCUT` (or `UNKNOWN`) — from the wrist's start→peak path and the elbow angle
+at the peak (a bent elbow separates a hook/uppercut from an extended straight;
+vertical rise separates the uppercut). Side + stance then name it: a lead
+straight is a *jab*, a rear straight a *cross*, and so on (`punch_name`). The
+round's `punch_mix` (e.g. `{"jab": 3, "cross": 1}`) rides on the metrics.
+
+This is what lets rules target the right punch: `hip_rotation` now judges only
+the rear **straight**, since a hook or uppercut turns over differently and
+shouldn't be measured against a cross's shoulder-drive. Classification is a
+swappable step (`analysis/punch_classifier.py`) — single-view 2D reads the
+uppercut and straight clearly but the hook least well, so treat the type as a
+strong signal, not ground truth.
+
 ## Fighting styles
 
 "Correct" is style-dependent — judging every fighter against a textbook high
@@ -147,9 +163,11 @@ clean fixture) — that's the validation loop the whole skeleton exists to serve
   starting points, not tuned values. The real work is recording yourself doing
   things right and wrong, and adjusting each rule's config until observations
   match reality. That's `--json` output plus your own eyes.
-- **No punch *type* classification yet.** The detector finds punches and which
-  hand; it doesn't distinguish jab vs hook vs uppercut. Several richer rules
-  need that — it's the natural next feature.
+- **Punch typing is uneven from one camera.** The classifier separates the
+  uppercut (vertical) and straight (extension) well, but the hook — a horizontal
+  arc with a bent elbow — foreshortens on a head-on view, and the detector only
+  sees punches that push the wrist away from the shoulder. It's a strong signal,
+  not ground truth, and the first place a second angle or the VLM layer helps.
 - **Style profiles are coarse.** Four styles exist (`StyleProfile`), enough to
   stop the worst misfires — a Philly shell's low lead hand is no longer flagged,
   an out-boxer isn't nagged about head movement. But each profile is a handful

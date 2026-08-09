@@ -20,6 +20,7 @@ import numpy as np
 
 from ...domain.analysis import Observation, Severity, SkillCategory
 from ...domain.landmarks import Side
+from ...domain.punch import PunchType
 from .. import geometry as geo
 from ..context import AnalysisContext
 from ..rule import Rule
@@ -48,6 +49,11 @@ class HipRotationRule(Rule):
         observations: list[Observation] = []
 
         for punch in context.punches_by(rear):
+            # Only the rear straight (cross) is driven by rotation this way; a
+            # rear hook or uppercut turns over differently, so don't judge them
+            # against a straight's shoulder-drive expectation.
+            if punch.punch_type is not PunchType.STRAIGHT:
+                continue
             if punch.peak_reach < cfg.min_peak_reach:
                 continue
             drive = self._shoulder_drive(context, rear, punch.start_index, punch.peak_index)

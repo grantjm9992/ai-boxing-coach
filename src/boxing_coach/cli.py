@@ -55,6 +55,9 @@ def _print_report(analysis: RoundAnalysis, style_label: str | None = None) -> No
 
     m = analysis.metrics
     print(f"Punches thrown: {m.punches_thrown}")
+    if m.punch_mix:
+        mix = ", ".join(f"{name} x{count}" for name, count in m.punch_mix.items())
+        print(f"Punch mix: {mix}")
     if m.guard_return_rate is not None:
         print(f"Guard return rate: {m.guard_return_rate:.0%}")
     print()

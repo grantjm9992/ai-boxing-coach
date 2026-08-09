@@ -98,6 +98,8 @@ class RoundMetrics:
 
     punches_thrown: int = 0
     guard_return_rate: float | None = None  # 0..1, None if no punches
+    # Named punch -> count, e.g. {"jab": 3, "cross": 1, "lead hook": 1}.
+    punch_mix: dict[str, int] = field(default_factory=dict)
     values: dict[str, float] = field(default_factory=dict)
 
 
