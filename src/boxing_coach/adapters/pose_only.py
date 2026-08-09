@@ -95,6 +95,7 @@ class PoseOnlyAdapter(VisionAnalysisAdapter):
                     description=obs.coaching_text,
                     suggested_drill=_SUGGESTED_DRILLS.get(obs.category.value),
                     example_timestamp_ms=obs.timestamp_ms,
+                    highlight_landmarks=obs.highlight_landmarks,
                 )
             )
             priority += 1

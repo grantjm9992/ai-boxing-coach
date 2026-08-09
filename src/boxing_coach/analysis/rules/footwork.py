@@ -54,6 +54,7 @@ class FootworkRule(Rule):
                         "step in and out, work angles instead of standing square."
                     ),
                     metrics={"travel_per_second": round(travel, 3)},
+                    highlight_landmarks=(Side.LEFT.ankle, Side.RIGHT.ankle),
                 )
             ]
         return [

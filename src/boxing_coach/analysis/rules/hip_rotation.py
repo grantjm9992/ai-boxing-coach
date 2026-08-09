@@ -64,6 +64,7 @@ class HipRotationRule(Rule):
                         ),
                         timestamp_ms=punch.peak_timestamp_ms(seq),
                         metrics={"shoulder_drive": round(drive, 3)},
+                        highlight_landmarks=(rear.shoulder,),
                     )
                 )
         return observations

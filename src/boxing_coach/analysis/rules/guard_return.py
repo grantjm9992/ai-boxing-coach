@@ -58,6 +58,7 @@ class GuardReturnRule(Rule):
                     coaching_text=self._coaching_text(punch.side, failure_mode),
                     timestamp_ms=seq.frames[worst_frame].timestamp_ms,
                     metrics={"peak_reach": punch.peak_reach},
+                    highlight_landmarks=(punch.side.wrist,),
                 )
             )
 

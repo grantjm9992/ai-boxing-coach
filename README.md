@@ -31,6 +31,21 @@ python -m boxing_coach.cli myround.mp4 --stance orthodox
 python -m boxing_coach.cli myround.mp4 --focus jab defence --json > out.json
 ```
 
+### Annotated stills
+
+Add `--stills DIR` to save one annotated frame per correction — the video frame
+at that moment with the pose skeleton drawn and the at-fault body part circled
+in red, captioned with the coaching cue. Each correction's `still_path` points
+at its PNG (in the report and in `--json`).
+
+```bash
+python -m boxing_coach.cli myround.mp4 --stance orthodox --stills ./stills
+```
+
+Only corrections tied to a moment get a still; round-level ones (e.g. flat
+footwork) have no single frame to show. Rendering lives behind a lazy `cv2`
+import in `rendering/`, so it never touches the engine or its tests.
+
 Run the tests (engine only — no MediaPipe needed):
 
 ```bash
@@ -111,6 +126,12 @@ clean fixture) — that's the validation loop the whole skeleton exists to serve
 - **No punch *type* classification yet.** The detector finds punches and which
   hand; it doesn't distinguish jab vs hook vs uppercut. Several richer rules
   need that — it's the natural next feature.
+- **No style / guard-profile model yet.** The only style input is `Stance`
+  (orthodox/southpaw). The rules assume a textbook high guard, so some would
+  *misfire* for other styles — `hands_up` flags a deliberately low lead hand
+  (Philly shell, low-lead out-boxer) as a fault, and `head_movement` assumes
+  movement off the centre line is always wanted. A `StyleProfile` that tunes
+  thresholds and gates rules per style is the fix; it isn't built.
 - **This is 5 rules, not 30.** The spec's domain value is in the rule library.
   The skeleton proves the pattern; the boxing expertise is what fills it out.
 

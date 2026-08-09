@@ -62,6 +62,7 @@ class HeadMovementRule(Rule):
                         "Add some movement — slip off the line so you're not a fixed target."
                     ),
                     metrics={"lateral_std": round(lateral_std, 3)},
+                    highlight_landmarks=(Landmark.NOSE,),
                 )
             ]
         return []

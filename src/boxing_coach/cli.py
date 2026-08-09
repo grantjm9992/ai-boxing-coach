@@ -33,7 +33,7 @@ def _to_dict(analysis: RoundAnalysis) -> dict:
     def convert(value):
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
             return {k: convert(v) for k, v in dataclasses.asdict(value).items()}
-        if isinstance(value, list):
+        if isinstance(value, (list, tuple)):
             return [convert(v) for v in value]
         if hasattr(value, "value"):  # Enum
             return value.value
@@ -62,6 +62,8 @@ def _print_report(analysis: RoundAnalysis) -> None:
             print(f"  {c.priority}. [{c.category.value}] {c.description}{when}")
             if c.suggested_drill:
                 print(f"     drill: {c.suggested_drill}")
+            if c.still_path:
+                print(f"     still: {c.still_path}")
         print()
 
     if analysis.positive_notes:
@@ -92,6 +94,10 @@ def main(argv: list[str] | None = None) -> int:
         "--sample-every-ms", type=float, default=40.0,
         help="min spacing between analysed frames",
     )
+    parser.add_argument(
+        "--stills", metavar="DIR", default=None,
+        help="write an annotated still (skeleton + highlighted fault) per correction to DIR",
+    )
     args = parser.parse_args(argv)
 
     # Import the estimator lazily so --help and JSON schema work without mediapipe.
@@ -100,7 +106,16 @@ def main(argv: list[str] | None = None) -> int:
     estimator = load_mediapipe_estimator(sample_every_ms=args.sample_every_ms)
     pipeline = AnalysisPipeline(estimator, PoseOnlyAdapter())
 
-    analysis = pipeline.analyse_video(args.video, _build_drill(args))
+    drill = _build_drill(args)
+    sequence = pipeline.estimate(args.video)
+    analysis = pipeline.analyse_sequence(sequence, drill)
+
+    if args.stills:
+        from .rendering import StillRenderer
+
+        analysis.correction_priorities = StillRenderer().render(
+            args.video, sequence, analysis.correction_priorities, args.stills
+        )
 
     if args.json:
         json.dump(_to_dict(analysis), sys.stdout, indent=2)

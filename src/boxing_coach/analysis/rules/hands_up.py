@@ -58,6 +58,7 @@ class HandsUpRule(Rule):
                         ),
                         timestamp_ms=worst_ms,
                         metrics={"down_fraction": round(down_fraction, 3)},
+                        highlight_landmarks=(side.wrist,),
                     )
                 )
         return observations

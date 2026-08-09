@@ -10,6 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 
+from .landmarks import Landmark
+
 
 class Severity(str, Enum):
     """How much a given observation matters. Ordered worst-first via `rank`."""
@@ -61,6 +63,9 @@ class Observation:
     coaching_text: str
     timestamp_ms: float | None = None
     metrics: dict[str, float] = field(default_factory=dict)
+    # Body parts a rule wants emphasised when this moment is shown to the user
+    # (e.g. the wrist that dropped). Drives the highlight on annotated stills.
+    highlight_landmarks: tuple[Landmark, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +77,10 @@ class Correction:
     description: str
     suggested_drill: str | None = None
     example_timestamp_ms: float | None = None
+    # Body parts to emphasise on the still for this correction.
+    highlight_landmarks: tuple[Landmark, ...] = ()
+    # Path to a rendered annotated still for this correction, if one was made.
+    still_path: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
