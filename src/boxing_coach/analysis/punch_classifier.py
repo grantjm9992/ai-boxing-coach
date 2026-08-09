@@ -35,8 +35,6 @@ class PunchClassifierConfig:
     extended_elbow_deg: float = 150.0
     # Fallback when the elbow landmark is missing: reach at/above this = extended.
     extended_reach: float = 1.2
-    # Below this total wrist travel (and not extended), we can't tell -> UNKNOWN.
-    min_travel: float = 0.3
 
 
 def classify_punch(

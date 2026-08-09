@@ -54,6 +54,12 @@ class PunchDetectorConfig:
     min_duration_ms: float = 60.0
     # Percentile of reach treated as the retracted/guard baseline.
     baseline_percentile: float = 25.0
+    # A detected reach bump the classifier can't type (UNKNOWN) whose wrist
+    # travelled less than this (torso-lengths) isn't a punch — it's a held-out /
+    # range-finding hand or a clip-boundary frame crossing the global baseline,
+    # not a stroke. Dropped rather than emitted as a phantom "punch". Real but
+    # ambiguous strokes travel further, so they still register (as UNKNOWN).
+    min_travel: float = 0.3
 
 
 class PunchDetector:
@@ -125,18 +131,41 @@ class PunchDetector:
                     sequence, side, start, peak, float(reach[peak]), body_scale,
                     self._classifier_config,
                 )
-                events.append(
-                    PunchEvent(
-                        side=side,
-                        start_index=start,
-                        peak_index=peak,
-                        end_index=end,
-                        peak_reach=float(reach[peak]),
-                        punch_type=punch_type,
+                # Drop phantom detections: a bump we can't classify AND whose wrist
+                # barely moved is a held-out hand or a boundary frame, not a stroke.
+                travel = self._wrist_travel(sequence, side, start, peak, body_scale)
+                phantom = punch_type is PunchType.UNKNOWN and travel < self._config.min_travel
+                if not phantom:
+                    events.append(
+                        PunchEvent(
+                            side=side,
+                            start_index=start,
+                            peak_index=peak,
+                            end_index=end,
+                            peak_reach=float(reach[peak]),
+                            punch_type=punch_type,
+                        )
                     )
-                )
             i = end + 1
         return events
+
+    @staticmethod
+    def _wrist_travel(
+        sequence: PoseSequence, side: Side, start_index: int, peak_index: int, body_scale: float
+    ) -> float:
+        """Total wrist path length over the out-stroke (start->peak), torso-lengths.
+
+        The actual travelled path, not just the endpoints, so a real punch that
+        arcs still reads as travel while a near-motionless bump reads as ~0.
+        """
+        total = 0.0
+        prev: np.ndarray | None = None
+        for j in range(start_index, peak_index + 1):
+            w = geo.frame_point(sequence.frames[j], side.wrist)
+            if prev is not None and not np.any(np.isnan(w)) and not np.any(np.isnan(prev)):
+                total += float(np.linalg.norm(w - prev)) / body_scale
+            prev = w
+        return total
 
 
 def compute_body_scale(sequence: PoseSequence) -> float:
