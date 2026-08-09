@@ -12,6 +12,7 @@ from .analysis import (
 from .drill import DrillContext
 from .landmarks import Landmark, Side, Stance
 from .pose import Keypoint, PoseFrame, PoseSequence
+from .style import Style
 
 __all__ = [
     "Correction",
@@ -25,6 +26,7 @@ __all__ = [
     "Landmark",
     "Side",
     "Stance",
+    "Style",
     "Keypoint",
     "PoseFrame",
     "PoseSequence",

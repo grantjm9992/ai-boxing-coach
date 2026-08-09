@@ -34,16 +34,17 @@ class FootworkRule(Rule):
         self._cfg = config or FootworkConfig()
 
     def evaluate(self, context: AnalysisContext) -> list[Observation]:
+        cfg = context.style_profile.config_for(self.id, self._cfg)
         seq = context.sequence
         duration_s = seq.duration_ms / 1000.0
-        if seq.duration_ms < self._cfg.min_duration_ms or duration_s <= 0:
+        if seq.duration_ms < cfg.min_duration_ms or duration_s <= 0:
             return []
 
         travel = self._mean_ankle_travel_per_second(context, duration_s)
         if travel is None:
             return []
 
-        if travel < self._cfg.min_travel_per_second:
+        if travel < cfg.min_travel_per_second:
             return [
                 Observation(
                     rule_id=self.id,

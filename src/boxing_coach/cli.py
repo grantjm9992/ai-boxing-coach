@@ -18,12 +18,14 @@ from .adapters import PoseOnlyAdapter
 from .domain.analysis import RoundAnalysis
 from .domain.drill import DrillContext
 from .domain.landmarks import Stance
+from .domain.style import Style
 from .pipeline import AnalysisPipeline
 
 
 def _build_drill(args: argparse.Namespace) -> DrillContext:
     return DrillContext(
         stance=Stance[args.stance.upper()],
+        style=Style(args.style),
         focus=frozenset(args.focus or []),
         notes=args.notes or "",
     )
@@ -42,10 +44,12 @@ def _to_dict(analysis: RoundAnalysis) -> dict:
     return convert(analysis)
 
 
-def _print_report(analysis: RoundAnalysis) -> None:
+def _print_report(analysis: RoundAnalysis, style_label: str | None = None) -> None:
     print("=" * 60)
     print("ROUND ANALYSIS")
     print("=" * 60)
+    if style_label:
+        print(f"Style: {style_label}")
     print(analysis.overall_summary)
     print()
 
@@ -85,6 +89,10 @@ def main(argv: list[str] | None = None) -> int:
         "--stance", choices=["orthodox", "southpaw"], default="orthodox"
     )
     parser.add_argument(
+        "--style", choices=[s.value for s in Style], default=Style.HIGH_GUARD.value,
+        help="fighting style — tunes/gates the rules (e.g. philly_shell keeps the lead hand low)",
+    )
+    parser.add_argument(
         "--focus", nargs="*", default=[],
         help="drill focus tags, e.g. jab defence footwork (empty = all rules)",
     )
@@ -121,7 +129,9 @@ def main(argv: list[str] | None = None) -> int:
         json.dump(_to_dict(analysis), sys.stdout, indent=2)
         sys.stdout.write("\n")
     else:
-        _print_report(analysis)
+        from .analysis.style_profiles import profile_for
+
+        _print_report(analysis, style_label=profile_for(drill.style).label)
     return 0
 
 

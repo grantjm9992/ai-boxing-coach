@@ -14,6 +14,7 @@ from ..domain.drill import DrillContext
 from ..domain.landmarks import Side
 from ..domain.pose import PoseSequence
 from .features import PunchDetector, PunchDetectorConfig, PunchEvent, compute_body_scale
+from .style import DEFAULT_STYLE_PROFILE, StyleProfile
 
 
 @dataclass
@@ -23,6 +24,10 @@ class AnalysisContext:
     sequence: PoseSequence
     drill: DrillContext
     punch_config: PunchDetectorConfig = field(default_factory=PunchDetectorConfig)
+    #: Tunes/gates the rules for this round's fighting style. Defaults to the
+    #: neutral high-guard profile so tests and callers that don't care are
+    #: unaffected. The adapter resolves it from `drill.style`.
+    style_profile: StyleProfile = DEFAULT_STYLE_PROFILE
 
     @cached_property
     def body_scale(self) -> float:

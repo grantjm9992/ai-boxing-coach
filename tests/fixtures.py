@@ -126,6 +126,16 @@ def hands_down_idle() -> PoseSequence:
     return PoseScript().hold(4000, left_wrist=LEAD_DROPPED).build()
 
 
+def rear_hand_down_idle() -> PoseSequence:
+    """Standing with the *rear* hand hanging low the whole time (no punches).
+
+    The mirror of `hands_down_idle` — used to check that styles which stop
+    judging the lead hand (Philly shell) still flag a dropped rear hand.
+    """
+    rear_dropped = (0.53, 0.60, 0.0)  # rear (right) wrist down at hip level
+    return PoseScript().hold(4000, right_wrist=rear_dropped).build()
+
+
 def static_feet() -> PoseSequence:
     """A whole round rooted to the spot."""
     return PoseScript().hold(5000).build()
@@ -144,17 +154,48 @@ def moving_feet() -> PoseSequence:
     return s.build()
 
 
+def drifting_feet() -> PoseSequence:
+    """Feet moving gently — enough for a textbook guard, not for an out-boxer.
+
+    A modest, steady drift whose travel-per-second sits between the default
+    footwork bar and the higher one an out-boxer is held to.
+    """
+    s = PoseScript()
+    la, ra = list(BASE_POSE[Landmark.LEFT_ANKLE]), list(BASE_POSE[Landmark.RIGHT_ANKLE])
+    for i in range(16):  # 16 moves clears the footwork min-duration gate (>3s)
+        step = 0.010 * (i + 1)
+        s.move(250, {
+            Landmark.LEFT_ANKLE: (la[0] + step, la[1], 0.0),
+            Landmark.RIGHT_ANKLE: (ra[0] + step, ra[1], 0.0),
+        })
+    return s.build()
+
+
 def static_head() -> PoseSequence:
     """Head glued to the centre line."""
     return PoseScript().hold(5000).build()
 
 
 def slipping_head() -> PoseSequence:
-    """Head slipping left and right off the centre line."""
+    """Head slipping left and right off the centre line (past the 3s gate)."""
     s = PoseScript()
     nose = list(BASE_POSE[Landmark.NOSE])
-    for i in range(10):
+    for i in range(14):
         dx = 0.08 if i % 2 == 0 else -0.08
+        s.move(250, {Landmark.NOSE: (nose[0] + dx, nose[1], 0.0)})
+    return s.build()
+
+
+def slight_slipping_head() -> PoseSequence:
+    """Head slipping a little — enough for a textbook guard, not for peek-a-boo.
+
+    Lateral spread sits between the default head-movement bar and the higher one
+    a peek-a-boo fighter is held to.
+    """
+    s = PoseScript()
+    nose = list(BASE_POSE[Landmark.NOSE])
+    for i in range(14):  # past the head-movement min-duration gate (>3s)
+        dx = 0.035 if i % 2 == 0 else -0.035
         s.move(250, {Landmark.NOSE: (nose[0] + dx, nose[1], 0.0)})
     return s.build()
 

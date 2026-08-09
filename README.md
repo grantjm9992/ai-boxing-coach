@@ -92,6 +92,30 @@ tunable config dataclass so you can calibrate against your own footage.
 | `head_movement` | head never leaving the centre line | head movement |
 | `hip_rotation` | rear straight thrown arm-only, no rotation | offence–straight |
 
+## Fighting styles
+
+"Correct" is style-dependent — judging every fighter against a textbook high
+guard gives a shell fighter the wrong advice. A **`StyleProfile`** tunes and
+gates the rules per style: it switches off rules that don't apply and overrides
+the thresholds that legitimately differ.
+
+```bash
+python -m boxing_coach.cli myround.mp4 --style philly_shell
+```
+
+| Style | What it changes |
+|---|---|
+| `high_guard` | the neutral default — every rule on, default thresholds |
+| `philly_shell` | lead hand rides low on purpose → `hands_up`/`guard_return` judge the **rear hand only** |
+| `peek_a_boo` | hands high, constant head movement → held to a **higher `head_movement` bar** |
+| `out_boxer` | defends with range → `head_movement` **off**, `footwork` held to a higher bar |
+
+Style is per round (it lives on `DrillContext`), so it varies without rebuilding
+the rule set — the resolved profile rides on the `AnalysisContext` and each rule
+reads its config from it. Adding a style is a `Style` enum member plus one entry
+in `analysis/style_profiles.py`. Like the thresholds, the profiles are starting
+points to calibrate, not gospel.
+
 ## Adding a rule
 
 ```python
@@ -126,12 +150,12 @@ clean fixture) — that's the validation loop the whole skeleton exists to serve
 - **No punch *type* classification yet.** The detector finds punches and which
   hand; it doesn't distinguish jab vs hook vs uppercut. Several richer rules
   need that — it's the natural next feature.
-- **No style / guard-profile model yet.** The only style input is `Stance`
-  (orthodox/southpaw). The rules assume a textbook high guard, so some would
-  *misfire* for other styles — `hands_up` flags a deliberately low lead hand
-  (Philly shell, low-lead out-boxer) as a fault, and `head_movement` assumes
-  movement off the centre line is always wanted. A `StyleProfile` that tunes
-  thresholds and gates rules per style is the fix; it isn't built.
+- **Style profiles are coarse.** Four styles exist (`StyleProfile`), enough to
+  stop the worst misfires — a Philly shell's low lead hand is no longer flagged,
+  an out-boxer isn't nagged about head movement. But each profile is a handful
+  of threshold tweaks and rule on/offs, not a real model of the style. A shell's
+  lead hand still isn't checked for returning to *its* guard (across the body),
+  only exempted; that finer per-style technique modelling is future work.
 - **This is 5 rules, not 30.** The spec's domain value is in the rule library.
   The skeleton proves the pattern; the boxing expertise is what fills it out.
 

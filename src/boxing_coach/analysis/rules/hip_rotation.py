@@ -42,17 +42,18 @@ class HipRotationRule(Rule):
         self._cfg = config or HipRotationConfig()
 
     def evaluate(self, context: AnalysisContext) -> list[Observation]:
+        cfg = context.style_profile.config_for(self.id, self._cfg)
         rear = context.drill.stance.rear
         seq = context.sequence
         observations: list[Observation] = []
 
         for punch in context.punches_by(rear):
-            if punch.peak_reach < self._cfg.min_peak_reach:
+            if punch.peak_reach < cfg.min_peak_reach:
                 continue
             drive = self._shoulder_drive(context, rear, punch.start_index, punch.peak_index)
             if drive is None:
                 continue
-            if drive < self._cfg.min_shoulder_drive:
+            if drive < cfg.min_shoulder_drive:
                 observations.append(
                     Observation(
                         rule_id=self.id,

@@ -27,6 +27,8 @@ class RuleEngine:
     def run(self, context: AnalysisContext) -> list[Observation]:
         observations: list[Observation] = []
         for rule in self._rules:
+            if not context.style_profile.enables(rule.id):
+                continue
             if not rule.applies_to(context):
                 continue
             try:

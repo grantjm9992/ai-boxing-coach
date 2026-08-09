@@ -26,6 +26,10 @@ class HandsUpConfig:
     drop_margin: float = 0.10
     # Flag the round if a hand is down for more than this fraction of idle time.
     max_down_fraction: float = 0.25
+    # Which hands to judge. A Philly shell keeps its lead hand deliberately low,
+    # so that style checks the rear hand only (check_lead=False).
+    check_lead: bool = True
+    check_rear: bool = True
 
 
 class HandsUpRule(Rule):
@@ -36,17 +40,27 @@ class HandsUpRule(Rule):
         self._cfg = config or HandsUpConfig()
 
     def evaluate(self, context: AnalysisContext) -> list[Observation]:
+        cfg = context.style_profile.config_for(self.id, self._cfg)
         idle = self._idle_frame_indices(context)
         if not idle:
             return []
 
+        stance = context.drill.stance
+        checked: set[Side] = set()
+        if cfg.check_lead:
+            checked.add(stance.lead)
+        if cfg.check_rear:
+            checked.add(stance.rear)
+
         observations: list[Observation] = []
         for side in (Side.LEFT, Side.RIGHT):
-            down_fraction, worst_ms = self._down_fraction(context, side, idle)
+            if side not in checked:
+                continue
+            down_fraction, worst_ms = self._down_fraction(context, side, idle, cfg)
             if down_fraction is None:
                 continue
-            if down_fraction > self._cfg.max_down_fraction:
-                hand = "lead" if side is Side.LEFT else "rear"
+            if down_fraction > cfg.max_down_fraction:
+                hand = "lead" if side is stance.lead else "rear"
                 observations.append(
                     Observation(
                         rule_id=self.id,
@@ -71,7 +85,7 @@ class HandsUpRule(Rule):
         return [i for i in range(len(context.sequence)) if i not in punching]
 
     def _down_fraction(
-        self, context: AnalysisContext, side: Side, idle: list[int]
+        self, context: AnalysisContext, side: Side, idle: list[int], cfg: HandsUpConfig
     ) -> tuple[float | None, float | None]:
         seq = context.sequence
         scale = context.body_scale
@@ -88,7 +102,7 @@ class HandsUpRule(Rule):
             considered += 1
             # y grows downward, so wrist below shoulder => wrist.y larger.
             drop = (wrist[1] - shoulder[1]) / scale
-            if drop > self._cfg.drop_margin:
+            if drop > cfg.drop_margin:
                 down += 1
                 if drop > worst_drop:
                     worst_drop = drop

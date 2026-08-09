@@ -27,6 +27,10 @@ class GuardReturnConfig:
     return_window_ms: float = 500.0
     # Below this fraction of returning punches, flag it as a round-level fault.
     healthy_return_rate: float = 0.8
+    # Which hands to judge. A Philly shell returns its lead hand low on purpose,
+    # so that style checks the rear hand only (check_lead=False).
+    check_lead: bool = True
+    check_rear: bool = True
 
 
 class GuardReturnRule(Rule):
@@ -37,15 +41,18 @@ class GuardReturnRule(Rule):
         self._cfg = config or GuardReturnConfig()
 
     def evaluate(self, context: AnalysisContext) -> list[Observation]:
+        cfg = context.style_profile.config_for(self.id, self._cfg)
         seq = context.sequence
-        scale = context.body_scale
+        checked = self._checked_sides(context, cfg)
         observations: list[Observation] = []
         returned = 0
         total = 0
 
         for punch in context.punches:
+            if punch.side not in checked:
+                continue
             total += 1
-            verdict = self._classify_return(context, punch)
+            verdict = self._classify_return(context, punch, cfg)
             if verdict is None:  # returned cleanly
                 returned += 1
                 continue
@@ -55,7 +62,9 @@ class GuardReturnRule(Rule):
                     rule_id=self.id,
                     category=SkillCategory.DEFENCE,
                     severity=Severity.MODERATE,
-                    coaching_text=self._coaching_text(punch.side, failure_mode),
+                    coaching_text=self._coaching_text(
+                        context.drill.stance, punch.side, failure_mode
+                    ),
                     timestamp_ms=seq.frames[worst_frame].timestamp_ms,
                     metrics={"peak_reach": punch.peak_reach},
                     highlight_landmarks=(punch.side.wrist,),
@@ -65,7 +74,7 @@ class GuardReturnRule(Rule):
         # Round-level summary: praise or flag depending on the rate.
         if total:
             rate = returned / total
-            if rate >= self._cfg.healthy_return_rate and not observations:
+            if rate >= cfg.healthy_return_rate and not observations:
                 observations.append(
                     Observation(
                         rule_id=self.id,
@@ -77,11 +86,23 @@ class GuardReturnRule(Rule):
                 )
         return observations
 
-    def _classify_return(self, context: AnalysisContext, punch) -> tuple[str, int] | None:
+    @staticmethod
+    def _checked_sides(context: AnalysisContext, cfg: GuardReturnConfig) -> set[Side]:
+        stance = context.drill.stance
+        sides: set[Side] = set()
+        if cfg.check_lead:
+            sides.add(stance.lead)
+        if cfg.check_rear:
+            sides.add(stance.rear)
+        return sides
+
+    def _classify_return(
+        self, context: AnalysisContext, punch, cfg: GuardReturnConfig
+    ) -> tuple[str, int] | None:
         """None if the hand returns to guard in time; else (failure_mode, frame)."""
         seq = context.sequence
         scale = context.body_scale
-        deadline = seq.frames[punch.end_index].timestamp_ms + self._cfg.return_window_ms
+        deadline = seq.frames[punch.end_index].timestamp_ms + cfg.return_window_ms
 
         best_dist = np.inf
         worst_frame = punch.peak_index
@@ -99,14 +120,13 @@ class GuardReturnRule(Rule):
             if dist > best_dist:  # track the most-exposed moment for the flag
                 worst_frame = i
 
-        if best_dist <= self._cfg.guard_radius:
+        if best_dist <= cfg.guard_radius:
             return None
 
         # It didn't return in time — figure out how it failed for the cue.
         end_frame = seq.frames[min(punch.end_index, len(seq) - 1)]
         wrist = geo.frame_point(end_frame, punch.side.wrist)
         shoulder = geo.frame_point(end_frame, punch.side.shoulder)
-        hip = geo.frame_point(end_frame, punch.side.hip)
 
         if not np.any(np.isnan(wrist)):
             # Dropped below the shoulder line -> hanging low.
@@ -115,13 +135,13 @@ class GuardReturnRule(Rule):
             # Still far from the shoulder -> left hanging out there.
             if not np.any(np.isnan(shoulder)):
                 reach = geo.distance(wrist, shoulder) / scale
-                if reach > self._cfg.guard_radius:
+                if reach > cfg.guard_radius:
                     return ("extended", punch.end_index)
         return ("slow", punch.end_index)
 
     @staticmethod
-    def _coaching_text(side: Side, failure_mode: str) -> str:
-        hand = "lead" if side is Side.LEFT else "rear"
+    def _coaching_text(stance, side: Side, failure_mode: str) -> str:
+        hand = "lead" if side is stance.lead else "rear"
         if failure_mode == "dropped":
             return f"Your {hand} hand drops after the punch — bring it straight back to your cheek, not down to your hip."
         if failure_mode == "extended":

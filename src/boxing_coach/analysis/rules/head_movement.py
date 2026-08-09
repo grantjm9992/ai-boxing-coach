@@ -34,8 +34,9 @@ class HeadMovementRule(Rule):
         self._cfg = config or HeadMovementConfig()
 
     def evaluate(self, context: AnalysisContext) -> list[Observation]:
+        cfg = context.style_profile.config_for(self.id, self._cfg)
         seq = context.sequence
-        if seq.duration_ms < self._cfg.min_duration_ms:
+        if seq.duration_ms < cfg.min_duration_ms:
             return []
 
         scale = context.body_scale
@@ -51,7 +52,7 @@ class HeadMovementRule(Rule):
             return []
 
         lateral_std = float(np.std(offsets))
-        if lateral_std < self._cfg.min_lateral_std:
+        if lateral_std < cfg.min_lateral_std:
             return [
                 Observation(
                     rule_id=self.id,
