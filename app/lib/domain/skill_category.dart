@@ -4,8 +4,13 @@
 /// `mobility` is an addition: the spec's list covers the boxing work but leaves
 /// warm-up and cool-down exercises untaggable, and an untagged exercise breaks
 /// the category-based tracking principle.
+///
+/// The keys deliberately match `SkillCategory` in the Python analysis engine
+/// (`src/boxing_coach/domain/analysis.py`) so that from v0.5, an observation
+/// coming out of the rule engine maps onto a tracked category without a
+/// translation table in between.
 enum SkillCategory {
-  cardio('cardio', 'Cardio', 'Cardiovascular endurance'),
+  cardio('cardiovascular_endurance', 'Cardio', 'Cardiovascular endurance'),
   muscularEndurance(
     'muscular_endurance',
     'Muscular endurance',
@@ -14,10 +19,14 @@ enum SkillCategory {
   power('power', 'Power', 'Explosive force generation'),
   footwork('footwork', 'Footwork', 'Movement, angles, ring cutting'),
   defence('defence', 'Defence', 'Slipping, rolling, blocking, parrying'),
-  jab('jab', 'Jab', 'Offence — the jab'),
-  straight('straight', 'Straight', 'Offence — cross and straight shots'),
-  hooks('hooks', 'Hooks', 'Offence — lead and rear hooks'),
-  uppercuts('uppercuts', 'Uppercuts', 'Offence — uppercuts'),
+  jab('offence_jab', 'Jab', 'Offence — the jab'),
+  straight(
+    'offence_straight',
+    'Straight',
+    'Offence — cross and straight shots',
+  ),
+  hooks('offence_hooks', 'Hooks', 'Offence — lead and rear hooks'),
+  uppercuts('offence_uppercuts', 'Uppercuts', 'Offence — uppercuts'),
   combinations('combinations', 'Combinations', 'Multi-punch sequences'),
   headMovement('head_movement', 'Head movement', 'Getting off the centre line'),
   distanceManagement(

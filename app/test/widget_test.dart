@@ -53,7 +53,7 @@ void main() {
   testWidgets('the session screen shows the clock and the current round', (
     tester,
   ) async {
-    final template = SessionTemplates.shortSharp;
+    const template = SessionTemplates.shortSharp;
     final plan = SessionPlanBuilder.build(
       template,
       SessionSettings.fromTemplate(template),

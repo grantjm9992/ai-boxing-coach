@@ -8,7 +8,7 @@ import 'package:boxing_coach/engine/session_plan_builder.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final template = SessionTemplates.balancedFull;
+  const template = SessionTemplates.balancedFull;
   final plan = SessionPlanBuilder.build(
     template,
     SessionSettings.fromTemplate(template),

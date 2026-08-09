@@ -6,7 +6,7 @@ import 'package:boxing_coach/engine/session_plan_builder.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final template = SessionTemplates.balancedFull;
+  const template = SessionTemplates.balancedFull;
 
   group('plan building', () {
     test('produces the phases in arc order', () {

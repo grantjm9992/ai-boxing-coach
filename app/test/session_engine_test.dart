@@ -15,7 +15,7 @@ void main() {
 
   /// A short session, so a test can run the whole thing.
   SessionPlan shortPlan() {
-    final template = SessionTemplates.shortSharp;
+    const template = SessionTemplates.shortSharp;
     var settings = SessionSettings.fromTemplate(template);
     for (final phase in settings.phases) {
       settings = settings.withPhase(
