@@ -1,0 +1,10 @@
+# Core analysis engine (rules, features, adapters) needs only numpy.
+numpy>=1.24
+
+# Pose estimation from real video needs these. They are imported lazily, so the
+# engine and its tests run without them installed.
+mediapipe>=0.10
+opencv-python>=4.8
+
+# Dev
+pytest>=7.4
