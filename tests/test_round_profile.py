@@ -47,3 +47,9 @@ def test_torso_lean_detects_a_crouched_stance():
 def test_body_shot_ratio_flags_low_finishing_punches():
     assert _profile(fixtures.body_hook()).body_shot_ratio == 1.0
     assert _profile(fixtures.lead_hook()).body_shot_ratio == 0.0  # head-height hook
+
+
+def test_body_shot_ratio_uses_mid_torso_not_the_shoulder_line():
+    # A hook finishing below the shoulder but above mid-torso is NOT a body shot
+    # — this is the false positive that inflated the ratio on real footage.
+    assert _profile(fixtures.chest_high_hook()).body_shot_ratio == 0.0

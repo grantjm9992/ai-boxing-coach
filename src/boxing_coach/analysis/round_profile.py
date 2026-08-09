@@ -123,7 +123,15 @@ def _torso_lean_deg(sequence: PoseSequence) -> float:
 
 
 def _body_shot_ratio(sequence: PoseSequence, punches) -> float:
-    """Fraction of punches whose fist finishes below the shoulder line (body height)."""
+    """Fraction of punches whose fist finishes at body height.
+
+    "Body height" is measured against the fighter's own mid-torso (the midpoint
+    of the shoulder and hip on the punching side), not the shoulder line. A
+    straight punch extended forward routinely dips just below the shoulder in a
+    single 2D view even when it's a head shot, so a shoulder cutoff wildly
+    over-counts; requiring the fist below mid-torso is far more conservative.
+    Still a proxy — we see the thrower, not where the punch would land.
+    """
     if not punches:
         return 0.0
     body = 0
@@ -132,9 +140,11 @@ def _body_shot_ratio(sequence: PoseSequence, punches) -> float:
         frame = sequence.frames[punch.peak_index]
         wrist = geo.frame_point(frame, punch.side.wrist)
         shoulder = geo.frame_point(frame, punch.side.shoulder)
-        if np.any(np.isnan(wrist)) or np.any(np.isnan(shoulder)):
+        hip = geo.frame_point(frame, punch.side.hip)
+        if np.any(np.isnan(wrist)) or np.any(np.isnan(shoulder)) or np.any(np.isnan(hip)):
             continue
         counted += 1
-        if wrist[1] > shoulder[1]:  # y grows downward -> fist below the shoulder
+        mid_torso_y = (shoulder[1] + hip[1]) / 2.0
+        if wrist[1] > mid_torso_y:  # y grows downward -> fist below mid-torso
             body += 1
     return (body / counted) if counted else 0.0

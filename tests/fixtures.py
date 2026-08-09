@@ -237,9 +237,25 @@ def crouched_stance() -> PoseSequence:
 
 
 def body_hook() -> PoseSequence:
-    """A lead hook finishing low — a body shot (fist below the shoulder line)."""
+    """A lead hook finishing low — a body shot (fist below mid-torso)."""
     chambered_elbow, chambered_wrist = (0.44, 0.52, 0.0), (0.46, 0.44, 0.0)
-    hook_elbow, hook_wrist = (0.58, 0.56, 0.0), (0.62, 0.52, 0.0)  # arcs out and low
+    hook_elbow, hook_wrist = (0.58, 0.60, 0.0), (0.62, 0.58, 0.0)  # arcs out and low
+    return (
+        PoseScript()
+        .hold(600, left_elbow=chambered_elbow, left_wrist=chambered_wrist)
+        .move(120, {Landmark.LEFT_ELBOW: hook_elbow, Landmark.LEFT_WRIST: hook_wrist})
+        .move(120, {Landmark.LEFT_ELBOW: chambered_elbow, Landmark.LEFT_WRIST: chambered_wrist})
+        .hold(500)
+        .build()
+    )
+
+
+def chest_high_hook() -> PoseSequence:
+    """A lead hook finishing just below the shoulder but above mid-torso — a
+    head/chest-level shot. The old 'below the shoulder' rule wrongly called this
+    a body shot; measured against mid-torso it doesn't count."""
+    chambered_elbow, chambered_wrist = (0.44, 0.52, 0.0), (0.46, 0.44, 0.0)
+    hook_elbow, hook_wrist = (0.58, 0.50, 0.0), (0.62, 0.45, 0.0)
     return (
         PoseScript()
         .hold(600, left_elbow=chambered_elbow, left_wrist=chambered_wrist)
