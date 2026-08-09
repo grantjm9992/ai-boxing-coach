@@ -19,6 +19,7 @@ from .guard_return import GuardReturnRule
 from .hands_up import HandsUpRule
 from .head_movement import HeadMovementRule
 from .hip_rotation import HipRotationRule
+from .school_adherence import SchoolAdherenceRule
 
 __all__ = [
     "FootworkRule",
@@ -26,6 +27,7 @@ __all__ = [
     "HandsUpRule",
     "HeadMovementRule",
     "HipRotationRule",
+    "SchoolAdherenceRule",
     "default_rules",
 ]
 
@@ -38,4 +40,5 @@ def default_rules() -> list[Rule]:
         FootworkRule(),
         HeadMovementRule(),
         HipRotationRule(),
+        SchoolAdherenceRule(),
     ]

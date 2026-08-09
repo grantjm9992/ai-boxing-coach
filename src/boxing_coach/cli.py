@@ -18,6 +18,7 @@ from .adapters import PoseOnlyAdapter
 from .domain.analysis import RoundAnalysis
 from .domain.drill import DrillContext
 from .domain.landmarks import Stance
+from .domain.school import School
 from .domain.style import Style
 from .pipeline import AnalysisPipeline
 
@@ -26,6 +27,7 @@ def _build_drill(args: argparse.Namespace) -> DrillContext:
     return DrillContext(
         stance=Stance[args.stance.upper()],
         style=Style(args.style),
+        school=School(args.school) if args.school else None,
         focus=frozenset(args.focus or []),
         notes=args.notes or "",
     )
@@ -64,6 +66,13 @@ def _print_report(analysis: RoundAnalysis, style_label: str | None = None) -> No
     prof = {k: m.values[k] for k in prof_keys if k in m.values}
     if prof:
         print("Round profile: " + ", ".join(f"{k}={v}" for k, v in prof.items()))
+    if m.punches_thrown:
+        from .analysis.schools import classify_school
+
+        ranked = classify_school(m.values)
+        if ranked and ranked[0][1] > 0:
+            school, score = ranked[0]
+            print(f"Reads as: {school.value} ({score:.0%} school match)")
     print()
 
     if analysis.correction_priorities:
@@ -98,6 +107,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--style", choices=[s.value for s in Style], default=Style.HIGH_GUARD.value,
         help="fighting style — tunes/gates the rules (e.g. philly_shell keeps the lead hand low)",
+    )
+    parser.add_argument(
+        "--school", choices=[s.value for s in School], default=None,
+        help="national school to coach toward (soviet/mexican/european/american)",
     )
     parser.add_argument(
         "--focus", nargs="*", default=[],

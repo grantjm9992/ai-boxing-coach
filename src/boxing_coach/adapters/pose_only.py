@@ -17,6 +17,7 @@ from ..analysis.engine import RuleEngine
 from ..analysis.features import PunchDetectorConfig
 from ..analysis.rule import Rule
 from ..analysis.rules import default_rules
+from ..analysis.schools import round_feature_values
 from ..analysis.style_profiles import profile_for
 from ..domain.analysis import (
     Correction,
@@ -116,11 +117,15 @@ class PoseOnlyAdapter(VisionAnalysisAdapter):
         guard_rate = None
         if n_punches:
             guard_rate = round(1.0 - min(len(guard_returns), n_punches) / n_punches, 3)
+        features = round_feature_values(context.round_profile, context.punches, context.drill.stance)
         return RoundMetrics(
             punches_thrown=n_punches,
             guard_return_rate=guard_rate,
             punch_mix=self._punch_mix(context),
-            values={"body_scale": round(context.body_scale, 4), **context.round_profile.as_dict()},
+            values={
+                "body_scale": round(context.body_scale, 4),
+                **{k: round(v, 3) for k, v in features.items()},
+            },
         )
 
     def _punch_mix(self, context: AnalysisContext) -> dict[str, int]:

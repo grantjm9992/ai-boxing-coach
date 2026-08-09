@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .landmarks import Stance
+from .school import School
 from .style import Style
 
 
@@ -21,6 +22,8 @@ class DrillContext:
     stance: Stance = Stance.ORTHODOX
     # Fighting style — selects the StyleProfile that tunes/gates the rules.
     style: Style = Style.HIGH_GUARD
+    # National/tactical school to coach toward. None = no school feedback.
+    school: School | None = None
     # Free-form focus tags, e.g. {"jab", "defence"}. Empty = run every rule.
     focus: frozenset[str] = field(default_factory=frozenset)
     notes: str = ""

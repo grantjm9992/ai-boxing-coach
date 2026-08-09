@@ -132,6 +132,38 @@ reads its config from it. Adding a style is a `Style` enum member plus one entry
 in `analysis/style_profiles.py`. Like the thresholds, the profiles are starting
 points to calibrate, not gospel.
 
+## National schools (a second, orthogonal axis)
+
+Guard `Style` is the defensive *shape*. A national **`School`** (Soviet /
+Mexican / European / American) is the tactical *game* — a fighter is "Mexican
+pressure **with** a high guard". It's a separate, optional axis on the drill.
+
+Schools are read off round-level tendencies (`analysis/round_profile.py`), not
+single frames:
+
+| Feature | Means |
+|---|---|
+| `output_per_min` | work rate / volume |
+| `mobility` | foot travel per second |
+| `ground_coverage` | ranging (→1) vs bouncing on the spot (→0) |
+| `torso_lean_deg` | posture off vertical (upright vs crouched) |
+| `body_shot_ratio` | share of punches finishing at body height |
+
+Each school is a few expectations on those features (`analysis/schools.py`),
+which do double duty: **classify** a round ("reads as Mexican") and **coach
+toward** a chosen one.
+
+```bash
+python -m boxing_coach.cli myround.mp4 --style high_guard --school mexican
+# -> "Go downstairs — the Mexican game is built on body work..." if you don't
+```
+
+Honest scope: much of what defines a school — feints, ring IQ, willingness to
+trade, and body-vs-head *targeting* (there's no opponent in a shadow round) —
+isn't reachable from this input, so the profiles judge only the detectable
+tendencies and are starting characterisations to calibrate. American is the
+loosest, having the least distinct pose signature.
+
 ## Adding a rule
 
 ```python

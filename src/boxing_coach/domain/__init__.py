@@ -13,6 +13,7 @@ from .drill import DrillContext
 from .landmarks import Landmark, Side, Stance
 from .pose import Keypoint, PoseFrame, PoseSequence
 from .punch import PunchType, punch_name
+from .school import School
 from .style import Style
 
 __all__ = [
@@ -28,6 +29,7 @@ __all__ = [
     "Side",
     "Stance",
     "Style",
+    "School",
     "PunchType",
     "punch_name",
     "Keypoint",
