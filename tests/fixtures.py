@@ -126,6 +126,21 @@ def hands_down_idle() -> PoseSequence:
     return PoseScript().hold(4000, left_wrist=LEAD_DROPPED).build()
 
 
+def low_carry_jab() -> PoseSequence:
+    """A jab from a deliberately low/extended lead carry that returns to that
+    same carry — an intentional range-finder, not a dropped guard. guard_return
+    should leave it alone (it returns to where it launched from)."""
+    low = (0.55, 0.45, 0.0)  # lead hand carried low and slightly out
+    return (
+        PoseScript()
+        .hold(500, left_wrist=low)
+        .move(120, {Landmark.LEFT_WRIST: LEAD_JAB_EXTENDED})
+        .move(120, {Landmark.LEFT_WRIST: low})
+        .hold(500, left_wrist=low)
+        .build()
+    )
+
+
 def rear_hand_down_idle() -> PoseSequence:
     """Standing with the *rear* hand hanging low the whole time (no punches).
 
@@ -307,3 +322,24 @@ def rotated_cross() -> PoseSequence:
 
 def squared_cross() -> PoseSequence:
     return _cross(rotated=False)
+
+
+def rotated_cross_side_view() -> PoseSequence:
+    """A rear straight rotated *in the image plane* — the rear shoulder swings
+    across (x) with no depth (z) change, as a side/3-4 camera sees it. The
+    old z-only rule wrongly called this squared; the in-plane check credits it."""
+    rs = BASE_POSE[Landmark.RIGHT_SHOULDER]
+    return (
+        PoseScript()
+        .hold(500)
+        .move(120, {
+            Landmark.RIGHT_WRIST: REAR_CROSS_EXTENDED,
+            Landmark.RIGHT_SHOULDER: (0.50, rs[1], 0.0),  # comes across in x, z unchanged
+        })
+        .move(120, {
+            Landmark.RIGHT_WRIST: REAR_GUARD,
+            Landmark.RIGHT_SHOULDER: rs,
+        })
+        .hold(500)
+        .build()
+    )

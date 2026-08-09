@@ -1,9 +1,12 @@
 """Rule: does the hand come back to guard after a punch?
 
-The flagship check from the conversation. For each detected punch we look at a
-short window after retraction and ask whether the wrist returned near the head.
-If it stayed extended or dropped low, that's a fault, and we describe *how* it
-failed so the correction is specific.
+The flagship check from the conversation. For each detected punch we ask whether
+the wrist came back to **where it launched the punch from** — the fighter's own
+guard — within a short window. Measuring against the launch position rather than
+an absolute head/cheek position means a deliberately low or extended lead carry
+(a range-finder, a Philly shell) isn't flagged as a drop; only a hand that ends
+up somewhere it didn't start is. We describe *how* it failed so the correction
+is specific.
 """
 
 from __future__ import annotations
@@ -13,7 +16,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ...domain.analysis import Observation, Severity, SkillCategory
-from ...domain.landmarks import Landmark, Side
+from ...domain.landmarks import Side
 from .. import geometry as geo
 from ..context import AnalysisContext
 from ..rule import Rule
@@ -21,9 +24,14 @@ from ..rule import Rule
 
 @dataclass(frozen=True, slots=True)
 class GuardReturnConfig:
-    # Wrist within this many torso-lengths of the head counts as "at guard".
-    guard_radius: float = 0.65
-    # How long after retraction the hand has to get back to guard.
+    # The hand counts as "returned" if it comes back within this many
+    # torso-lengths of where it launched the punch from (its own guard).
+    return_radius: float = 0.5
+    # After the window, a wrist this far below its launch height reads as dropped.
+    drop_margin: float = 0.15
+    # ...and a wrist still this far from its shoulder reads as left hanging out.
+    extended_reach: float = 1.0
+    # How long after retraction the hand has to get back.
     return_window_ms: float = 500.0
     # Below this fraction of returning punches, flag it as a round-level fault.
     healthy_return_rate: float = 0.8
@@ -80,7 +88,7 @@ class GuardReturnRule(Rule):
                         rule_id=self.id,
                         category=SkillCategory.DEFENCE,
                         severity=Severity.POSITIVE,
-                        coaching_text="Clean guard return all round — hands came straight back to your face.",
+                        coaching_text="Clean guard return all round — hands came straight back to guard.",
                         metrics={"guard_return_rate": rate},
                     )
                 )
@@ -99,51 +107,56 @@ class GuardReturnRule(Rule):
     def _classify_return(
         self, context: AnalysisContext, punch, cfg: GuardReturnConfig
     ) -> tuple[str, int] | None:
-        """None if the hand returns to guard in time; else (failure_mode, frame)."""
+        """None if the hand returns to its launch guard in time; else (mode, frame)."""
         seq = context.sequence
         scale = context.body_scale
+        # The guard reference is where the hand launched the punch from.
+        ref = geo.frame_point(seq.frames[punch.start_index], punch.side.wrist)
+        if np.any(np.isnan(ref)):
+            return None  # no usable guard reference — don't judge
+
         deadline = seq.frames[punch.end_index].timestamp_ms + cfg.return_window_ms
 
         best_dist = np.inf
+        worst_dist = -np.inf
         worst_frame = punch.peak_index
         for i in range(punch.peak_index, len(seq)):
             frame = seq.frames[i]
             if frame.timestamp_ms > deadline:
                 break
             wrist = geo.frame_point(frame, punch.side.wrist)
-            head = geo.frame_point(frame, Landmark.NOSE)
-            if np.any(np.isnan(wrist)) or np.any(np.isnan(head)):
+            if np.any(np.isnan(wrist)):
                 continue
-            dist = geo.distance(wrist, head) / scale
-            if dist < best_dist:
-                best_dist = dist
-            if dist > best_dist:  # track the most-exposed moment for the flag
+            dist = geo.distance(wrist, ref) / scale
+            best_dist = min(best_dist, dist)
+            if dist > worst_dist:  # most out-of-position moment, for the flag
+                worst_dist = dist
                 worst_frame = i
 
-        if best_dist <= cfg.guard_radius:
+        if best_dist <= cfg.return_radius:
             return None
 
-        # It didn't return in time — figure out how it failed for the cue.
+        # It didn't get back to guard — figure out how it failed for the cue.
         end_frame = seq.frames[min(punch.end_index, len(seq) - 1)]
         wrist = geo.frame_point(end_frame, punch.side.wrist)
         shoulder = geo.frame_point(end_frame, punch.side.shoulder)
 
         if not np.any(np.isnan(wrist)):
-            # Dropped below the shoulder line -> hanging low.
-            if not np.any(np.isnan(shoulder)) and wrist[1] > shoulder[1]:
-                return ("dropped", punch.end_index)
-            # Still far from the shoulder -> left hanging out there.
+            # Ended below where it launched from -> dropped.
+            if wrist[1] > ref[1] + cfg.drop_margin:
+                return ("dropped", worst_frame)
+            # Still far out from the shoulder -> left hanging out there.
             if not np.any(np.isnan(shoulder)):
                 reach = geo.distance(wrist, shoulder) / scale
-                if reach > cfg.guard_radius:
-                    return ("extended", punch.end_index)
-        return ("slow", punch.end_index)
+                if reach > cfg.extended_reach:
+                    return ("extended", worst_frame)
+        return ("slow", worst_frame)
 
     @staticmethod
     def _coaching_text(stance, side: Side, failure_mode: str) -> str:
         hand = "lead" if side is stance.lead else "rear"
         if failure_mode == "dropped":
-            return f"Your {hand} hand drops after the punch — bring it straight back to your cheek, not down to your hip."
+            return f"Your {hand} hand drops after the punch — bring it back up to your guard, don't let it sink."
         if failure_mode == "extended":
             return f"You're leaving the {hand} hand hanging out there after the punch. Snap it back to guard every time."
-        return f"Your {hand} hand is slow getting back to guard. Return should be as fast as the punch went out."
+        return f"Your {hand} hand is slow getting back to guard. The return should be as fast as the punch went out."

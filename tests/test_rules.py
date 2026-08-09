@@ -41,6 +41,13 @@ def test_guard_return_clean_jab_has_no_fault():
     assert any(o.severity is Severity.POSITIVE for o in obs)
 
 
+def test_guard_return_allows_a_consistent_low_carry():
+    # A low/extended range-finder that returns to its own carry is not a drop —
+    # guard_return measures return to the launch position, not an absolute cheek.
+    obs = GuardReturnRule().evaluate(_ctx(fixtures.low_carry_jab()))
+    assert _faults(obs) == []
+
+
 # -- hands up --------------------------------------------------------------
 
 def test_hands_up_flags_low_hand():
@@ -95,6 +102,13 @@ def test_hip_rotation_flags_squared_cross():
 
 def test_hip_rotation_quiet_when_rotated():
     obs = HipRotationRule().evaluate(_ctx(fixtures.rotated_cross()))
+    assert _faults(obs) == []
+
+
+def test_hip_rotation_credits_in_plane_rotation():
+    # Rotation seen by a side camera (shoulder swings across in x, no z change)
+    # must not be misread as squared up — the old z-only rule got this wrong.
+    obs = HipRotationRule().evaluate(_ctx(fixtures.rotated_cross_side_view()))
     assert _faults(obs) == []
 
 

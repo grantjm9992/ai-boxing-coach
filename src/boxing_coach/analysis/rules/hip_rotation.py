@@ -4,12 +4,21 @@ A cross/rear straight should be driven by hip and shoulder rotation — the rear
 shoulder comes forward. Punching arm-only ("squared up") is both weak and
 telegraphed.
 
-HONESTY CAVEAT: this is the least reliable of the starter rules from a single
-front-facing camera. Rotation mostly shows up in depth (z), which MediaPipe
-only estimates. We use the rear-shoulder z travel from punch start to peak as a
-proxy and keep the threshold conservative. This rule is the first candidate for
-the VLM layer or a second camera angle. It's included to prove the punch-scoped
-rule pattern, not because front-view rotation detection is solved.
+We look at how far the rear shoulder travels *relative to the hip centre* from
+punch start to peak, taking whichever is larger of:
+
+- the **in-plane** swing (x/y) — how a side or 3/4 camera sees the shoulder come
+  across; and
+- the **depth** (z) drive — how a front camera sees it come toward the lens.
+
+Measuring relative to the hips means a step forward isn't mistaken for rotation.
+Taking the max of the two axes is what stops a fully-rotated punch on a side-on
+camera (little z change) from being wrongly flagged as squared up.
+
+HONESTY CAVEAT: still the least certain of the starter rules. z is only
+estimated, and from a pure head-on view a rotated and a squared punch can look
+alike. A second angle or the VLM layer is the real answer; this is a robust-ish
+proxy, not solved rotation detection.
 """
 
 from __future__ import annotations
@@ -28,8 +37,9 @@ from ..rule import Rule
 
 @dataclass(frozen=True, slots=True)
 class HipRotationConfig:
-    # Minimum rear-shoulder forward travel (torso-lengths, in z) from start to
-    # peak for the punch to count as "rotated".
+    # Minimum rear-shoulder travel relative to the hips (torso-lengths), taken
+    # as the max of the in-plane swing and the depth drive, for the punch to
+    # count as "rotated".
     min_shoulder_drive: float = 0.12
     # Only judge punches that actually reached extension.
     min_peak_reach: float = 0.9
@@ -79,15 +89,29 @@ class HipRotationRule(Rule):
     def _shoulder_drive(
         self, context: AnalysisContext, side: Side, start_index: int, peak_index: int
     ) -> float | None:
-        """Forward (toward-camera) travel of the rear shoulder, in torso-lengths.
+        """Rear-shoulder travel relative to the hips, in torso-lengths.
 
-        MediaPipe z decreases toward the camera, so a rotating-in shoulder gives
-        a negative delta; we return its magnitude.
+        The max of the in-plane swing (x/y, what a side camera sees) and the
+        depth drive (z, what a front camera sees). Relative to the hip centre so
+        a step isn't counted as rotation. None if neither axis is measurable.
         """
         seq = context.sequence
         scale = context.body_scale
-        start = geo.frame_point(seq.frames[start_index], side.shoulder, use_z=True)
-        peak = geo.frame_point(seq.frames[peak_index], side.shoulder, use_z=True)
-        if np.isnan(start[2]) or np.isnan(peak[2]):
-            return None
-        return abs(peak[2] - start[2]) / scale
+        start_f, peak_f = seq.frames[start_index], seq.frames[peak_index]
+
+        # In-plane swing of the shoulder about the torso.
+        s0 = geo.frame_point(start_f, side.shoulder)
+        s1 = geo.frame_point(peak_f, side.shoulder)
+        h0 = geo.hip_center(start_f)
+        h1 = geo.hip_center(peak_f)
+        inplane = np.nan
+        if not any(np.any(np.isnan(p)) for p in (s0, s1, h0, h1)):
+            inplane = geo.distance(s1 - h1, s0 - h0) / scale
+
+        # Depth drive (front camera): MediaPipe z toward the lens.
+        z0 = geo.frame_point(start_f, side.shoulder, use_z=True)[2]
+        z1 = geo.frame_point(peak_f, side.shoulder, use_z=True)[2]
+        depth = abs(z1 - z0) / scale if not (np.isnan(z0) or np.isnan(z1)) else np.nan
+
+        drives = [d for d in (inplane, depth) if not np.isnan(d)]
+        return max(drives) if drives else None
