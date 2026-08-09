@@ -11,7 +11,9 @@ dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
 # Only needed to process real video; the engine runs without them.
-vision = ["mediapipe>=0.10", "opencv-python>=4.8"]
+# mediapipe is capped below 1.0: the 1.0 release removed the legacy
+# `mp.solutions` API (Pose etc.) that the estimator uses. 0.10.x still ships it.
+vision = ["mediapipe>=0.10.14,<1.0", "opencv-python>=4.8"]
 dev = ["pytest>=7.4"]
 
 [project.scripts]
