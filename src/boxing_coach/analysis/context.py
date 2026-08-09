@@ -14,6 +14,7 @@ from ..domain.drill import DrillContext
 from ..domain.landmarks import Side
 from ..domain.pose import PoseSequence
 from .features import PunchDetector, PunchDetectorConfig, PunchEvent, compute_body_scale
+from .round_profile import RoundProfile, compute_round_profile
 from .style import DEFAULT_STYLE_PROFILE, StyleProfile
 
 
@@ -36,6 +37,10 @@ class AnalysisContext:
     @cached_property
     def punches(self) -> list[PunchEvent]:
         return PunchDetector(self.punch_config).detect(self.sequence, self.body_scale)
+
+    @cached_property
+    def round_profile(self) -> RoundProfile:
+        return compute_round_profile(self.sequence, self.punches, self.body_scale)
 
     def punches_by(self, side: Side) -> list[PunchEvent]:
         return [p for p in self.punches if p.side is side]

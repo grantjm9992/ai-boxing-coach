@@ -120,7 +120,7 @@ class PoseOnlyAdapter(VisionAnalysisAdapter):
             punches_thrown=n_punches,
             guard_return_rate=guard_rate,
             punch_mix=self._punch_mix(context),
-            values={"body_scale": round(context.body_scale, 4)},
+            values={"body_scale": round(context.body_scale, 4), **context.round_profile.as_dict()},
         )
 
     def _punch_mix(self, context: AnalysisContext) -> dict[str, int]:

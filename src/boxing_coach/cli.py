@@ -60,6 +60,10 @@ def _print_report(analysis: RoundAnalysis, style_label: str | None = None) -> No
         print(f"Punch mix: {mix}")
     if m.guard_return_rate is not None:
         print(f"Guard return rate: {m.guard_return_rate:.0%}")
+    prof_keys = ("output_per_min", "mobility", "ground_coverage", "torso_lean_deg", "body_shot_ratio")
+    prof = {k: m.values[k] for k in prof_keys if k in m.values}
+    if prof:
+        print("Round profile: " + ", ".join(f"{k}={v}" for k, v in prof.items()))
     print()
 
     if analysis.correction_priorities:
