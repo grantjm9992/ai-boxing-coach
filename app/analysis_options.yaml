@@ -1,0 +1,11 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    prefer_single_quotes: true
+    always_declare_return_types: true
+    unawaited_futures: true
+    avoid_redundant_argument_values: true
+    prefer_const_declarations: true
+    require_trailing_commas: true
+    sort_child_properties_last: true
