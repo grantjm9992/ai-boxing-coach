@@ -2,15 +2,22 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../analysis/drill.dart';
+import '../../analysis/round_analysis.dart';
+import '../../domain/round_clip.dart';
 import '../../domain/session_phase.dart';
 import '../../domain/session_plan.dart';
+import '../../domain/session_record.dart';
+import '../../engine/coach_cue.dart';
 import '../../engine/session_engine.dart';
 import '../../services/camera_round_recorder.dart';
 import '../../services/clip_store.dart';
 import '../../services/coach_voice.dart';
 import '../../services/device_coach_voice.dart';
+import '../../services/round_analyzer.dart';
 import '../../services/round_recorder.dart';
 import '../../services/round_recording_controller.dart';
+import '../../services/session_history_store.dart';
 import '../format.dart';
 import '../theme.dart';
 import '../widgets/phase_bar.dart';
@@ -29,6 +36,8 @@ class SessionScreen extends StatefulWidget {
     this.recorder,
     this.clipStore,
     this.sessionId,
+    this.analyzer,
+    this.historyStore,
     super.key,
   });
 
@@ -36,6 +45,12 @@ class SessionScreen extends StatefulWidget {
 
   /// Injectable for tests and for running without audio.
   final CoachVoice? voice;
+
+  /// Runs pose analysis over a recorded round. Defaults to the real pipeline.
+  final RoundAnalyzer? analyzer;
+
+  /// Persists the completed session for history + the weekly balance.
+  final SessionHistoryStore? historyStore;
 
   /// Records technical rounds. Defaults to the real camera; tests inject a
   /// [FakeRoundRecorder]. Left null on platforms with no camera, where the
@@ -67,7 +82,14 @@ class _SessionScreenState extends State<SessionScreen> {
     recorder: _recorder,
     clipStore: _clipStore,
     sessionId: _sessionId,
+    onClipSaved: _onClipSaved,
   );
+  late final RoundAnalyzer _analyzer = widget.analyzer ?? RoundAnalyzer();
+  late final SessionHistoryStore _historyStore =
+      widget.historyStore ?? SessionHistoryStore();
+
+  /// Analyses produced this session, keyed by the round's segment index.
+  final Map<int, RoundAnalysis> _analyses = <int, RoundAnalysis>{};
 
   /// True once this session contains technical rounds and we have offered the
   /// framing check. It is offered exactly once, before the first such round.
@@ -102,6 +124,7 @@ class _SessionScreenState extends State<SessionScreen> {
       _navigatedToSummary = true;
       // Make sure the last technical round is filed before we leave.
       _recording.finish().whenComplete(() {
+        _saveHistory();
         // Let the completion cues start before the screen changes.
         Future<void>.delayed(const Duration(milliseconds: 400), () {
           if (!mounted) return;
@@ -111,6 +134,7 @@ class _SessionScreenState extends State<SessionScreen> {
                 plan: widget.plan,
                 clipStore: _clipStore,
                 sessionId: _recordingEnabled ? _sessionId : null,
+                analyses: Map<int, RoundAnalysis>.of(_analyses),
               ),
             ),
           );
@@ -185,6 +209,61 @@ class _SessionScreenState extends State<SessionScreen> {
       ),
     );
     return confirmed ?? false;
+  }
+
+  /// After a technical round is filed, analyse it and — if the analysis lands
+  /// while we're still in the rest that follows — speak the summary and the top
+  /// correction. Analysis is best-effort: a null result (no camera/model) simply
+  /// means no coaching for that round, never a broken session.
+  Future<void> _onClipSaved(RoundClip clip) async {
+    final drill = DrillContext(notes: clip.title ?? '');
+    final analysis = await _analyzer.analyse(clip, drill: drill);
+    if (analysis == null || !mounted) return;
+    _analyses[clip.segmentIndex] = analysis;
+
+    final inRest = _engine.currentSegment?.isRest ?? false;
+    if (inRest && _engine.voiceEnabled) {
+      await _voice.speak(analysis.overallSummary, CuePriority.routine);
+      if (analysis.correctionPriorities.isNotEmpty) {
+        await _voice.speak(
+          analysis.correctionPriorities.first.description,
+          CuePriority.routine,
+        );
+      }
+    }
+  }
+
+  /// Records the completed session for history + the weekly balance. Saved for
+  /// every session — the weighted-minutes balance comes from the plan whether or
+  /// not any round was analysed.
+  void _saveHistory() {
+    final rounds = <RoundSummary>[];
+    for (final segment in widget.plan.segments) {
+      if (segment.phase != SessionPhase.technical || !segment.isWork) continue;
+      final analysis = _analyses[segment.index];
+      final corrections = analysis?.correctionPriorities ?? const [];
+      rounds.add(
+        RoundSummary(
+          segmentIndex: segment.index,
+          title: segment.title,
+          roundNumber: segment.roundNumber,
+          summary: analysis?.overallSummary,
+          topCorrection: corrections.isNotEmpty ? corrections.first.description : null,
+          punchesThrown: analysis?.metrics.punchesThrown,
+          guardReturnRate: analysis?.metrics.guardReturnRate,
+        ),
+      );
+    }
+    _historyStore
+        .save(
+          SessionRecord.fromPlan(
+            widget.plan,
+            sessionId: _sessionId,
+            completedAt: DateTime.now(),
+            rounds: rounds,
+          ),
+        )
+        .ignore();
   }
 
   @override

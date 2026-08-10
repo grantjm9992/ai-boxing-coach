@@ -17,6 +17,10 @@ enum Severity {
   final int rank;
 
   bool get isFault => this != Severity.positive;
+
+  static Severity fromValue(String value) =>
+      Severity.values.firstWhere((s) => s.value == value,
+          orElse: () => Severity.minor);
 }
 
 /// Skill areas from the spec's category tracking. Each observation maps to one.
@@ -38,6 +42,10 @@ enum SkillCategory {
   const SkillCategory(this.value);
 
   final String value;
+
+  static SkillCategory fromValue(String value) =>
+      SkillCategory.values.firstWhere((c) => c.value == value,
+          orElse: () => SkillCategory.defence);
 }
 
 /// A single specific thing the analysis noticed, tied to a moment in time.
@@ -66,6 +74,32 @@ class Observation {
   /// Body parts to emphasise when this moment is shown to the user (e.g. the
   /// wrist that dropped). Drives the skeleton highlight on review.
   final List<Landmark> highlightLandmarks;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'ruleId': ruleId,
+    'category': category.value,
+    'severity': severity.value,
+    'coachingText': coachingText,
+    'timestampMs': timestampMs,
+    'metrics': metrics,
+    'highlight': highlightLandmarks.map((l) => l.mpIndex).toList(),
+  };
+
+  factory Observation.fromJson(Map<String, Object?> json) => Observation(
+    ruleId: json['ruleId'] as String,
+    category: SkillCategory.fromValue(json['category'] as String),
+    severity: Severity.fromValue(json['severity'] as String),
+    coachingText: json['coachingText'] as String,
+    timestampMs: (json['timestampMs'] as num?)?.toDouble(),
+    metrics: <String, double>{
+      for (final e in (json['metrics'] as Map<String, Object?>? ?? const {}).entries)
+        e.key: (e.value as num).toDouble(),
+    },
+    highlightLandmarks: <Landmark>[
+      for (final i in (json['highlight'] as List<Object?>? ?? const []))
+        ?Landmark.fromIndex((i as num).toInt()),
+    ],
+  );
 }
 
 /// A prioritised, actionable correction distilled from the observations.
@@ -85,6 +119,27 @@ class Correction {
   final String? suggestedDrill;
   final double? exampleTimestampMs;
   final List<Landmark> highlightLandmarks;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'priority': priority,
+    'category': category.value,
+    'description': description,
+    'suggestedDrill': suggestedDrill,
+    'exampleTimestampMs': exampleTimestampMs,
+    'highlight': highlightLandmarks.map((l) => l.mpIndex).toList(),
+  };
+
+  factory Correction.fromJson(Map<String, Object?> json) => Correction(
+    priority: (json['priority'] as num).toInt(),
+    category: SkillCategory.fromValue(json['category'] as String),
+    description: json['description'] as String,
+    suggestedDrill: json['suggestedDrill'] as String?,
+    exampleTimestampMs: (json['exampleTimestampMs'] as num?)?.toDouble(),
+    highlightLandmarks: <Landmark>[
+      for (final i in (json['highlight'] as List<Object?>? ?? const []))
+        ?Landmark.fromIndex((i as num).toInt()),
+    ],
+  );
 }
 
 /// A timestamp worth surfacing to the user for frame-by-frame review.
@@ -98,6 +153,18 @@ class FlaggedMoment {
   final double timestampMs;
   final String reason;
   final Severity severity;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'timestampMs': timestampMs,
+    'reason': reason,
+    'severity': severity.value,
+  };
+
+  factory FlaggedMoment.fromJson(Map<String, Object?> json) => FlaggedMoment(
+    timestampMs: (json['timestampMs'] as num).toDouble(),
+    reason: json['reason'] as String,
+    severity: Severity.fromValue(json['severity'] as String),
+  );
 }
 
 /// Quantitative round summary. Extend freely as rules add signals.
@@ -113,6 +180,28 @@ class RoundMetrics {
   final double? guardReturnRate; // 0..1, null if no punches
   final Map<String, int> punchMix; // named punch -> count
   final Map<String, double> values;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'punchesThrown': punchesThrown,
+    'guardReturnRate': guardReturnRate,
+    'punchMix': punchMix,
+    'values': values,
+  };
+
+  factory RoundMetrics.fromJson(Map<String, Object?> json) => RoundMetrics(
+    punchesThrown: (json['punchesThrown'] as num?)?.toInt() ?? 0,
+    guardReturnRate: (json['guardReturnRate'] as num?)?.toDouble(),
+    punchMix: <String, int>{
+      for (final e
+          in (json['punchMix'] as Map<String, Object?>? ?? const {}).entries)
+        e.key: (e.value as num).toInt(),
+    },
+    values: <String, double>{
+      for (final e
+          in (json['values'] as Map<String, Object?>? ?? const {}).entries)
+        e.key: (e.value as num).toDouble(),
+    },
+  );
 }
 
 /// Everything the analysis produced for one recorded round.
@@ -132,4 +221,38 @@ class RoundAnalysis {
   final List<Correction> correctionPriorities;
   final RoundMetrics metrics;
   final List<FlaggedMoment> flaggedMoments;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'overallSummary': overallSummary,
+    'specificObservations':
+        specificObservations.map((o) => o.toJson()).toList(),
+    'positiveNotes': positiveNotes,
+    'correctionPriorities':
+        correctionPriorities.map((c) => c.toJson()).toList(),
+    'metrics': metrics.toJson(),
+    'flaggedMoments': flaggedMoments.map((f) => f.toJson()).toList(),
+  };
+
+  factory RoundAnalysis.fromJson(Map<String, Object?> json) => RoundAnalysis(
+    overallSummary: json['overallSummary'] as String,
+    specificObservations: <Observation>[
+      for (final o in (json['specificObservations'] as List<Object?>? ?? const []))
+        Observation.fromJson((o as Map).cast<String, Object?>()),
+    ],
+    positiveNotes: <String>[
+      for (final n in (json['positiveNotes'] as List<Object?>? ?? const []))
+        n as String,
+    ],
+    correctionPriorities: <Correction>[
+      for (final c in (json['correctionPriorities'] as List<Object?>? ?? const []))
+        Correction.fromJson((c as Map).cast<String, Object?>()),
+    ],
+    metrics: RoundMetrics.fromJson(
+      (json['metrics'] as Map?)?.cast<String, Object?>() ?? const {},
+    ),
+    flaggedMoments: <FlaggedMoment>[
+      for (final f in (json['flaggedMoments'] as List<Object?>? ?? const []))
+        FlaggedMoment.fromJson((f as Map).cast<String, Object?>()),
+    ],
+  );
 }

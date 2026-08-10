@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../analysis/round_analysis.dart';
 import '../../domain/round_clip.dart';
 import '../../domain/session_plan.dart';
 import '../../services/clip_store.dart';
@@ -19,6 +20,7 @@ class SessionSummaryScreen extends StatelessWidget {
     required this.plan,
     this.clipStore,
     this.sessionId,
+    this.analyses = const <int, RoundAnalysis>{},
     super.key,
   });
 
@@ -28,6 +30,9 @@ class SessionSummaryScreen extends StatelessWidget {
   /// runs and when recording was off, in which case no review section shows.
   final ClipStore? clipStore;
   final String? sessionId;
+
+  /// Per-round analyses produced this session, keyed by segment index.
+  final Map<int, RoundAnalysis> analyses;
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +97,14 @@ class SessionSummaryScreen extends StatelessWidget {
                 ],
               ),
             ),
+          if (analyses.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 24),
+            const _SectionTitle('Round feedback'),
+            const SizedBox(height: 12),
+            for (final entry in (analyses.entries.toList()
+                  ..sort((a, b) => a.key.compareTo(b.key))))
+              _RoundFeedbackCard(analysis: entry.value),
+          ],
           if (clipStore != null && sessionId != null) ...<Widget>[
             const SizedBox(height: 24),
             const _SectionTitle('Recordings'),
@@ -113,6 +126,49 @@ class SessionSummaryScreen extends StatelessWidget {
           CategoryBalance(breakdown: plan.categoryBreakdown, maxRows: 12),
           const SizedBox(height: 24),
           const _NextUpNote(),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoundFeedbackCard extends StatelessWidget {
+  const _RoundFeedbackCard({required this.analysis});
+
+  final RoundAnalysis analysis;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(analysis.overallSummary, style: const TextStyle(height: 1.4)),
+          for (final c in analysis.correctionPriorities)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Icon(Icons.arrow_right, size: 18, color: AppTheme.accent),
+                  Expanded(
+                    child: Text(
+                      c.description,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

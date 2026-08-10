@@ -31,6 +31,7 @@ class RoundRecordingController {
     required this.recorder,
     required this.clipStore,
     required this.sessionId,
+    this.onClipSaved,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now;
 
@@ -39,6 +40,10 @@ class RoundRecordingController {
 
   /// Identifies this session run, so a review screen can gather its clips.
   final String sessionId;
+
+  /// Called after a technical round's clip is filed — the hook the session uses
+  /// to kick off pose analysis during the rest that follows.
+  final void Function(RoundClip clip)? onClipSaved;
 
   final DateTime Function() _now;
 
@@ -116,19 +121,19 @@ class RoundRecordingController {
     final moved = await _move(tempPath, target);
     if (!moved) return;
 
-    await clipStore.add(
-      RoundClip(
-        sessionId: sessionId,
-        segmentIndex: segment.index,
-        phase: segment.phase,
-        path: target,
-        recordedAt: recordedAt,
-        roundNumber: segment.roundNumber,
-        roundsInPhase: segment.roundsInPhase,
-        durationMs: durationMs,
-        title: segment.title,
-      ),
+    final clip = RoundClip(
+      sessionId: sessionId,
+      segmentIndex: segment.index,
+      phase: segment.phase,
+      path: target,
+      recordedAt: recordedAt,
+      roundNumber: segment.roundNumber,
+      roundsInPhase: segment.roundsInPhase,
+      durationMs: durationMs,
+      title: segment.title,
     );
+    await clipStore.add(clip);
+    onClipSaved?.call(clip);
   }
 
   /// Moves the camera's temp file to its permanent path. Tries a rename first
