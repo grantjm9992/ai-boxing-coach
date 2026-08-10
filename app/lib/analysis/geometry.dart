@@ -94,6 +94,20 @@ double nanPercentile(List<double> values, double q) {
   return finite[lower] + frac * (finite[upper] - finite[lower]);
 }
 
+/// Population standard deviation (divide by N) — matching `numpy.std` defaults.
+/// Assumes [values] are finite (callers filter NaN first, as numpy would not).
+double populationStd(List<double> values) {
+  final n = values.length;
+  if (n == 0) return double.nan;
+  final mean = values.reduce((a, b) => a + b) / n;
+  var sumSq = 0.0;
+  for (final v in values) {
+    final d = v - mean;
+    sumSq += d * d;
+  }
+  return math.sqrt(sumSq / n);
+}
+
 /// Index of the maximum finite value, ignoring NaN — matching `numpy.nanargmax`
 /// (first occurrence on ties). Returns 0 if nothing is finite.
 int nanArgmax(List<double> values) {

@@ -10,7 +10,7 @@
       "punchType": "hook"
     }
   ],
-  "guardReturn": [
+  "observations": [
     {
       "ruleId": "guard_return",
       "category": "defence",

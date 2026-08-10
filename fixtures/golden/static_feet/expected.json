@@ -1,5 +1,33 @@
 {
   "bodyScale": 0.19999999999999996,
   "punches": [],
-  "guardReturn": []
+  "observations": [
+    {
+      "ruleId": "footwork",
+      "category": "footwork",
+      "severity": "moderate",
+      "coachingText": "You're flat-footed this round \u2014 barely moving. Stay light, step in and out, work angles instead of standing square.",
+      "timestampMs": null,
+      "metrics": {
+        "travel_per_second": 0.0
+      },
+      "highlight": [
+        27,
+        28
+      ]
+    },
+    {
+      "ruleId": "head_movement",
+      "category": "head_movement",
+      "severity": "minor",
+      "coachingText": "Your head stayed on the centre line the whole round. Add some movement \u2014 slip off the line so you're not a fixed target.",
+      "timestampMs": null,
+      "metrics": {
+        "lateral_std": 0.0
+      },
+      "highlight": [
+        0
+      ]
+    }
+  ]
 }

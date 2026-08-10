@@ -25,11 +25,22 @@ for path in (_SRC, _ROOT):
         sys.path.insert(0, str(path))
 
 from boxing_coach.analysis.context import AnalysisContext  # noqa: E402
+from boxing_coach.analysis.engine import RuleEngine  # noqa: E402
 from boxing_coach.analysis.features import PunchDetector, compute_body_scale  # noqa: E402
+from boxing_coach.analysis.rules.footwork import FootworkRule  # noqa: E402
 from boxing_coach.analysis.rules.guard_return import GuardReturnRule  # noqa: E402
+from boxing_coach.analysis.rules.hands_up import HandsUpRule  # noqa: E402
+from boxing_coach.analysis.rules.head_movement import HeadMovementRule  # noqa: E402
 from boxing_coach.domain.drill import DrillContext  # noqa: E402
 from boxing_coach.golden_fixtures import round_tripped, sequence_to_json  # noqa: E402
 from tests import fixtures as fx  # noqa: E402
+
+
+# The four v0.5 rules, in the same order as the Dart `defaultRules()`. Kept here
+# (rather than `default_rules()`, which also carries the two v2 rules) so the
+# golden reflects exactly what the shipping Dart engine runs.
+def _v05_rules() -> list:
+    return [GuardReturnRule(), HandsUpRule(), FootworkRule(), HeadMovementRule()]
 
 # Explicit registry — a stable, curated list rather than reflection, so adding a
 # fixture is a deliberate act and the golden set does not shift under us.
@@ -78,7 +89,7 @@ def _expected(sequence) -> dict:
     scale = compute_body_scale(sequence)
     punches = PunchDetector().detect(sequence, scale)
     context = AnalysisContext(sequence=sequence, drill=DrillContext())
-    guard_return = GuardReturnRule().evaluate(context)
+    observations = RuleEngine(_v05_rules()).run(context)
     return {
         "bodyScale": scale,
         "punches": [
@@ -92,7 +103,7 @@ def _expected(sequence) -> dict:
             }
             for p in punches
         ],
-        "guardReturn": [_observation_json(o) for o in guard_return],
+        "observations": [_observation_json(o) for o in observations],
     }
 
 

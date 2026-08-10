@@ -10,7 +10,7 @@
       "punchType": "straight"
     }
   ],
-  "guardReturn": [
+  "observations": [
     {
       "ruleId": "guard_return",
       "category": "defence",

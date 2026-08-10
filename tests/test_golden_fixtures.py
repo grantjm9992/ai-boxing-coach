@@ -15,10 +15,18 @@ from pathlib import Path
 import pytest
 
 from boxing_coach.analysis.context import AnalysisContext
+from boxing_coach.analysis.engine import RuleEngine
 from boxing_coach.analysis.features import PunchDetector, compute_body_scale
+from boxing_coach.analysis.rules.footwork import FootworkRule
 from boxing_coach.analysis.rules.guard_return import GuardReturnRule
+from boxing_coach.analysis.rules.hands_up import HandsUpRule
+from boxing_coach.analysis.rules.head_movement import HeadMovementRule
 from boxing_coach.domain.drill import DrillContext
 from boxing_coach.golden_fixtures import sequence_from_json
+
+
+def _v05_rules() -> list:
+    return [GuardReturnRule(), HandsUpRule(), FootworkRule(), HeadMovementRule()]
 
 GOLDEN_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "golden"
 
@@ -83,12 +91,12 @@ def _observation_json(o) -> dict:
 
 
 @pytest.mark.parametrize("name", _scenarios())
-def test_guard_return_matches_golden(name: str) -> None:
+def test_observations_match_golden(name: str) -> None:
     scenario = GOLDEN_DIR / name
     sequence = sequence_from_json(json.loads((scenario / "input.json").read_text()))
     expected = json.loads((scenario / "expected.json").read_text())
 
     context = AnalysisContext(sequence=sequence, drill=DrillContext())
-    got = [_observation_json(o) for o in GuardReturnRule().evaluate(context)]
-    assert got == expected.get("guardReturn", [])
+    got = [_observation_json(o) for o in RuleEngine(_v05_rules()).run(context)]
+    assert got == expected.get("observations", [])
 

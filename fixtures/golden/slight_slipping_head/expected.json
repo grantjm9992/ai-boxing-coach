@@ -1,5 +1,20 @@
 {
   "bodyScale": 0.19999999999999996,
   "punches": [],
-  "guardReturn": []
+  "observations": [
+    {
+      "ruleId": "footwork",
+      "category": "footwork",
+      "severity": "moderate",
+      "coachingText": "You're flat-footed this round \u2014 barely moving. Stay light, step in and out, work angles instead of standing square.",
+      "timestampMs": null,
+      "metrics": {
+        "travel_per_second": 0.0
+      },
+      "highlight": [
+        27,
+        28
+      ]
+    }
+  ]
 }
