@@ -3,26 +3,33 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../analysis/drill.dart';
+import '../../analysis/pose_only_adapter.dart';
+import '../../analysis/round_analysis.dart';
 import '../../domain/round_clip.dart';
 import '../../services/clip_store.dart';
+import '../../services/pose_estimator.dart';
+import '../format.dart';
 import '../theme.dart';
+import '../widgets/skeleton_painter.dart';
 
-/// The list of technical rounds recorded this session, and a scrubber to look
-/// back at them.
-///
-/// In 0.2 this is just video — no skeleton overlay, no flagged moments. Those
-/// arrive in 0.3/0.5. The point here is only that the clips exist, are labelled
-/// by round, and can be scrubbed, which doubles as the honest "we recorded you"
-/// confirmation.
+/// The list of technical rounds recorded this session, and — per round — a
+/// scrubber, the on-device pose analysis (skeleton overlay, mechanical facts)
+/// and the rule-based corrections drawn from it.
 class RoundReviewScreen extends StatefulWidget {
   const RoundReviewScreen({
     required this.clipStore,
     required this.sessionId,
+    this.estimator,
     super.key,
   });
 
   final ClipStore clipStore;
   final String sessionId;
+
+  /// Injectable so tests / no-camera platforms can supply a fake. Defaults to
+  /// the real MediaPipe estimator.
+  final PoseEstimator? estimator;
 
   @override
   State<RoundReviewScreen> createState() => _RoundReviewScreenState();
@@ -64,7 +71,8 @@ class _RoundReviewScreenState extends State<RoundReviewScreen> {
             padding: const EdgeInsets.all(16),
             itemCount: clips.length,
             separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (context, i) => _ClipTile(clip: clips[i]),
+            itemBuilder: (context, i) =>
+                _ClipTile(clip: clips[i], estimator: widget.estimator),
           );
         },
       ),
@@ -73,9 +81,10 @@ class _RoundReviewScreenState extends State<RoundReviewScreen> {
 }
 
 class _ClipTile extends StatelessWidget {
-  const _ClipTile({required this.clip});
+  const _ClipTile({required this.clip, this.estimator});
 
   final RoundClip clip;
+  final PoseEstimator? estimator;
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +104,8 @@ class _ClipTile extends StatelessWidget {
         onTap: exists
             ? () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => _RoundPlayerScreen(clip: clip),
+                  builder: (_) =>
+                      _RoundPlayerScreen(clip: clip, estimator: estimator),
                 ),
               )
             : null,
@@ -104,10 +114,13 @@ class _ClipTile extends StatelessWidget {
   }
 }
 
+enum _AnalysisState { idle, running, done, failed }
+
 class _RoundPlayerScreen extends StatefulWidget {
-  const _RoundPlayerScreen({required this.clip});
+  const _RoundPlayerScreen({required this.clip, this.estimator});
 
   final RoundClip clip;
+  final PoseEstimator? estimator;
 
   @override
   State<_RoundPlayerScreen> createState() => _RoundPlayerScreenState();
@@ -115,7 +128,15 @@ class _RoundPlayerScreen extends StatefulWidget {
 
 class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
   late final VideoPlayerController _controller;
+  late final PoseEstimator _estimator =
+      widget.estimator ?? MediaPipePoseEstimator();
   bool _ready = false;
+
+  _AnalysisState _state = _AnalysisState.idle;
+  double _progress = 0;
+  String? _error;
+  PoseAnalysisResult? _result;
+  RoundAnalysis? _analysis;
 
   @override
   void initState() {
@@ -134,6 +155,37 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
     super.dispose();
   }
 
+  Future<void> _analyse() async {
+    setState(() {
+      _state = _AnalysisState.running;
+      _progress = 0;
+      _error = null;
+    });
+    try {
+      await for (final progress in _estimator.analyse(widget.clip.path)) {
+        if (!mounted) return;
+        final result = progress.result;
+        if (result == null) {
+          setState(() => _progress = progress.fraction);
+        } else {
+          final analysis =
+              PoseOnlyAdapter().analyse(result.sequence, const DrillContext());
+          setState(() {
+            _result = result;
+            _analysis = analysis;
+            _state = _AnalysisState.done;
+          });
+        }
+      }
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _state = _AnalysisState.failed;
+        _error = '$error';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,31 +194,24 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
         backgroundColor: Colors.black,
         title: Text(widget.clip.title ?? widget.clip.positionLabel),
       ),
-      body: Center(
-        child: _ready
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  AspectRatio(
-                    aspectRatio: _controller.value.aspectRatio,
-                    child: VideoPlayer(_controller),
-                  ),
-                  const SizedBox(height: 8),
-                  VideoProgressIndicator(
-                    _controller,
-                    allowScrubbing: true,
-                    colors: const VideoProgressColors(
-                      playedColor: AppTheme.accent,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ],
-              )
-            : const CircularProgressIndicator(),
-      ),
+      body: !_ready
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              children: <Widget>[
+                _videoWithOverlay(),
+                VideoProgressIndicator(
+                  _controller,
+                  allowScrubbing: true,
+                  colors: const VideoProgressColors(playedColor: AppTheme.accent),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                  child: _analysisPanel(),
+                ),
+              ],
+            ),
       floatingActionButton: _ready
           ? FloatingActionButton(
               backgroundColor: AppTheme.accent,
@@ -180,6 +225,212 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
               ),
             )
           : null,
+    );
+  }
+
+  Widget _videoWithOverlay() {
+    return AspectRatio(
+      aspectRatio: _controller.value.aspectRatio,
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          VideoPlayer(_controller),
+          if (_analysis != null && _result != null)
+            ValueListenableBuilder<VideoPlayerValue>(
+              valueListenable: _controller,
+              builder: (context, value, _) {
+                final frame = _result!.sequence
+                    .frameAtTimestamp(value.position.inMilliseconds.toDouble());
+                return SkeletonOverlay(frame: frame);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _analysisPanel() {
+    switch (_state) {
+      case _AnalysisState.idle:
+        return FilledButton.icon(
+          onPressed: _analyse,
+          icon: const Icon(Icons.auto_awesome),
+          label: const Text('Analyse pose'),
+        );
+      case _AnalysisState.running:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'Analysing… ${(_progress * 100).round()}%',
+              style: const TextStyle(color: AppTheme.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: _progress == 0 ? null : _progress,
+              backgroundColor: AppTheme.surfaceAlt,
+              color: AppTheme.accent,
+            ),
+          ],
+        );
+      case _AnalysisState.failed:
+        return Text(
+          'Pose analysis unavailable: $_error',
+          style: const TextStyle(color: AppTheme.textSecondary),
+        );
+      case _AnalysisState.done:
+        return _results();
+    }
+  }
+
+  Widget _results() {
+    final result = _result!;
+    final analysis = _analysis!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _FactsRow(result: result),
+        const SizedBox(height: 16),
+        Text(
+          analysis.overallSummary,
+          style: const TextStyle(fontSize: 15, height: 1.4),
+        ),
+        if (analysis.correctionPriorities.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 16),
+          const Text(
+            'CORRECTIONS',
+            style: TextStyle(
+              fontSize: 11,
+              letterSpacing: 1.2,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final c in analysis.correctionPriorities)
+            _CorrectionTile(
+              correction: c,
+              onSeek: c.exampleTimestampMs == null
+                  ? null
+                  : () => _controller.seekTo(
+                      Duration(milliseconds: c.exampleTimestampMs!.round()),
+                    ),
+            ),
+        ],
+        if (analysis.positiveNotes.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 16),
+          for (final note in analysis.positiveNotes)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Icon(Icons.check, size: 16, color: AppTheme.rest),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(note)),
+                ],
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _FactsRow extends StatelessWidget {
+  const _FactsRow({required this.result});
+
+  final PoseAnalysisResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = (result.fullBodyVisibleFraction * 100).round();
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: <Widget>[
+          _Fact(label: 'Frames', value: '${result.framesAnalysed}'),
+          _Fact(
+            label: 'Took',
+            value: '${(result.elapsed.inMilliseconds / 1000).toStringAsFixed(1)}s',
+          ),
+          _Fact(label: 'You in frame', value: '$visible%'),
+        ],
+      ),
+    );
+  }
+}
+
+class _Fact extends StatelessWidget {
+  const _Fact({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 10,
+              letterSpacing: 0.6,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(value,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+}
+
+class _CorrectionTile extends StatelessWidget {
+  const _CorrectionTile({required this.correction, this.onSeek});
+
+  final Correction correction;
+  final VoidCallback? onSeek;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        child: ListTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          dense: true,
+          leading: CircleAvatar(
+            radius: 13,
+            backgroundColor: AppTheme.accent,
+            child: Text(
+              '${correction.priority}',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+          ),
+          title: Text(correction.description, style: const TextStyle(fontSize: 14)),
+          subtitle: correction.exampleTimestampMs == null
+              ? null
+              : Text(
+                  'Tap to jump to '
+                  '${TimeFormat.clock(Duration(milliseconds: correction.exampleTimestampMs!.round()))}',
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                ),
+          trailing: onSeek == null
+              ? null
+              : const Icon(Icons.my_location, size: 18, color: AppTheme.textSecondary),
+          onTap: onSeek,
+        ),
+      ),
     );
   }
 }

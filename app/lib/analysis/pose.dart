@@ -77,6 +77,33 @@ class PoseSequence {
     return best;
   }
 
+  /// Encodes to the wire format shared with the Python reference
+  /// (`golden_fixtures.sequence_to_json`): landmark index as key, coordinates
+  /// rounded to 4 decimals. Used to persist a round's poses alongside its clip.
+  Map<String, Object?> toJson() => <String, Object?>{
+    'fps': fps,
+    'source': source,
+    'meta': meta,
+    'frames': <Map<String, Object?>>[
+      for (final frame in frames)
+        <String, Object?>{
+          'i': frame.index,
+          't': _round4(frame.timestampMs),
+          'kp': <String, Object?>{
+            for (final entry in frame.keypoints.entries)
+              '${entry.key.mpIndex}': <double>[
+                _round4(entry.value.x),
+                _round4(entry.value.y),
+                _round4(entry.value.z),
+                _round4(entry.value.visibility),
+              ],
+          },
+        },
+    ],
+  };
+
+  static double _round4(double v) => (v * 10000).round() / 10000;
+
   /// Decodes the golden-fixture / calibration-upload wire format. Must match
   /// `golden_fixtures.sequence_to_json` on the Python side exactly.
   factory PoseSequence.fromJson(Map<String, Object?> json) {
