@@ -9,5 +9,18 @@
       "peakReach": 1.019804,
       "punchType": "hook"
     }
+  ],
+  "guardReturn": [
+    {
+      "ruleId": "guard_return",
+      "category": "defence",
+      "severity": "positive",
+      "coachingText": "Clean guard return all round \u2014 hands came straight back to guard.",
+      "timestampMs": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight": []
+    }
   ]
 }

@@ -38,6 +38,11 @@ List<double> hipCenter(PoseFrame frame) => midpoint(
   framePoint(frame, Landmark.rightHip),
 );
 
+List<double> ankleCenter(PoseFrame frame) => midpoint(
+  framePoint(frame, Landmark.leftAnkle),
+  framePoint(frame, Landmark.rightAnkle),
+);
+
 /// Distance from shoulder-center to hip-center (2D). The scale unit. More
 /// stable than shoulder width, which foreshortens as the boxer turns.
 double torsoLength(PoseFrame frame) =>

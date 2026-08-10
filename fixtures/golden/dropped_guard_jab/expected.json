@@ -9,5 +9,20 @@
       "peakReach": 1.50333,
       "punchType": "straight"
     }
+  ],
+  "guardReturn": [
+    {
+      "ruleId": "guard_return",
+      "category": "defence",
+      "severity": "moderate",
+      "coachingText": "Your lead hand drops after the punch \u2014 bring it back up to your guard, don't let it sink.",
+      "timestampMs": 733.3333,
+      "metrics": {
+        "peak_reach": 1.50333
+      },
+      "highlight": [
+        15
+      ]
+    }
   ]
 }

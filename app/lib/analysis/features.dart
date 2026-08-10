@@ -188,6 +188,33 @@ class PunchDetector {
   }
 }
 
+/// Per-frame speed of the stance centre (ankle midpoint), torso-lengths/sec —
+/// the in-and-out signal a rule reads to tell "planted" from "stepping in/out".
+/// Ported from `round_profile.stance_speed_series`.
+///
+/// Index-aligned to `sequence.frames`: element i is the speed of the step *into*
+/// frame i; frame 0 is 0.0, and a gap (a missing ankle either side) yields NaN,
+/// so callers treat "unknown" as not-moving rather than fabricating motion.
+List<double> stanceSpeedSeries(PoseSequence sequence, double scale) {
+  final frames = sequence.frames;
+  final n = frames.length;
+  final speeds = List<double>.filled(n, 0.0);
+  if (n < 2 || scale <= 0) return speeds;
+  for (var i = 1; i < n; i++) {
+    final a = geo.ankleCenter(frames[i - 1]);
+    final b = geo.ankleCenter(frames[i]);
+    final step = <double>[b[0] - a[0], b[1] - a[1]];
+    final dt = (frames[i].timestampMs - frames[i - 1].timestampMs) / 1000.0;
+    if (step.any((v) => v.isNaN) || dt <= 0) {
+      speeds[i] = double.nan;
+      continue;
+    }
+    final stepNorm = geo.distance(a, b);
+    speeds[i] = (stepNorm / scale) / dt;
+  }
+  return speeds;
+}
+
 /// Median torso length across frames — the person-and-camera-invariant length
 /// unit every rule divides by, so thresholds are expressed in "torso-lengths"
 /// and hold across people and camera distances rather than pixels.

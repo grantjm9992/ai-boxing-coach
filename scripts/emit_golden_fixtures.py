@@ -24,7 +24,10 @@ for path in (_SRC, _ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
+from boxing_coach.analysis.context import AnalysisContext  # noqa: E402
 from boxing_coach.analysis.features import PunchDetector, compute_body_scale  # noqa: E402
+from boxing_coach.analysis.rules.guard_return import GuardReturnRule  # noqa: E402
+from boxing_coach.domain.drill import DrillContext  # noqa: E402
 from boxing_coach.golden_fixtures import round_tripped, sequence_to_json  # noqa: E402
 from tests import fixtures as fx  # noqa: E402
 
@@ -58,10 +61,24 @@ SCENARIOS = [
 OUT_DIR = _ROOT / "fixtures" / "golden"
 
 
+def _observation_json(o) -> dict:
+    return {
+        "ruleId": o.rule_id,
+        "category": o.category.value,
+        "severity": o.severity.value,
+        "coachingText": o.coaching_text,
+        "timestampMs": round(o.timestamp_ms, 4) if o.timestamp_ms is not None else None,
+        "metrics": {k: round(v, 6) for k, v in o.metrics.items()},
+        "highlight": [int(lm) for lm in o.highlight_landmarks],
+    }
+
+
 def _expected(sequence) -> dict:
     """What the reference engine derives from the round-tripped sequence."""
     scale = compute_body_scale(sequence)
     punches = PunchDetector().detect(sequence, scale)
+    context = AnalysisContext(sequence=sequence, drill=DrillContext())
+    guard_return = GuardReturnRule().evaluate(context)
     return {
         "bodyScale": scale,
         "punches": [
@@ -75,6 +92,7 @@ def _expected(sequence) -> dict:
             }
             for p in punches
         ],
+        "guardReturn": [_observation_json(o) for o in guard_return],
     }
 
 
