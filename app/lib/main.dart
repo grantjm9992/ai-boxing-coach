@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'services/clip_store.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/theme.dart';
 
@@ -11,6 +12,9 @@ void main() {
   SystemChrome.setPreferredOrientations(<DeviceOrientation>[
     DeviceOrientation.portraitUp,
   ]).ignore();
+  // Enforce the spec's 7-day clip retention on every launch. Fire-and-forget:
+  // a failed sweep must never delay the app starting.
+  ClipStore().sweepExpired().ignore();
   runApp(const BoxingCoachApp());
 }
 

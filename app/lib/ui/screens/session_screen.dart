@@ -1,14 +1,27 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../analysis/drill.dart';
+import '../../analysis/round_analysis.dart';
+import '../../domain/round_clip.dart';
 import '../../domain/session_phase.dart';
 import '../../domain/session_plan.dart';
+import '../../domain/session_record.dart';
+import '../../engine/coach_cue.dart';
 import '../../engine/session_engine.dart';
+import '../../services/camera_round_recorder.dart';
+import '../../services/clip_store.dart';
 import '../../services/coach_voice.dart';
 import '../../services/device_coach_voice.dart';
+import '../../services/round_analyzer.dart';
+import '../../services/round_recorder.dart';
+import '../../services/round_recording_controller.dart';
+import '../../services/session_history_store.dart';
 import '../format.dart';
 import '../theme.dart';
 import '../widgets/phase_bar.dart';
+import 'camera_check_screen.dart';
 import 'session_summary_screen.dart';
 
 /// The running session: one big clock, the current round, and what is coming.
@@ -17,12 +30,38 @@ import 'session_summary_screen.dart';
 /// breathing hard, so it is deliberately sparse — the coach carries the detail
 /// in audio, the screen carries the clock.
 class SessionScreen extends StatefulWidget {
-  const SessionScreen({required this.plan, this.voice, super.key});
+  const SessionScreen({
+    required this.plan,
+    this.voice,
+    this.recorder,
+    this.clipStore,
+    this.sessionId,
+    this.analyzer,
+    this.historyStore,
+    super.key,
+  });
 
   final SessionPlan plan;
 
   /// Injectable for tests and for running without audio.
   final CoachVoice? voice;
+
+  /// Runs pose analysis over a recorded round. Defaults to the real pipeline.
+  final RoundAnalyzer? analyzer;
+
+  /// Persists the completed session for history + the weekly balance.
+  final SessionHistoryStore? historyStore;
+
+  /// Records technical rounds. Defaults to the real camera; tests inject a
+  /// [FakeRoundRecorder]. Left null on platforms with no camera, where the
+  /// camera-check simply reports it and the session runs unrecorded.
+  final RoundRecorder? recorder;
+
+  /// Where recorded clips are filed. Injectable for tests.
+  final ClipStore? clipStore;
+
+  /// Identifies this session run for clip grouping. Defaults to a timestamp.
+  final String? sessionId;
 
   @override
   State<SessionScreen> createState() => _SessionScreenState();
@@ -34,6 +73,41 @@ class _SessionScreenState extends State<SessionScreen> {
     plan: widget.plan,
     voice: _voice,
   );
+
+  late final RoundRecorder _recorder = widget.recorder ?? CameraRoundRecorder();
+  late final ClipStore _clipStore = widget.clipStore ?? ClipStore();
+  late final String _sessionId =
+      widget.sessionId ?? DateTime.now().millisecondsSinceEpoch.toString();
+  late final RoundRecordingController _recording = RoundRecordingController(
+    recorder: _recorder,
+    clipStore: _clipStore,
+    sessionId: _sessionId,
+    onClipSaved: _onClipSaved,
+  );
+  late final RoundAnalyzer _analyzer = widget.analyzer ?? RoundAnalyzer();
+  late final SessionHistoryStore _historyStore =
+      widget.historyStore ?? SessionHistoryStore();
+
+  /// Analyses produced this session, keyed by the round's segment index.
+  final Map<int, RoundAnalysis> _analyses = <int, RoundAnalysis>{};
+
+  /// True once this session contains technical rounds and we have offered the
+  /// framing check. It is offered exactly once, before the first such round.
+  bool _cameraChecked = false;
+
+  /// Whether recording is on for this session — set by the camera check.
+  bool _recordingEnabled = false;
+
+  /// Serialises the async recording reactions so a burst of engine
+  /// notifications cannot start two recordings or two camera checks.
+  bool _recordingBusy = false;
+
+  /// Set when a segment change arrives while [_syncRecording] is mid-flight, so
+  /// a burst of transitions (skipping quickly) is handled after the current one
+  /// rather than silently dropped.
+  bool _recordingPending = false;
+  int? _lastRecordingIndex;
+
   bool _navigatedToSummary = false;
 
   @override
@@ -45,24 +119,159 @@ class _SessionScreenState extends State<SessionScreen> {
   }
 
   void _onEngineChanged() {
+    _syncRecording();
     if (_engine.isCompleted && !_navigatedToSummary) {
       _navigatedToSummary = true;
-      // Let the completion cues start before the screen changes.
-      Future<void>.delayed(const Duration(milliseconds: 400), () {
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute<void>(
-            builder: (_) => SessionSummaryScreen(plan: widget.plan),
-          ),
-        );
+      // Make sure the last technical round is filed before we leave.
+      _recording.finish().whenComplete(() {
+        _saveHistory();
+        // Let the completion cues start before the screen changes.
+        Future<void>.delayed(const Duration(milliseconds: 400), () {
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => SessionSummaryScreen(
+                plan: widget.plan,
+                clipStore: _clipStore,
+                sessionId: _recordingEnabled ? _sessionId : null,
+                analyses: Map<int, RoundAnalysis>.of(_analyses),
+              ),
+            ),
+          );
+        });
       });
     }
+  }
+
+  /// Reacts to the current segment changing: runs the one-time camera check
+  /// before the first technical round, then keeps the recorder in step with the
+  /// segment. Recording is additive — any failure here leaves the session
+  /// running exactly as it did in v0.1.
+  ///
+  /// Serialised through [_recordingBusy]/[_recordingPending]: the camera and the
+  /// file moves are async, and the engine can fire several notifications while
+  /// one is in flight (a tick, or a rapid skip). Anything that arrives mid-flight
+  /// sets [_recordingPending] and is picked up by the loop, so no transition is
+  /// lost.
+  Future<void> _syncRecording() async {
+    if (_recordingBusy) {
+      _recordingPending = true;
+      return;
+    }
+    _recordingBusy = true;
+    try {
+      do {
+        _recordingPending = false;
+        await _handleSegmentChange();
+      } while (_recordingPending);
+    } finally {
+      _recordingBusy = false;
+    }
+  }
+
+  Future<void> _handleSegmentChange() async {
+    final segment = _engine.currentSegment;
+    final index = segment?.index;
+    if (index == _lastRecordingIndex) return;
+
+    if (shouldRecordSegment(segment) && !_cameraChecked) {
+      _cameraChecked = true;
+      _engine.pause();
+      _recordingEnabled = await _runCameraCheck();
+      if (mounted) _engine.start();
+    }
+    _lastRecordingIndex = index;
+    if (_recordingEnabled) {
+      await _recording.onSegment(segment);
+      // Reflect the REC indicator / preview appearing or disappearing.
+      if (mounted) setState(() {});
+    }
+  }
+
+  /// Shows the framing check and returns whether recording should be on. With a
+  /// non-camera recorder (tests, no-camera platforms) there is no screen to
+  /// show; we just probe whether the recorder initialises.
+  Future<bool> _runCameraCheck() async {
+    final recorder = _recorder;
+    if (recorder is! CameraRoundRecorder) {
+      try {
+        await recorder.initialize();
+        return recorder.isReady;
+      } on RecorderUnavailable {
+        return false;
+      }
+    }
+    if (!mounted) return false;
+    final confirmed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => CameraCheckScreen(recorder: recorder),
+        fullscreenDialog: true,
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  /// After a technical round is filed, analyse it and — if the analysis lands
+  /// while we're still in the rest that follows — speak the summary and the top
+  /// correction. Analysis is best-effort: a null result (no camera/model) simply
+  /// means no coaching for that round, never a broken session.
+  Future<void> _onClipSaved(RoundClip clip) async {
+    final drill = DrillContext(notes: clip.title ?? '');
+    final analysis = await _analyzer.analyse(clip, drill: drill);
+    if (analysis == null || !mounted) return;
+    _analyses[clip.segmentIndex] = analysis;
+
+    final inRest = _engine.currentSegment?.isRest ?? false;
+    if (inRest && _engine.voiceEnabled) {
+      await _voice.speak(analysis.overallSummary, CuePriority.routine);
+      if (analysis.correctionPriorities.isNotEmpty) {
+        await _voice.speak(
+          analysis.correctionPriorities.first.description,
+          CuePriority.routine,
+        );
+      }
+    }
+  }
+
+  /// Records the completed session for history + the weekly balance. Saved for
+  /// every session — the weighted-minutes balance comes from the plan whether or
+  /// not any round was analysed.
+  void _saveHistory() {
+    final rounds = <RoundSummary>[];
+    for (final segment in widget.plan.segments) {
+      if (segment.phase != SessionPhase.technical || !segment.isWork) continue;
+      final analysis = _analyses[segment.index];
+      final corrections = analysis?.correctionPriorities ?? const [];
+      rounds.add(
+        RoundSummary(
+          segmentIndex: segment.index,
+          title: segment.title,
+          roundNumber: segment.roundNumber,
+          summary: analysis?.overallSummary,
+          topCorrection: corrections.isNotEmpty ? corrections.first.description : null,
+          punchesThrown: analysis?.metrics.punchesThrown,
+          guardReturnRate: analysis?.metrics.guardReturnRate,
+        ),
+      );
+    }
+    _historyStore
+        .save(
+          SessionRecord.fromPlan(
+            widget.plan,
+            sessionId: _sessionId,
+            completedAt: DateTime.now(),
+            rounds: rounds,
+          ),
+        )
+        .ignore();
   }
 
   @override
   void dispose() {
     _engine.removeListener(_onEngineChanged);
     _engine.dispose();
+    _recording.finish().ignore();
+    _recorder.dispose().ignore();
     _voice.dispose().ignore();
     WakelockPlus.disable().ignore();
     super.dispose();
@@ -111,11 +320,90 @@ class _SessionScreenState extends State<SessionScreen> {
       },
       child: Scaffold(
         body: SafeArea(
-          child: ListenableBuilder(
-            listenable: _engine,
-            builder: (context, _) => _SessionBody(engine: _engine),
+          child: Stack(
+            children: <Widget>[
+              ListenableBuilder(
+                listenable: _engine,
+                builder: (context, _) => _SessionBody(engine: _engine),
+              ),
+              if (_recording.isRecording)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: _RecordingIndicator(recorder: _recorder),
+                ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The "we can see you" reassurance: a small live preview plus a ● REC badge,
+/// shown only while a technical round is actually being recorded. Rendering the
+/// preview also keeps the camera texture bound, so the camera stays active for
+/// the whole session rather than being released between the check and the round.
+class _RecordingIndicator extends StatelessWidget {
+  const _RecordingIndicator({required this.recorder});
+
+  final RoundRecorder recorder;
+
+  @override
+  Widget build(BuildContext context) {
+    final r = recorder;
+    final controller = r is CameraRoundRecorder ? r.controller : null;
+    final hasPreview = controller != null && controller.value.isInitialized;
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (hasPreview)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: SizedBox(
+                width: 66,
+                height: 100,
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: controller.value.previewSize?.height ?? 9,
+                    height: controller.value.previewSize?.width ?? 16,
+                    child: CameraPreview(controller),
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: AppTheme.accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                'REC',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

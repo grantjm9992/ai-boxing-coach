@@ -1,0 +1,39 @@
+{
+  "bodyScale": 0.19999999999999996,
+  "punches": [
+    {
+      "side": "left",
+      "startIndex": 19,
+      "peakIndex": 21,
+      "endIndex": 23,
+      "peakReach": 1.029563,
+      "punchType": "uppercut"
+    }
+  ],
+  "observations": [
+    {
+      "ruleId": "hands_up",
+      "category": "defence",
+      "severity": "moderate",
+      "coachingText": "Your lead hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "timestampMs": 0.0,
+      "metrics": {
+        "down_fraction": 0.944
+      },
+      "highlight": [
+        15
+      ]
+    },
+    {
+      "ruleId": "guard_return",
+      "category": "defence",
+      "severity": "positive",
+      "coachingText": "Clean guard return all round \u2014 hands came straight back to guard.",
+      "timestampMs": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight": []
+    }
+  ]
+}

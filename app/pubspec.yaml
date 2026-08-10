@@ -23,6 +23,14 @@ dependencies:
 
   # Persists the per-template session configuration between runs.
   shared_preferences: ^2.5.3
+  camera: ^0.12.0+2
+  path_provider: ^2.1.6
+  video_player: ^2.13.0
+
+  # On-device pose estimation over the recorded round (MediaPipe Tasks Vision).
+  # Federated plugin lives in-repo; Android only for v0.5.
+  pose_landmarker:
+    path: packages/pose_landmarker
 
 dev_dependencies:
   flutter_test:
@@ -35,3 +43,6 @@ flutter:
 
   assets:
     - assets/audio/
+    # Pose model, provisioned to a file at runtime for MediaPipe. Not committed
+    # (binary, ~6 MB) — fetch with scripts/fetch_pose_model.sh before building.
+    - assets/models/

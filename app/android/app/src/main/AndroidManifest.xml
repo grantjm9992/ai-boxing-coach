@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- v0.5 stage 0.2: record technical rounds for pose analysis. Video only,
+         no audio, so no RECORD_AUDIO permission is needed. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <application
         android:label="AI Boxing Coach"
         android:name="${applicationName}"
