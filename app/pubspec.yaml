@@ -23,6 +23,9 @@ dependencies:
 
   # Persists the per-template session configuration between runs.
   shared_preferences: ^2.5.3
+  camera: ^0.12.0+2
+  path_provider: ^2.1.6
+  video_player: ^2.13.0
 
 dev_dependencies:
   flutter_test:

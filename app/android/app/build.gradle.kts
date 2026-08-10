@@ -19,7 +19,9 @@ android {
         applicationId = "com.aiboxingcoach.boxing_coach"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // v0.5: the camera plugin needs 21; MediaPipe Tasks Vision (stage 0.3)
+        // needs 24. Set it once here so pose work does not force a second bump.
+        minSdk = maxOf(24, flutter.minSdkVersion)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

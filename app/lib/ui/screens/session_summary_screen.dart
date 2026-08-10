@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/round_clip.dart';
 import '../../domain/session_plan.dart';
+import '../../services/clip_store.dart';
 import '../format.dart';
 import '../theme.dart';
 import '../widgets/category_widgets.dart';
+import 'round_review_screen.dart';
 
 /// The end-of-session recap.
 ///
@@ -12,9 +15,19 @@ import '../widgets/category_widgets.dart';
 /// still worth showing: the balance view is the thing the athlete is meant to
 /// act on when picking the next session.
 class SessionSummaryScreen extends StatelessWidget {
-  const SessionSummaryScreen({required this.plan, super.key});
+  const SessionSummaryScreen({
+    required this.plan,
+    this.clipStore,
+    this.sessionId,
+    super.key,
+  });
 
   final SessionPlan plan;
+
+  /// Present when the session recorded technical rounds (v0.5). Null in v0.1
+  /// runs and when recording was off, in which case no review section shows.
+  final ClipStore? clipStore;
+  final String? sessionId;
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +92,15 @@ class SessionSummaryScreen extends StatelessWidget {
                 ],
               ),
             ),
+          if (clipStore != null && sessionId != null) ...<Widget>[
+            const SizedBox(height: 24),
+            const _SectionTitle('Recordings'),
+            const SizedBox(height: 12),
+            _RecordingsSection(
+              clipStore: clipStore!,
+              sessionId: sessionId!,
+            ),
+          ],
           const SizedBox(height: 24),
           const _SectionTitle('Category balance'),
           const SizedBox(height: 4),
@@ -93,6 +115,58 @@ class SessionSummaryScreen extends StatelessWidget {
           const _NextUpNote(),
         ],
       ),
+    );
+  }
+}
+
+class _RecordingsSection extends StatelessWidget {
+  const _RecordingsSection({required this.clipStore, required this.sessionId});
+
+  final ClipStore clipStore;
+  final String sessionId;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<RoundClip>>(
+      future: clipStore.listForSession(sessionId),
+      builder: (context, snapshot) {
+        final clips = snapshot.data ?? const <RoundClip>[];
+        final count = clips.length;
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                count == 0
+                    ? 'No technical rounds were recorded.'
+                    : '$count technical ${count == 1 ? 'round' : 'rounds'} '
+                          'recorded. Kept for 7 days.',
+                style: const TextStyle(color: AppTheme.textSecondary),
+              ),
+              if (count > 0) ...<Widget>[
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => RoundReviewScreen(
+                        clipStore: clipStore,
+                        sessionId: sessionId,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.video_library_outlined),
+                  label: const Text('Review rounds'),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }
