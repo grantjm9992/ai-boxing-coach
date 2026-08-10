@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from boxing_coach.analysis.features import compute_body_scale
+from boxing_coach.analysis.features import PunchDetector, compute_body_scale
 from boxing_coach.golden_fixtures import sequence_from_json
 
 GOLDEN_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "golden"
@@ -43,3 +43,26 @@ def test_body_scale_matches_golden(name: str) -> None:
     assert compute_body_scale(sequence) == pytest.approx(
         expected["bodyScale"], abs=TOLERANCE
     )
+
+
+@pytest.mark.parametrize("name", _scenarios())
+def test_punches_match_golden(name: str) -> None:
+    scenario = GOLDEN_DIR / name
+    sequence = sequence_from_json(json.loads((scenario / "input.json").read_text()))
+    expected = json.loads((scenario / "expected.json").read_text())
+
+    scale = compute_body_scale(sequence)
+    punches = PunchDetector().detect(sequence, scale)
+    got = [
+        {
+            "side": p.side.name.lower(),
+            "startIndex": p.start_index,
+            "peakIndex": p.peak_index,
+            "endIndex": p.end_index,
+            "punchType": p.punch_type.value,
+        }
+        for p in punches
+    ]
+    want = [{k: e[k] for k in ("side", "startIndex", "peakIndex", "endIndex", "punchType")} for e in expected["punches"]]
+    assert got == want
+

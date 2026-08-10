@@ -71,6 +71,42 @@ double nanMedian(List<double> values) {
   return (finite[mid - 1] + finite[mid]) / 2.0;
 }
 
+/// The [q]-th percentile (0..100) of the finite values, ignoring NaN — matching
+/// `numpy.nanpercentile` with its default linear interpolation.
+double nanPercentile(List<double> values, double q) {
+  final finite = <double>[
+    for (final v in values)
+      if (v.isFinite) v,
+  ]..sort();
+  final n = finite.length;
+  if (n == 0) return double.nan;
+  if (n == 1) return finite.first;
+  final rank = (q / 100.0) * (n - 1);
+  final lower = rank.floor();
+  final upper = rank.ceil();
+  if (lower == upper) return finite[lower];
+  final frac = rank - lower;
+  return finite[lower] + frac * (finite[upper] - finite[lower]);
+}
+
+/// Index of the maximum finite value, ignoring NaN — matching `numpy.nanargmax`
+/// (first occurrence on ties). Returns 0 if nothing is finite.
+int nanArgmax(List<double> values) {
+  var bestIndex = 0;
+  var best = double.negativeInfinity;
+  var seen = false;
+  for (var i = 0; i < values.length; i++) {
+    final v = values[i];
+    if (v.isNaN) continue;
+    if (!seen || v > best) {
+      best = v;
+      bestIndex = i;
+      seen = true;
+    }
+  }
+  return bestIndex;
+}
+
 bool _hasNan(List<double> v) => v.any((e) => e.isNaN);
 
 double _norm(List<double> v) => math.sqrt(v[0] * v[0] + v[1] * v[1]);

@@ -1,3 +1,13 @@
 {
-  "bodyScale": 0.19999999999999996
+  "bodyScale": 0.19999999999999996,
+  "punches": [
+    {
+      "side": "left",
+      "startIndex": 16,
+      "peakIndex": 18,
+      "endIndex": 40,
+      "peakReach": 1.50333,
+      "punchType": "straight"
+    }
+  ]
 }

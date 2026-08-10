@@ -24,7 +24,7 @@ for path in (_SRC, _ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from boxing_coach.analysis.features import compute_body_scale  # noqa: E402
+from boxing_coach.analysis.features import PunchDetector, compute_body_scale  # noqa: E402
 from boxing_coach.golden_fixtures import round_tripped, sequence_to_json  # noqa: E402
 from tests import fixtures as fx  # noqa: E402
 
@@ -60,7 +60,22 @@ OUT_DIR = _ROOT / "fixtures" / "golden"
 
 def _expected(sequence) -> dict:
     """What the reference engine derives from the round-tripped sequence."""
-    return {"bodyScale": compute_body_scale(sequence)}
+    scale = compute_body_scale(sequence)
+    punches = PunchDetector().detect(sequence, scale)
+    return {
+        "bodyScale": scale,
+        "punches": [
+            {
+                "side": p.side.name.lower(),
+                "startIndex": p.start_index,
+                "peakIndex": p.peak_index,
+                "endIndex": p.end_index,
+                "peakReach": round(p.peak_reach, 6),
+                "punchType": p.punch_type.value,
+            }
+            for p in punches
+        ],
+    }
 
 
 def main() -> int:
