@@ -8,3 +8,6 @@ build/
 dist/
 *.mp4
 *.mov
+
+# Bundled pose models (binary, fetched via scripts/fetch_pose_model.sh)
+app/assets/models/*.task

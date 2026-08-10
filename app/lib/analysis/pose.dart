@@ -61,6 +61,22 @@ class PoseSequence {
       ? 0.0
       : frames.last.timestampMs - frames.first.timestampMs;
 
+  /// The frame whose timestamp is nearest [ms] — for syncing a skeleton overlay
+  /// to the video scrub position. Null only for an empty sequence.
+  PoseFrame? frameAtTimestamp(double ms) {
+    if (frames.isEmpty) return null;
+    var best = frames.first;
+    var bestDelta = (best.timestampMs - ms).abs();
+    for (final frame in frames) {
+      final delta = (frame.timestampMs - ms).abs();
+      if (delta < bestDelta) {
+        bestDelta = delta;
+        best = frame;
+      }
+    }
+    return best;
+  }
+
   /// Decodes the golden-fixture / calibration-upload wire format. Must match
   /// `golden_fixtures.sequence_to_json` on the Python side exactly.
   factory PoseSequence.fromJson(Map<String, Object?> json) {

@@ -1,0 +1,2 @@
+# The MediaPipe pose model (.task) is fetched here by
+# scripts/fetch_pose_model.sh and is gitignored (binary, ~6 MB).
