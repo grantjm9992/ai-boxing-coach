@@ -5,6 +5,8 @@ import 'rules/footwork.dart';
 import 'rules/guard_return.dart';
 import 'rules/hands_up.dart';
 import 'rules/head_movement.dart';
+import 'rules/hip_rotation.dart';
+import 'rules/school_adherence.dart';
 
 /// RuleEngine — runs the rule set over one round and collects observations.
 /// Mirror of `src/boxing_coach/analysis/engine.py`.
@@ -43,12 +45,15 @@ class RuleEngine {
   }
 }
 
-/// The v0.5 starter rule set — the spec's "Detectable in v1" list minus the two
-/// v2 rules (hip_rotation needs z; school_adherence needs a coach's input).
-/// Order is irrelevant; the engine sorts the output.
+/// The full starter rule set — the spec's "Detectable in v1" list. Matches the
+/// Python `default_rules()` order (irrelevant to output; the engine sorts).
+/// hip_rotation reads z (least certain from a single view); school_adherence
+/// runs only when the drill names a School.
 List<Rule> defaultRules() => <Rule>[
   GuardReturnRule(),
   HandsUpRule(),
   FootworkRule(),
   HeadMovementRule(),
+  HipRotationRule(),
+  SchoolAdherenceRule(),
 ];

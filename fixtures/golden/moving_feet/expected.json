@@ -26,5 +26,39 @@
       },
       "highlight": []
     }
+  ],
+  "roundProfile": {
+    "output_per_min": 0.0,
+    "mobility": 2.502,
+    "ground_coverage": 0.037,
+    "torso_lean_deg": 0.0,
+    "body_shot_ratio": 0.0
+  },
+  "featureValues": {
+    "output_per_min": 0.0,
+    "mobility": 2.501892,
+    "ground_coverage": 0.037053,
+    "torso_lean_deg": 0.0,
+    "body_shot_ratio": 0.0,
+    "jab_ratio": 0.0,
+    "punch_variety": 0.0
+  },
+  "schoolRanking": [
+    [
+      "european",
+      0.666667
+    ],
+    [
+      "soviet",
+      0.5
+    ],
+    [
+      "american",
+      0.333333
+    ],
+    [
+      "mexican",
+      0.0
+    ]
   ]
 }

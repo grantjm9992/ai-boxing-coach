@@ -5,6 +5,8 @@ import 'pose.dart';
 import 'punch.dart';
 import 'round_analysis.dart';
 import 'rule.dart';
+import 'schools.dart';
+import 'style_profiles.dart';
 
 /// PoseOnlyAdapter — pose estimation + rules, no model. Mirror of
 /// `src/boxing_coach/adapters/pose_only.py`, scoped to what v0.5 ships.
@@ -15,10 +17,9 @@ import 'rule.dart';
 /// deterministic and template-based on purpose — the spec's v0.5 ships with no
 /// API model in the loop.
 ///
-/// Scoping note vs the Python reference: v0.5 always uses the neutral style
-/// profile (per-style / school coaching is v2), and `metrics.values` carries
-/// only `body_scale` — the round-profile features that feed national-school
-/// classification stay in Python until v2.
+/// Full parity with the Python reference: the style/school profile is resolved
+/// from the drill, and `metrics.values` carries the round-profile features that
+/// feed national-school classification.
 class PoseOnlyAdapter {
   PoseOnlyAdapter({List<Rule>? rules})
     : _engine = RuleEngine(rules ?? defaultRules());
@@ -41,9 +42,11 @@ class PoseOnlyAdapter {
   };
 
   RoundAnalysis analyse(PoseSequence sequence, DrillContext drill) {
-    // v0.5 always uses the neutral profile (per-style / school coaching is v2),
-    // which is also AnalysisContext's default.
-    final context = AnalysisContext(sequence: sequence, drill: drill);
+    final context = AnalysisContext(
+      sequence: sequence,
+      drill: drill,
+      styleProfile: resolveProfile(drill.style, drill.school),
+    );
     final observations = _engine.run(context);
 
     final faults =
@@ -114,11 +117,19 @@ class PoseOnlyAdapter {
       final capped = guardReturnFaults < n ? guardReturnFaults : n;
       guardRate = _round(1.0 - capped / n, 3);
     }
+    final features = roundFeatureValues(
+      context.roundProfile,
+      context.punches,
+      context.drill.stance,
+    );
     return RoundMetrics(
       punchesThrown: n,
       guardReturnRate: guardRate,
       punchMix: _punchMix(context),
-      values: <String, double>{'body_scale': _round(context.bodyScale, 4)},
+      values: <String, double>{
+        'body_scale': _round(context.bodyScale, 4),
+        for (final e in features.entries) e.key: _round(e.value, 3),
+      },
     );
   }
 

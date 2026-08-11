@@ -27,20 +27,15 @@ for path in (_SRC, _ROOT):
 from boxing_coach.analysis.context import AnalysisContext  # noqa: E402
 from boxing_coach.analysis.engine import RuleEngine  # noqa: E402
 from boxing_coach.analysis.features import PunchDetector, compute_body_scale  # noqa: E402
-from boxing_coach.analysis.rules.footwork import FootworkRule  # noqa: E402
-from boxing_coach.analysis.rules.guard_return import GuardReturnRule  # noqa: E402
-from boxing_coach.analysis.rules.hands_up import HandsUpRule  # noqa: E402
-from boxing_coach.analysis.rules.head_movement import HeadMovementRule  # noqa: E402
+from boxing_coach.analysis.rules import default_rules  # noqa: E402
+from boxing_coach.analysis.schools import classify_school, round_feature_values  # noqa: E402
+from boxing_coach.analysis.style_profiles import resolve_profile  # noqa: E402
 from boxing_coach.domain.drill import DrillContext  # noqa: E402
+from boxing_coach.domain.landmarks import Stance  # noqa: E402
+from boxing_coach.domain.school import School  # noqa: E402
+from boxing_coach.domain.style import Style  # noqa: E402
 from boxing_coach.golden_fixtures import round_tripped, sequence_to_json  # noqa: E402
 from tests import fixtures as fx  # noqa: E402
-
-
-# The four v0.5 rules, in the same order as the Dart `defaultRules()`. Kept here
-# (rather than `default_rules()`, which also carries the two v2 rules) so the
-# golden reflects exactly what the shipping Dart engine runs.
-def _v05_rules() -> list:
-    return [GuardReturnRule(), HandsUpRule(), FootworkRule(), HeadMovementRule()]
 
 # Explicit registry — a stable, curated list rather than reflection, so adding a
 # fixture is a deliberate act and the golden set does not shift under us.
@@ -89,7 +84,9 @@ def _expected(sequence) -> dict:
     scale = compute_body_scale(sequence)
     punches = PunchDetector().detect(sequence, scale)
     context = AnalysisContext(sequence=sequence, drill=DrillContext())
-    observations = RuleEngine(_v05_rules()).run(context)
+    observations = RuleEngine(default_rules()).run(context)
+    features = round_feature_values(context.round_profile, context.punches, Stance.ORTHODOX)
+    ranking = classify_school(features)
     return {
         "bodyScale": scale,
         "punches": [
@@ -103,6 +100,41 @@ def _expected(sequence) -> dict:
             }
             for p in punches
         ],
+        "observations": [_observation_json(o) for o in observations],
+        "roundProfile": context.round_profile.as_dict(),
+        "featureValues": {k: round(v, 6) for k, v in features.items()},
+        "schoolRanking": [[s.value, round(score, 6)] for s, score in ranking],
+    }
+
+
+# Style / school cases: each exercises the profile plumbing (a gated rule, a
+# retuned threshold, a school override or school_adherence) on a chosen fixture.
+STYLE_CASES = [
+    {"fixture": "sagging_guard_idle", "style": "philly_shell"},
+    {"fixture": "rear_hand_down_idle", "style": "philly_shell"},
+    {"fixture": "slight_slipping_head", "style": "peek_a_boo"},
+    {"fixture": "slight_slipping_head", "style": "out_boxer"},
+    {"fixture": "drifting_feet", "style": "out_boxer"},
+    {"fixture": "out_step_dropped_jab", "school": "soviet"},
+    {"fixture": "clean_jab", "school": "mexican"},
+]
+
+
+def _style_case_result(case: dict) -> dict:
+    sequence = round_tripped(getattr(fx, case["fixture"])())
+    stance = Stance[case.get("stance", "orthodox").upper()]
+    style = Style(case.get("style", "high_guard"))
+    school = School(case["school"]) if case.get("school") else None
+    drill = DrillContext(stance=stance, style=style, school=school, focus=frozenset())
+    context = AnalysisContext(
+        sequence=sequence, drill=drill, style_profile=resolve_profile(style, school)
+    )
+    observations = RuleEngine(default_rules()).run(context)
+    return {
+        "fixture": case["fixture"],
+        "stance": stance.name.lower(),
+        "style": style.value,
+        "school": school.value if school else None,
         "observations": [_observation_json(o) for o in observations],
     }
 
@@ -120,7 +152,14 @@ def main() -> int:
         (scenario_dir / "expected.json").write_text(
             json.dumps(_expected(round_tripped(sequence)), indent=2) + "\n"
         )
-    print(f"Wrote {len(SCENARIOS)} golden fixtures to {OUT_DIR.relative_to(_ROOT)}")
+    (OUT_DIR / "_style_cases.json").write_text(
+        json.dumps({"cases": [_style_case_result(c) for c in STYLE_CASES]}, indent=2)
+        + "\n"
+    )
+    print(
+        f"Wrote {len(SCENARIOS)} golden fixtures + {len(STYLE_CASES)} style cases "
+        f"to {OUT_DIR.relative_to(_ROOT)}"
+    )
     return 0
 
 
