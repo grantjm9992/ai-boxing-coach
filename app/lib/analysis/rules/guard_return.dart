@@ -52,6 +52,18 @@ class GuardReturnConfig {
   /// Stance-centre speed (torso-lengths/sec) above which the fighter counts as
   /// stepping in/out during the return.
   final double movingSpeed;
+
+  GuardReturnConfig copyWith({bool? excuseWhileMoving}) => GuardReturnConfig(
+    returnRadius: returnRadius,
+    dropMargin: dropMargin,
+    extendedReach: extendedReach,
+    returnWindowMs: returnWindowMs,
+    healthyReturnRate: healthyReturnRate,
+    checkLead: checkLead,
+    checkRear: checkRear,
+    excuseWhileMoving: excuseWhileMoving ?? this.excuseWhileMoving,
+    movingSpeed: movingSpeed,
+  );
 }
 
 class GuardReturnRule extends Rule {

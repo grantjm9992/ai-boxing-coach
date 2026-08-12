@@ -1,0 +1,231 @@
+{
+  "cases": [
+    {
+      "fixture": "sagging_guard_idle",
+      "stance": "orthodox",
+      "style": "philly_shell",
+      "school": null,
+      "observations": [
+        {
+          "ruleId": "footwork",
+          "category": "footwork",
+          "severity": "moderate",
+          "coachingText": "You're flat-footed this round \u2014 barely moving. Stay light, step in and out, work angles instead of standing square.",
+          "timestampMs": null,
+          "metrics": {
+            "travel_per_second": 0.0
+          },
+          "highlight": [
+            27,
+            28
+          ]
+        },
+        {
+          "ruleId": "head_movement",
+          "category": "head_movement",
+          "severity": "minor",
+          "coachingText": "Your head stayed on the centre line the whole round. Add some movement \u2014 slip off the line so you're not a fixed target.",
+          "timestampMs": null,
+          "metrics": {
+            "lateral_std": 0.0
+          },
+          "highlight": [
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "fixture": "rear_hand_down_idle",
+      "stance": "orthodox",
+      "style": "philly_shell",
+      "school": null,
+      "observations": [
+        {
+          "ruleId": "hands_up",
+          "category": "defence",
+          "severity": "moderate",
+          "coachingText": "Your rear hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+          "timestampMs": 0.0,
+          "metrics": {
+            "down_fraction": 1.0
+          },
+          "highlight": [
+            16
+          ]
+        },
+        {
+          "ruleId": "footwork",
+          "category": "footwork",
+          "severity": "moderate",
+          "coachingText": "You're flat-footed this round \u2014 barely moving. Stay light, step in and out, work angles instead of standing square.",
+          "timestampMs": null,
+          "metrics": {
+            "travel_per_second": 0.0
+          },
+          "highlight": [
+            27,
+            28
+          ]
+        },
+        {
+          "ruleId": "head_movement",
+          "category": "head_movement",
+          "severity": "minor",
+          "coachingText": "Your head stayed on the centre line the whole round. Add some movement \u2014 slip off the line so you're not a fixed target.",
+          "timestampMs": null,
+          "metrics": {
+            "lateral_std": 0.0
+          },
+          "highlight": [
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "fixture": "slight_slipping_head",
+      "stance": "orthodox",
+      "style": "peek_a_boo",
+      "school": null,
+      "observations": [
+        {
+          "ruleId": "footwork",
+          "category": "footwork",
+          "severity": "moderate",
+          "coachingText": "You're flat-footed this round \u2014 barely moving. Stay light, step in and out, work angles instead of standing square.",
+          "timestampMs": null,
+          "metrics": {
+            "travel_per_second": 0.0
+          },
+          "highlight": [
+            27,
+            28
+          ]
+        },
+        {
+          "ruleId": "head_movement",
+          "category": "head_movement",
+          "severity": "minor",
+          "coachingText": "Your head stayed on the centre line the whole round. Add some movement \u2014 slip off the line so you're not a fixed target.",
+          "timestampMs": null,
+          "metrics": {
+            "lateral_std": 0.104
+          },
+          "highlight": [
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "fixture": "slight_slipping_head",
+      "stance": "orthodox",
+      "style": "out_boxer",
+      "school": null,
+      "observations": [
+        {
+          "ruleId": "footwork",
+          "category": "footwork",
+          "severity": "moderate",
+          "coachingText": "You're flat-footed this round \u2014 barely moving. Stay light, step in and out, work angles instead of standing square.",
+          "timestampMs": null,
+          "metrics": {
+            "travel_per_second": 0.0
+          },
+          "highlight": [
+            27,
+            28
+          ]
+        }
+      ]
+    },
+    {
+      "fixture": "drifting_feet",
+      "stance": "orthodox",
+      "style": "out_boxer",
+      "school": null,
+      "observations": [
+        {
+          "ruleId": "footwork",
+          "category": "footwork",
+          "severity": "moderate",
+          "coachingText": "You're flat-footed this round \u2014 barely moving. Stay light, step in and out, work angles instead of standing square.",
+          "timestampMs": null,
+          "metrics": {
+            "travel_per_second": 0.214
+          },
+          "highlight": [
+            27,
+            28
+          ]
+        }
+      ]
+    },
+    {
+      "fixture": "out_step_dropped_jab",
+      "stance": "orthodox",
+      "style": "high_guard",
+      "school": "soviet",
+      "observations": [
+        {
+          "ruleId": "guard_return",
+          "category": "defence",
+          "severity": "positive",
+          "coachingText": "Clean guard return all round \u2014 hands came straight back to guard.",
+          "timestampMs": null,
+          "metrics": {
+            "guard_return_rate": 1.0
+          },
+          "highlight": []
+        },
+        {
+          "ruleId": "school_adherence",
+          "category": "footwork",
+          "severity": "positive",
+          "coachingText": "Boxing a clean Soviet round \u2014 the game's all there.",
+          "timestampMs": null,
+          "metrics": {},
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "fixture": "clean_jab",
+      "stance": "orthodox",
+      "style": "high_guard",
+      "school": "mexican",
+      "observations": [
+        {
+          "ruleId": "school_adherence",
+          "category": "offence_hooks",
+          "severity": "minor",
+          "coachingText": "Go downstairs \u2014 the Mexican game is built on body work, not just head-hunting.",
+          "timestampMs": null,
+          "metrics": {},
+          "highlight": []
+        },
+        {
+          "ruleId": "school_adherence",
+          "category": "footwork",
+          "severity": "minor",
+          "coachingText": "Get low and crowd your man \u2014 pressure fighters press forward, they don't stand tall.",
+          "timestampMs": null,
+          "metrics": {},
+          "highlight": []
+        },
+        {
+          "ruleId": "guard_return",
+          "category": "defence",
+          "severity": "positive",
+          "coachingText": "Clean guard return all round \u2014 hands came straight back to guard.",
+          "timestampMs": null,
+          "metrics": {
+            "guard_return_rate": 1.0
+          },
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import 'landmarks.dart';
+import 'school.dart';
 
 /// A fighting style — selects a [StyleProfile] in the analysis layer. Mirror of
 /// `src/boxing_coach/domain/style.py`. "Correct" technique is style-dependent,
@@ -30,8 +31,8 @@ class DrillContext {
   final Stance stance;
   final Style style;
 
-  /// National/tactical school to coach toward. Null = no school feedback (v2).
-  final String? school;
+  /// National/tactical school to coach toward. Null = no school feedback.
+  final School? school;
 
   /// Free-form focus tags, e.g. {"jab", "defence"}. Empty = run every rule.
   final Set<String> focus;

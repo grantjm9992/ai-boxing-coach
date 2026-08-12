@@ -1,5 +1,39 @@
 {
   "bodyScale": 0.19999999999999996,
   "punches": [],
-  "observations": []
+  "observations": [],
+  "roundProfile": {
+    "output_per_min": 0.0,
+    "mobility": 0.0,
+    "ground_coverage": 0.0,
+    "torso_lean_deg": 1.2,
+    "body_shot_ratio": 0.0
+  },
+  "featureValues": {
+    "output_per_min": 0.0,
+    "mobility": 0.0,
+    "ground_coverage": 0.0,
+    "torso_lean_deg": 1.197828,
+    "body_shot_ratio": 0.0,
+    "jab_ratio": 0.0,
+    "punch_variety": 0.0
+  },
+  "schoolRanking": [
+    [
+      "european",
+      0.666667
+    ],
+    [
+      "american",
+      0.333333
+    ],
+    [
+      "mexican",
+      0.0
+    ],
+    [
+      "soviet",
+      0.0
+    ]
+  ]
 }

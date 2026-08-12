@@ -2,6 +2,7 @@ import 'drill.dart';
 import 'features.dart';
 import 'landmarks.dart';
 import 'pose.dart';
+import 'round_profile.dart';
 import 'style.dart';
 
 /// AnalysisContext — the single object every rule receives. Mirror of
@@ -30,11 +31,17 @@ class AnalysisContext {
   double? _bodyScale;
   List<PunchEvent>? _punches;
   List<double>? _stanceSpeed;
+  RoundProfile? _roundProfile;
 
   double get bodyScale => _bodyScale ??= computeBodyScale(sequence);
 
   List<PunchEvent> get punches =>
       _punches ??= PunchDetector(config: punchConfig).detect(sequence, bodyScale);
+
+  /// Round-level descriptive features (work rate, mobility, posture, …) — the
+  /// raw material for national-school classification.
+  RoundProfile get roundProfile =>
+      _roundProfile ??= computeRoundProfile(sequence, punches, bodyScale);
 
   /// Per-frame stance-centre speed (torso-lengths/sec); the in/out signal,
   /// index-aligned to `sequence.frames`.

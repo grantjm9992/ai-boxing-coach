@@ -30,6 +30,20 @@ class HandsUpConfig {
   final double baselineWindowMs;
   final bool excuseWhileMoving;
   final double movingSpeed;
+
+  HandsUpConfig copyWith({
+    bool? relativeToBaseline,
+    bool? excuseWhileMoving,
+  }) => HandsUpConfig(
+    dropMargin: dropMargin,
+    maxDownFraction: maxDownFraction,
+    checkLead: checkLead,
+    checkRear: checkRear,
+    relativeToBaseline: relativeToBaseline ?? this.relativeToBaseline,
+    baselineWindowMs: baselineWindowMs,
+    excuseWhileMoving: excuseWhileMoving ?? this.excuseWhileMoving,
+    movingSpeed: movingSpeed,
+  );
 }
 
 class HandsUpRule extends Rule {

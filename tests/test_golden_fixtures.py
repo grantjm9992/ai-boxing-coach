@@ -17,16 +17,14 @@ import pytest
 from boxing_coach.analysis.context import AnalysisContext
 from boxing_coach.analysis.engine import RuleEngine
 from boxing_coach.analysis.features import PunchDetector, compute_body_scale
-from boxing_coach.analysis.rules.footwork import FootworkRule
-from boxing_coach.analysis.rules.guard_return import GuardReturnRule
-from boxing_coach.analysis.rules.hands_up import HandsUpRule
-from boxing_coach.analysis.rules.head_movement import HeadMovementRule
+from boxing_coach.analysis.rules import default_rules
+from boxing_coach.analysis.schools import classify_school, round_feature_values
+from boxing_coach.analysis.style_profiles import resolve_profile
 from boxing_coach.domain.drill import DrillContext
+from boxing_coach.domain.landmarks import Stance
+from boxing_coach.domain.school import School
+from boxing_coach.domain.style import Style
 from boxing_coach.golden_fixtures import sequence_from_json
-
-
-def _v05_rules() -> list:
-    return [GuardReturnRule(), HandsUpRule(), FootworkRule(), HeadMovementRule()]
 
 GOLDEN_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "golden"
 
@@ -97,6 +95,43 @@ def test_observations_match_golden(name: str) -> None:
     expected = json.loads((scenario / "expected.json").read_text())
 
     context = AnalysisContext(sequence=sequence, drill=DrillContext())
-    got = [_observation_json(o) for o in RuleEngine(_v05_rules()).run(context)]
+    got = [_observation_json(o) for o in RuleEngine(default_rules()).run(context)]
     assert got == expected.get("observations", [])
+
+
+@pytest.mark.parametrize("name", _scenarios())
+def test_round_profile_and_schools_match_golden(name: str) -> None:
+    scenario = GOLDEN_DIR / name
+    sequence = sequence_from_json(json.loads((scenario / "input.json").read_text()))
+    expected = json.loads((scenario / "expected.json").read_text())
+
+    context = AnalysisContext(sequence=sequence, drill=DrillContext())
+    features = round_feature_values(context.round_profile, context.punches, Stance.ORTHODOX)
+
+    assert context.round_profile.as_dict() == expected["roundProfile"]
+    assert {k: round(v, 6) for k, v in features.items()} == expected["featureValues"]
+    ranking = [[s.value, round(score, 6)] for s, score in classify_school(features)]
+    assert ranking == expected["schoolRanking"]
+
+
+def _style_cases() -> list[dict]:
+    path = GOLDEN_DIR / "_style_cases.json"
+    if not path.exists():
+        return []
+    return json.loads(path.read_text())["cases"]
+
+
+@pytest.mark.parametrize("case", _style_cases(), ids=lambda c: f"{c['fixture']}-{c['style']}-{c['school']}")
+def test_style_cases_match_golden(case: dict) -> None:
+    scenario = GOLDEN_DIR / case["fixture"]
+    sequence = sequence_from_json(json.loads((scenario / "input.json").read_text()))
+    stance = Stance[case["stance"].upper()]
+    style = Style(case["style"])
+    school = School(case["school"]) if case["school"] else None
+    drill = DrillContext(stance=stance, style=style, school=school, focus=frozenset())
+    context = AnalysisContext(
+        sequence=sequence, drill=drill, style_profile=resolve_profile(style, school)
+    )
+    got = [_observation_json(o) for o in RuleEngine(default_rules()).run(context)]
+    assert got == case["observations"]
 
