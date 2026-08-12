@@ -25,6 +25,7 @@ class GuardReturnConfig {
     this.checkRear = true,
     this.excuseWhileMoving = false,
     this.movingSpeed = 0.6,
+    this.requireFullReturnWindow = true,
   });
 
   /// "Returned" if the hand comes back within this many torso-lengths of where
@@ -53,6 +54,13 @@ class GuardReturnConfig {
   /// stepping in/out during the return.
   final double movingSpeed;
 
+  /// When the clip ends before the return window closes (a punch thrown right at
+  /// the buzzer), we never see whether the hand came back — real footage fires a
+  /// false "didn't return" on the last punch of every round. A truncated window
+  /// only survives as a positively-observed drop; a slow/extended verdict there
+  /// is just "ran out of frames" and is dropped.
+  final bool requireFullReturnWindow;
+
   GuardReturnConfig copyWith({bool? excuseWhileMoving}) => GuardReturnConfig(
     returnRadius: returnRadius,
     dropMargin: dropMargin,
@@ -63,6 +71,7 @@ class GuardReturnConfig {
     checkRear: checkRear,
     excuseWhileMoving: excuseWhileMoving ?? this.excuseWhileMoving,
     movingSpeed: movingSpeed,
+    requireFullReturnWindow: requireFullReturnWindow,
   );
 }
 
@@ -178,16 +187,26 @@ class GuardReturnRule extends Rule {
     final wrist = geo.framePoint(endFrame, punch.side.wrist);
     final shoulder = geo.framePoint(endFrame, punch.side.shoulder);
 
+    var mode = 'slow';
     if (!wrist.any((v) => v.isNaN)) {
       // Ended below where it launched from -> dropped.
-      if (wrist[1] > ref[1] + cfg.dropMargin) return ('dropped', worstFrame);
-      // Still far out from the shoulder -> left hanging out there.
-      if (!shoulder.any((v) => v.isNaN)) {
-        final reach = geo.distance(wrist, shoulder) / scale;
-        if (reach > cfg.extendedReach) return ('extended', worstFrame);
+      if (wrist[1] > ref[1] + cfg.dropMargin) {
+        mode = 'dropped';
+      } else if (!shoulder.any((v) => v.isNaN) &&
+          geo.distance(wrist, shoulder) / scale > cfg.extendedReach) {
+        mode = 'extended';
       }
     }
-    return ('slow', worstFrame);
+
+    // A truncated return window (the clip ended before the hand could come back)
+    // can't tell a slow/extended return from simply running out of frames — only
+    // a positively-observed drop survives it.
+    final windowTruncated = seq.frames.last.timestampMs < deadline;
+    if (cfg.requireFullReturnWindow && windowTruncated && mode != 'dropped') {
+      return null;
+    }
+
+    return (mode, worstFrame);
   }
 
   bool _movingThroughReturn(

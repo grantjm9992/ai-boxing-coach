@@ -109,6 +109,20 @@ def clean_jab() -> PoseSequence:
     )
 
 
+def truncated_return_jab() -> PoseSequence:
+    """A jab thrown right at the buzzer: the clip stops with the hand still out,
+    before it can return. The truncated return window must NOT be read as a
+    failed guard return — a boundary artifact seen on the last punch of every
+    real round. Contrast `dropped_guard_jab`, a positively-observed drop, which
+    still flags."""
+    return (
+        PoseScript()
+        .hold(500)
+        .move(120, {Landmark.LEFT_WRIST: LEAD_JAB_EXTENDED})
+        .build()
+    )
+
+
 def dropped_guard_jab() -> PoseSequence:
     """A jab where the hand drops to the hip instead of returning to guard."""
     return (

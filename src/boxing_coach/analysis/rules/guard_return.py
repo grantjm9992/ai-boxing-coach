@@ -46,6 +46,13 @@ class GuardReturnConfig:
     # Stance-centre speed (torso-lengths/sec) above which the fighter counts as
     # stepping in/out during the return, for excuse_while_moving.
     moving_speed: float = 0.6
+    # When the clip ends before the return window closes (a punch thrown right at
+    # the buzzer), we never see whether the hand came back. Real footage shows
+    # this fires a false "didn't return" on the last punch of every round. So a
+    # truncated window only survives as a *positively observed* drop (the hand
+    # ended visibly below its launch); a "slow"/"extended" verdict there is just
+    # "ran out of frames" and is dropped.
+    require_full_return_window: bool = True
 
 
 class GuardReturnRule(Rule):
@@ -151,16 +158,23 @@ class GuardReturnRule(Rule):
         wrist = geo.frame_point(end_frame, punch.side.wrist)
         shoulder = geo.frame_point(end_frame, punch.side.shoulder)
 
+        mode = "slow"
         if not np.any(np.isnan(wrist)):
             # Ended below where it launched from -> dropped.
             if wrist[1] > ref[1] + cfg.drop_margin:
-                return ("dropped", worst_frame)
+                mode = "dropped"
             # Still far out from the shoulder -> left hanging out there.
-            if not np.any(np.isnan(shoulder)):
-                reach = geo.distance(wrist, shoulder) / scale
-                if reach > cfg.extended_reach:
-                    return ("extended", worst_frame)
-        return ("slow", worst_frame)
+            elif not np.any(np.isnan(shoulder)) and geo.distance(wrist, shoulder) / scale > cfg.extended_reach:
+                mode = "extended"
+
+        # A truncated return window (the clip ended before the hand could come
+        # back) can't tell a slow/extended return from simply running out of
+        # frames — only a positively-observed drop survives it.
+        window_truncated = seq.frames[-1].timestamp_ms < deadline
+        if cfg.require_full_return_window and window_truncated and mode != "dropped":
+            return None
+
+        return (mode, worst_frame)
 
     @staticmethod
     def _moving_through_return(context: AnalysisContext, punch, cfg: GuardReturnConfig) -> bool:

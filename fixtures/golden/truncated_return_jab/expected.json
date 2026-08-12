@@ -1,0 +1,60 @@
+{
+  "bodyScale": 0.19999999999999996,
+  "punches": [
+    {
+      "side": "left",
+      "startIndex": 16,
+      "peakIndex": 18,
+      "endIndex": 18,
+      "peakReach": 1.50333,
+      "punchType": "straight"
+    }
+  ],
+  "observations": [
+    {
+      "ruleId": "guard_return",
+      "category": "defence",
+      "severity": "positive",
+      "coachingText": "Clean guard return all round \u2014 hands came straight back to guard.",
+      "timestampMs": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight": []
+    }
+  ],
+  "roundProfile": {
+    "output_per_min": 100.0,
+    "mobility": 0.0,
+    "ground_coverage": 0.0,
+    "torso_lean_deg": 0.0,
+    "body_shot_ratio": 0.0
+  },
+  "featureValues": {
+    "output_per_min": 100.0,
+    "mobility": 0.0,
+    "ground_coverage": 0.0,
+    "torso_lean_deg": 0.0,
+    "body_shot_ratio": 0.0,
+    "jab_ratio": 1.0,
+    "punch_variety": 1.0
+  },
+  "schoolRanking": [
+    [
+      "european",
+      1.0
+    ],
+    [
+      "soviet",
+      0.5
+    ],
+    [
+      "mexican",
+      0.333333
+    ],
+    [
+      "american",
+      0.333333
+    ]
+  ]
+}

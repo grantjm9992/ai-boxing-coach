@@ -41,6 +41,7 @@ from tests import fixtures as fx  # noqa: E402
 # fixture is a deliberate act and the golden set does not shift under us.
 SCENARIOS = [
     "clean_jab",
+    "truncated_return_jab",
     "dropped_guard_jab",
     "hands_down_idle",
     "low_carry_jab",
