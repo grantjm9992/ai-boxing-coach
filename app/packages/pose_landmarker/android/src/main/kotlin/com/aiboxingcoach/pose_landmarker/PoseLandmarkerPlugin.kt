@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
+import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.YuvImage
 import android.media.Image
@@ -121,11 +122,16 @@ class PoseLandmarkerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 post(events) { events.error("decode", "could not read clip duration", null) }
                 return
             }
+            // The raw decoded frames are in the sensor orientation; MediaCodec
+            // does not apply the container's rotation the way getFrameAtTime
+            // does. Read it here and rotate each frame so MediaPipe sees exactly
+            // the upright image the video player shows.
+            val rotationDegrees = readRotationDegrees(videoPath)
             val totalFrames = (durationMs / step).toInt() + 1
 
             val frames: ArrayList<Map<String, Any?>> = try {
                 runPass(modelPath, totalFrames, events) { onFrame ->
-                    decodeStreaming(videoPath, step, onFrame)
+                    decodeStreaming(videoPath, step, rotationDegrees, onFrame)
                 }
             } catch (c: CancelledException) {
                 post(events) { events.endOfStream() }
@@ -205,6 +211,7 @@ class PoseLandmarkerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun decodeStreaming(
         videoPath: String,
         stepMs: Long,
+        rotationDegrees: Int,
         onFrame: (Bitmap, Long) -> Unit,
     ) {
         val extractor = MediaExtractor()
@@ -270,7 +277,9 @@ class PoseLandmarkerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                         if (image != null) {
                             val bitmap = imageToBitmap(image)
                             image.close()
-                            if (bitmap != null) onFrame(bitmap, ptsUs / 1000L)
+                            if (bitmap != null) {
+                                onFrame(rotateBitmap(bitmap, rotationDegrees), ptsUs / 1000L)
+                            }
                         }
                         nextSampleUs = (ptsUs / stepUs + 1) * stepUs
                     }
@@ -330,6 +339,33 @@ class PoseLandmarkerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             } catch (_: Throwable) {
             }
         }
+    }
+
+    /** The clip's rotation (0/90/180/270) — the same the video player applies. */
+    private fun readRotationDegrees(videoPath: String): Int {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(videoPath)
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
+                ?.toIntOrNull() ?: 0
+        } catch (_: Throwable) {
+            0
+        } finally {
+            try {
+                retriever.release()
+            } catch (_: Throwable) {
+            }
+        }
+    }
+
+    private fun rotateBitmap(src: Bitmap, degrees: Int): Bitmap {
+        val normalized = ((degrees % 360) + 360) % 360
+        if (normalized == 0) return src
+        val matrix = Matrix().apply { postRotate(normalized.toFloat()) }
+        val rotated =
+            Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
+        if (rotated !== src) src.recycle()
+        return rotated
     }
 
     // -- YUV_420_888 -> Bitmap ----------------------------------------------
