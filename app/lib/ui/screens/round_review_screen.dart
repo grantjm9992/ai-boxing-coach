@@ -3,12 +3,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
-import '../../analysis/drill.dart';
 import '../../analysis/pose_only_adapter.dart';
 import '../../analysis/round_analysis.dart';
 import '../../domain/round_clip.dart';
+import '../../domain/user_profile.dart';
 import '../../services/clip_store.dart';
 import '../../services/pose_estimator.dart';
+import '../../services/profile_store.dart';
 import '../format.dart';
 import '../theme.dart';
 import '../widgets/skeleton_painter.dart';
@@ -138,6 +139,8 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
   PoseAnalysisResult? _result;
   RoundAnalysis? _analysis;
 
+  UserProfile _profile = const UserProfile();
+
   @override
   void initState() {
     super.initState();
@@ -146,6 +149,9 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
       if (!mounted) return;
       setState(() => _ready = true);
       _controller.setLooping(true);
+    });
+    const ProfileStore().load().then((profile) {
+      if (mounted) _profile = profile;
     });
   }
 
@@ -169,7 +175,7 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
           setState(() => _progress = progress.fraction);
         } else {
           final analysis =
-              PoseOnlyAdapter().analyse(result.sequence, const DrillContext());
+              PoseOnlyAdapter().analyse(result.sequence, _profile.toDrill());
           setState(() {
             _result = result;
             _analysis = analysis;

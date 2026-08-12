@@ -10,6 +10,7 @@ import '../widgets/category_widgets.dart';
 import '../widgets/phase_bar.dart';
 import 'exercise_library_screen.dart';
 import 'history_screen.dart';
+import 'profile_screen.dart';
 import 'template_detail_screen.dart';
 
 /// Template picker — the entry point of the app.
@@ -28,6 +29,15 @@ class HomeScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Your profile',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ProfileScreen(),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'History & weekly balance',

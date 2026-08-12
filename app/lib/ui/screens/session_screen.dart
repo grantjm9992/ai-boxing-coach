@@ -2,12 +2,12 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-import '../../analysis/drill.dart';
 import '../../analysis/round_analysis.dart';
 import '../../domain/round_clip.dart';
 import '../../domain/session_phase.dart';
 import '../../domain/session_plan.dart';
 import '../../domain/session_record.dart';
+import '../../domain/user_profile.dart';
 import '../../engine/coach_cue.dart';
 import '../../engine/session_engine.dart';
 import '../../services/camera_round_recorder.dart';
@@ -15,6 +15,7 @@ import '../../services/clip_store.dart';
 import '../../services/coach_voice.dart';
 import '../../services/device_coach_voice.dart';
 import '../../services/round_analyzer.dart';
+import '../../services/profile_store.dart';
 import '../../services/round_recorder.dart';
 import '../../services/round_recording_controller.dart';
 import '../../services/session_history_store.dart';
@@ -38,10 +39,15 @@ class SessionScreen extends StatefulWidget {
     this.sessionId,
     this.analyzer,
     this.historyStore,
+    this.profile,
     super.key,
   });
 
   final SessionPlan plan;
+
+  /// The athlete's profile, used to build the drill each round is analysed
+  /// against. Loaded from [ProfileStore] when null (the normal path).
+  final UserProfile? profile;
 
   /// Injectable for tests and for running without audio.
   final CoachVoice? voice;
@@ -91,6 +97,10 @@ class _SessionScreenState extends State<SessionScreen> {
   /// Analyses produced this session, keyed by the round's segment index.
   final Map<int, RoundAnalysis> _analyses = <int, RoundAnalysis>{};
 
+  /// The athlete's profile — rounds are analysed against it. Starts neutral and
+  /// is replaced once loaded (or taken from the injected value).
+  UserProfile _profile = const UserProfile();
+
   /// True once this session contains technical rounds and we have offered the
   /// framing check. It is offered exactly once, before the first such round.
   bool _cameraChecked = false;
@@ -115,6 +125,16 @@ class _SessionScreenState extends State<SessionScreen> {
     super.initState();
     _engine.addListener(_onEngineChanged);
     WakelockPlus.enable().ignore();
+    // Load the profile so rounds are analysed against the athlete's stance /
+    // style / school. Injected in tests; loaded from storage otherwise.
+    final injected = widget.profile;
+    if (injected != null) {
+      _profile = injected;
+    } else {
+      const ProfileStore().load().then((profile) {
+        if (mounted) _profile = profile;
+      });
+    }
     _engine.start();
   }
 
@@ -216,7 +236,7 @@ class _SessionScreenState extends State<SessionScreen> {
   /// correction. Analysis is best-effort: a null result (no camera/model) simply
   /// means no coaching for that round, never a broken session.
   Future<void> _onClipSaved(RoundClip clip) async {
-    final drill = DrillContext(notes: clip.title ?? '');
+    final drill = _profile.toDrill(notes: clip.title ?? '');
     final analysis = await _analyzer.analyse(clip, drill: drill);
     if (analysis == null || !mounted) return;
     _analyses[clip.segmentIndex] = analysis;
