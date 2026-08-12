@@ -31,6 +31,7 @@ dependencies:
   # Federated plugin lives in-repo; Android only for v0.5.
   pose_landmarker:
     path: packages/pose_landmarker
+  share_plus: ^13.3.0
 
 dev_dependencies:
   flutter_test:

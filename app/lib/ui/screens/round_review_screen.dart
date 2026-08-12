@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../analysis/pose_only_adapter.dart';
@@ -192,6 +195,34 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
     }
   }
 
+  /// Writes the round's pose sequence to a `.pose.json` and hands it to the OS
+  /// share sheet — the phone end of the calibration loop. Pose only, no video:
+  /// a few KB, de-identified, and the same wire format
+  /// `scripts/analyse_pose_json.py` reads on the desktop.
+  Future<void> _exportPose() async {
+    final result = _result;
+    if (result == null) return;
+    try {
+      final dir = await getTemporaryDirectory();
+      final stem = '${widget.clip.sessionId}_seg${widget.clip.segmentIndex}';
+      final file = File('${dir.path}/$stem.pose.json');
+      await file.writeAsString(jsonEncode(result.sequence.toJson()));
+      await SharePlus.instance.share(
+        ShareParams(
+          files: <XFile>[XFile(file.path)],
+          subject: 'Boxing round pose data',
+          text: 'Pose data for ${widget.clip.title ?? widget.clip.positionLabel}'
+              ' — run through scripts/analyse_pose_json.py',
+        ),
+      );
+    } on Object catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not export: $error')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -199,6 +230,14 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         title: Text(widget.clip.title ?? widget.clip.positionLabel),
+        actions: <Widget>[
+          if (_result != null)
+            IconButton(
+              icon: const Icon(Icons.ios_share),
+              tooltip: 'Export pose data',
+              onPressed: _exportPose,
+            ),
+        ],
       ),
       body: !_ready
           ? const Center(child: CircularProgressIndicator())
