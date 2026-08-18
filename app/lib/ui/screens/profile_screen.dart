@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../analysis/analysis_mode.dart';
 import '../../analysis/drill.dart';
 import '../../analysis/landmarks.dart';
 import '../../analysis/school.dart';
 import '../../domain/user_profile.dart';
+import '../../services/ai/ai_settings_store.dart';
+import '../../services/ai/openai_compatible_vision_model.dart';
+import '../../services/ai/vision_model.dart';
+import '../../services/ai/vision_model_config.dart';
 import '../../services/profile_store.dart';
 import '../theme.dart';
 
@@ -11,9 +16,10 @@ import '../theme.dart';
 /// toward. This is what turns the (fully-ported) style/school coaching on: every
 /// technical round is analysed against the profile chosen here.
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({this.store, super.key});
+  const ProfileScreen({this.store, this.aiStore, super.key});
 
   final ProfileStore? store;
+  final AiSettingsStore? aiStore;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -21,7 +27,14 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late final ProfileStore _store = widget.store ?? const ProfileStore();
+  late final AiSettingsStore _aiStore = widget.aiStore ?? const AiSettingsStore();
   UserProfile _profile = const UserProfile();
+  VisionModelConfig _config = const VisionModelConfig();
+  final TextEditingController _baseUrl = TextEditingController();
+  final TextEditingController _model = TextEditingController();
+  final TextEditingController _apiKey = TextEditingController();
+  String? _testResult;
+  bool _testing = false;
   bool _loaded = false;
 
   static const Map<Style, String> _styleLabels = <Style, String>{
@@ -49,18 +62,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _store.load().then((profile) {
+    Future.wait(<Future<Object>>[_store.load(), _aiStore.load()]).then((values) {
       if (!mounted) return;
       setState(() {
-        _profile = profile;
+        _profile = values[0] as UserProfile;
+        _config = values[1] as VisionModelConfig;
+        _baseUrl.text = _config.baseUrl;
+        _model.text = _config.model;
+        _apiKey.text = _config.apiKey;
         _loaded = true;
       });
     });
   }
 
+  @override
+  void dispose() {
+    _baseUrl.dispose();
+    _model.dispose();
+    _apiKey.dispose();
+    super.dispose();
+  }
+
   void _update(UserProfile next) {
     setState(() => _profile = next);
     _store.save(next);
+  }
+
+  void _updateConfig() {
+    _config = VisionModelConfig(
+      baseUrl: _baseUrl.text.trim(),
+      model: _model.text.trim(),
+      apiKey: _apiKey.text.trim(),
+    );
+    _aiStore.save(_config);
+  }
+
+  Future<void> _testConnection() async {
+    setState(() {
+      _testing = true;
+      _testResult = null;
+    });
+    final model = OpenAiCompatibleVisionModel(_config);
+    try {
+      final reply = await model.complete(
+        const VisionRequest(
+          systemPrompt: 'You are a boxing coach.',
+          userPrompt: 'Reply with the single word: ready.',
+          maxTokens: 8,
+        ),
+      );
+      if (mounted) setState(() => _testResult = 'Connected — model said: "$reply"');
+    } on Object catch (error) {
+      if (mounted) setState(() => _testResult = 'Failed: $error');
+    } finally {
+      model.close();
+      if (mounted) setState(() => _testing = false);
+    }
   }
 
   @override
@@ -128,8 +185,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                   ],
                 ),
+                const SizedBox(height: 28),
+                const _Label('Analysis mode'),
+                const SizedBox(height: 8),
+                for (final mode in AnalysisMode.values)
+                  _StyleTile(
+                    label: mode.label,
+                    blurb: mode.blurb,
+                    selected: _profile.analysisMode == mode,
+                    onTap: () =>
+                        _update(_profile.copyWith(analysisMode: mode)),
+                  ),
+                if (_profile.analysisMode.usesAi) ...<Widget>[
+                  const SizedBox(height: 16),
+                  const _Label('Model endpoint'),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'OpenAI-compatible. Works with a hosted API now (OpenAI, '
+                    'Qwen/DashScope, OpenRouter) or your own vLLM server later — '
+                    'just point the base URL + model at it.',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  _field(_baseUrl, 'Base URL', 'https://api.openai.com/v1'),
+                  const SizedBox(height: 10),
+                  _field(_model, 'Model', 'qwen3-vl-8b-instruct'),
+                  const SizedBox(height: 10),
+                  _field(_apiKey, 'API key', 'sk-…', obscure: true),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: <Widget>[
+                      OutlinedButton.icon(
+                        onPressed: _testing || !_config.isConfigured
+                            ? null
+                            : _testConnection,
+                        icon: _testing
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.wifi_tethering, size: 18),
+                        label: const Text('Test connection'),
+                      ),
+                    ],
+                  ),
+                  if (_testResult != null) ...<Widget>[
+                    const SizedBox(height: 10),
+                    Text(
+                      _testResult!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ),
+    );
+  }
+
+  Widget _field(
+    TextEditingController controller,
+    String label,
+    String hint, {
+    bool obscure = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      autocorrect: false,
+      enableSuggestions: false,
+      onChanged: (_) => _updateConfig(),
+      style: const TextStyle(fontSize: 14),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        isDense: true,
+        border: const OutlineInputBorder(),
+      ),
     );
   }
 }

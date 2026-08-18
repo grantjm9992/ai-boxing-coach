@@ -169,4 +169,21 @@ class PoseLandmarker {
 
     return controller.stream;
   }
+
+  /// Grabs a JPEG for each timestamp (ms) from the clip — the frames the AI
+  /// coaching modes send to the model. Orientation-correct (uses the rotating
+  /// retriever path). Missing timestamps are simply omitted.
+  Future<List<Uint8List>> grabFrames(
+    String videoPath,
+    List<int> timestampsMs,
+  ) async {
+    final result = await _method.invokeMethod<List<Object?>>('grabFrames', {
+      'videoPath': videoPath,
+      'timestampsMs': timestampsMs,
+    });
+    return <Uint8List>[
+      for (final bytes in result ?? const <Object?>[])
+        if (bytes is Uint8List) bytes,
+    ];
+  }
 }

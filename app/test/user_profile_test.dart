@@ -1,3 +1,4 @@
+import 'package:boxing_coach/analysis/analysis_mode.dart';
 import 'package:boxing_coach/analysis/drill.dart';
 import 'package:boxing_coach/analysis/landmarks.dart';
 import 'package:boxing_coach/analysis/school.dart';
@@ -41,11 +42,13 @@ void main() {
         stance: Stance.southpaw,
         style: Style.outBoxer,
         school: School.american,
+        analysisMode: AnalysisMode.keyframe,
       );
       final backA = UserProfile.fromJson(withSchool.toJson());
       expect(backA.stance, Stance.southpaw);
       expect(backA.style, Style.outBoxer);
       expect(backA.school, School.american);
+      expect(backA.analysisMode, AnalysisMode.keyframe);
 
       const noSchool = UserProfile(style: Style.peekABoo);
       final backB = UserProfile.fromJson(noSchool.toJson());

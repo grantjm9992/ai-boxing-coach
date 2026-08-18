@@ -13,6 +13,7 @@ void main() {
   group('RoundAnalysis JSON', () {
     test('round-trips observations, corrections, metrics and flags', () {
       final analysis = RoundAnalysis(
+        modelCoaching: 'AI: keep the jab snapping back.',
         overallSummary: 'One thing to fix: guard.',
         specificObservations: <Observation>[
           Observation(
@@ -53,6 +54,7 @@ void main() {
 
       final back = RoundAnalysis.fromJson(analysis.toJson());
       expect(back.overallSummary, analysis.overallSummary);
+      expect(back.modelCoaching, 'AI: keep the jab snapping back.');
       expect(back.specificObservations.single.ruleId, 'guard_return');
       expect(back.specificObservations.single.highlightLandmarks,
           <Landmark>[Landmark.leftWrist]);

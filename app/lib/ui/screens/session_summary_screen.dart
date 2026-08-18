@@ -149,6 +149,27 @@ class _RoundFeedbackCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          if (analysis.modelCoaching != null) ...<Widget>[
+            Row(
+              children: <Widget>[
+                const Icon(Icons.auto_awesome, size: 14, color: AppTheme.accent),
+                const SizedBox(width: 6),
+                Text(
+                  'COACH (AI)',
+                  style: TextStyle(
+                    fontSize: 10,
+                    letterSpacing: 1.2,
+                    color: AppTheme.accent,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(analysis.modelCoaching!, style: const TextStyle(height: 1.4)),
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+          ],
           Text(analysis.overallSummary, style: const TextStyle(height: 1.4)),
           for (final c in analysis.correctionPriorities)
             Padding(
