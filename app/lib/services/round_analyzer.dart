@@ -1,24 +1,33 @@
 import 'package:flutter/foundation.dart';
 
+import '../analysis/analysis_mode.dart';
 import '../analysis/drill.dart';
 import '../analysis/pose_only_adapter.dart';
 import '../analysis/round_analysis.dart';
 import '../domain/round_clip.dart';
+import 'ai/coaching_prompt.dart';
+import 'ai/vision_model.dart';
 import 'analysis_store.dart';
+import 'frame_grabber.dart';
 import 'pose_estimator.dart';
 
-/// Runs the full analysis pipeline over a recorded round: pose estimation ->
-/// rule engine + PoseOnlyAdapter -> a [RoundAnalysis], persisted for review and
-/// history.
+/// Runs the analysis pipeline over a recorded round and persists the result.
 ///
-/// Returns null (rather than throwing) when analysis can't run — no camera, no
-/// model, decode failure — because coaching is additive: a round with no
-/// analysis is exactly the v0.1 experience, never a broken session.
+/// Always runs pose + the rule engine on-device (that gives the metrics, the
+/// review skeleton and the base coaching, for free). In the AI modes it then
+/// layers a vision model's read on top:
+///  - [AnalysisMode.keyframe] sends the handful of frames the rules flagged;
+///  - [AnalysisMode.fullFrame] sends frames sampled across the whole round.
+///
+/// Everything AI is best-effort: no model, no key, no network → the round still
+/// has its offline rules analysis. Coaching is additive, never a blocker.
 class RoundAnalyzer {
   RoundAnalyzer({
     PoseEstimator? estimator,
     AnalysisStore? store,
     PoseOnlyAdapter? adapter,
+    this.visionModel,
+    this.frameGrabber,
   }) : _estimator = estimator ?? MediaPipePoseEstimator(),
        _store = store ?? AnalysisStore(),
        _adapter = adapter ?? PoseOnlyAdapter();
@@ -26,8 +35,14 @@ class RoundAnalyzer {
   final PoseEstimator _estimator;
   final AnalysisStore _store;
   final PoseOnlyAdapter _adapter;
+  final VisionModel? visionModel;
+  final FrameGrabber? frameGrabber;
 
-  Future<RoundAnalysis?> analyse(RoundClip clip, {DrillContext? drill}) async {
+  Future<RoundAnalysis?> analyse(
+    RoundClip clip, {
+    DrillContext? drill,
+    AnalysisMode mode = AnalysisMode.offline,
+  }) async {
     try {
       PoseAnalysisResult? result;
       await for (final progress in _estimator.analyse(clip.path)) {
@@ -35,10 +50,22 @@ class RoundAnalyzer {
       }
       if (result == null) return null;
 
-      final analysis = _adapter.analyse(
-        result.sequence,
-        drill ?? const DrillContext(),
-      );
+      final resolvedDrill = drill ?? const DrillContext();
+      var analysis = _adapter.analyse(result.sequence, resolvedDrill);
+
+      if (mode.usesAi && visionModel != null && frameGrabber != null) {
+        final coaching = await _aiCoaching(
+          mode,
+          clip,
+          analysis,
+          resolvedDrill,
+          result.sequence.durationMs,
+        );
+        if (coaching != null && coaching.trim().isNotEmpty) {
+          analysis = analysis.withModelCoaching(coaching.trim());
+        }
+      }
+
       await _store.save(
         clip.sessionId,
         clip.segmentIndex,
@@ -48,6 +75,35 @@ class RoundAnalyzer {
       return analysis;
     } on Object catch (error) {
       debugPrint('Round analysis failed for ${clip.path}: $error');
+      return null;
+    }
+  }
+
+  Future<String?> _aiCoaching(
+    AnalysisMode mode,
+    RoundClip clip,
+    RoundAnalysis analysis,
+    DrillContext drill,
+    double durationMs,
+  ) async {
+    try {
+      final timestamps = mode == AnalysisMode.keyframe
+          ? CoachingPrompt.keyframeTimestamps(analysis)
+          : CoachingPrompt.sampledTimestamps(durationMs);
+      if (timestamps.isEmpty) return null;
+
+      final images = await frameGrabber!.grab(clip.path, timestamps);
+      if (images.isEmpty) return null;
+
+      final request = mode == AnalysisMode.keyframe
+          ? CoachingPrompt.keyframeRequest(analysis, drill, images)
+          : CoachingPrompt.fullFrameRequest(drill, images);
+      return await visionModel!.complete(request);
+    } on VisionModelException catch (error) {
+      debugPrint('AI coaching unavailable: ${error.message}');
+      return null;
+    } on Object catch (error) {
+      debugPrint('AI coaching failed: $error');
       return null;
     }
   }

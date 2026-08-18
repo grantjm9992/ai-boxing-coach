@@ -213,6 +213,7 @@ class RoundAnalysis {
     this.correctionPriorities = const <Correction>[],
     this.metrics = const RoundMetrics(),
     this.flaggedMoments = const <FlaggedMoment>[],
+    this.modelCoaching,
   });
 
   final String overallSummary;
@@ -221,6 +222,20 @@ class RoundAnalysis {
   final List<Correction> correctionPriorities;
   final RoundMetrics metrics;
   final List<FlaggedMoment> flaggedMoments;
+
+  /// Free-text coaching from an AI model, in the AI analysis modes. Null when
+  /// the round was analysed offline (rules only).
+  final String? modelCoaching;
+
+  RoundAnalysis withModelCoaching(String? coaching) => RoundAnalysis(
+    overallSummary: overallSummary,
+    specificObservations: specificObservations,
+    positiveNotes: positiveNotes,
+    correctionPriorities: correctionPriorities,
+    metrics: metrics,
+    flaggedMoments: flaggedMoments,
+    modelCoaching: coaching,
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
     'overallSummary': overallSummary,
@@ -231,9 +246,11 @@ class RoundAnalysis {
         correctionPriorities.map((c) => c.toJson()).toList(),
     'metrics': metrics.toJson(),
     'flaggedMoments': flaggedMoments.map((f) => f.toJson()).toList(),
+    'modelCoaching': modelCoaching,
   };
 
   factory RoundAnalysis.fromJson(Map<String, Object?> json) => RoundAnalysis(
+    modelCoaching: json['modelCoaching'] as String?,
     overallSummary: json['overallSummary'] as String,
     specificObservations: <Observation>[
       for (final o in (json['specificObservations'] as List<Object?>? ?? const []))

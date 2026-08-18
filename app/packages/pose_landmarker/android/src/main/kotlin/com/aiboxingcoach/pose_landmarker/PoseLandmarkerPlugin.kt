@@ -78,8 +78,50 @@ class PoseLandmarkerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 cancelled.set(true)
                 result.success(null)
             }
+            "grabFrames" -> {
+                val videoPath = call.argument<String>("videoPath")
+                val times = call.argument<List<Number>>("timestampsMs")
+                if (videoPath == null || times == null) {
+                    result.error("bad_args", "videoPath and timestampsMs required", null)
+                    return
+                }
+                // Decode off the main thread; deliver the result back on it.
+                Thread {
+                    try {
+                        val frames = grabFrames(videoPath, times.map { it.toLong() })
+                        mainHandler.post { result.success(frames) }
+                    } catch (t: Throwable) {
+                        mainHandler.post { result.error("grab_failed", t.message ?: "$t", null) }
+                    }
+                }.start()
+            }
             else -> result.notImplemented()
         }
+    }
+
+    /** JPEG bytes for each timestamp (ms), via the rotation-correct retriever. */
+    private fun grabFrames(videoPath: String, timesMs: List<Long>): List<ByteArray> {
+        val retriever = MediaMetadataRetriever()
+        val out = ArrayList<ByteArray>(timesMs.size)
+        try {
+            retriever.setDataSource(videoPath)
+            for (tMs in timesMs) {
+                val bitmap = retriever.getFrameAtTime(
+                    tMs * 1000L,
+                    MediaMetadataRetriever.OPTION_CLOSEST,
+                ) ?: continue
+                val stream = ByteArrayOutputStream()
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, stream)
+                bitmap.recycle()
+                out.add(stream.toByteArray())
+            }
+        } finally {
+            try {
+                retriever.release()
+            } catch (_: Throwable) {
+            }
+        }
+        return out
     }
 
     // -- EventChannel: onListen starts the estimation run --------------------

@@ -10,10 +10,13 @@ import '../../domain/session_record.dart';
 import '../../domain/user_profile.dart';
 import '../../engine/coach_cue.dart';
 import '../../engine/session_engine.dart';
+import '../../services/ai/ai_settings_store.dart';
+import '../../services/ai/openai_compatible_vision_model.dart';
 import '../../services/camera_round_recorder.dart';
 import '../../services/clip_store.dart';
 import '../../services/coach_voice.dart';
 import '../../services/device_coach_voice.dart';
+import '../../services/frame_grabber.dart';
 import '../../services/round_analyzer.dart';
 import '../../services/profile_store.dart';
 import '../../services/round_recorder.dart';
@@ -90,7 +93,9 @@ class _SessionScreenState extends State<SessionScreen> {
     sessionId: _sessionId,
     onClipSaved: _onClipSaved,
   );
-  late final RoundAnalyzer _analyzer = widget.analyzer ?? RoundAnalyzer();
+  /// Built once the profile + AI settings load, so it's wired for the chosen
+  /// analysis mode. Falls back to an offline analyzer until then.
+  RoundAnalyzer? _analyzer;
   late final SessionHistoryStore _historyStore =
       widget.historyStore ?? SessionHistoryStore();
 
@@ -125,17 +130,36 @@ class _SessionScreenState extends State<SessionScreen> {
     super.initState();
     _engine.addListener(_onEngineChanged);
     WakelockPlus.enable().ignore();
-    // Load the profile so rounds are analysed against the athlete's stance /
-    // style / school. Injected in tests; loaded from storage otherwise.
+    // Load the profile + AI settings so rounds are analysed against the
+    // athlete's stance/style/school in their chosen mode. Injected in tests.
+    if (widget.analyzer != null) _analyzer = widget.analyzer;
     final injected = widget.profile;
     if (injected != null) {
       _profile = injected;
+      _analyzer ??= RoundAnalyzer();
     } else {
-      const ProfileStore().load().then((profile) {
-        if (mounted) _profile = profile;
-      });
+      _loadProfileAndAnalyzer();
     }
     _engine.start();
+  }
+
+  Future<void> _loadProfileAndAnalyzer() async {
+    final profile = await const ProfileStore().load();
+    final config = await const AiSettingsStore().load();
+    if (!mounted) return;
+    _profile = profile;
+    // Only build an AI-backed analyzer when the mode wants it and it's set up;
+    // otherwise stay offline.
+    if (_analyzer == null) {
+      if (profile.analysisMode.usesAi && config.isConfigured) {
+        _analyzer = RoundAnalyzer(
+          visionModel: OpenAiCompatibleVisionModel(config),
+          frameGrabber: PluginFrameGrabber(),
+        );
+      } else {
+        _analyzer = RoundAnalyzer();
+      }
+    }
   }
 
   void _onEngineChanged() {
@@ -236,19 +260,31 @@ class _SessionScreenState extends State<SessionScreen> {
   /// correction. Analysis is best-effort: a null result (no camera/model) simply
   /// means no coaching for that round, never a broken session.
   Future<void> _onClipSaved(RoundClip clip) async {
+    final analyzer = _analyzer ??= RoundAnalyzer();
     final drill = _profile.toDrill(notes: clip.title ?? '');
-    final analysis = await _analyzer.analyse(clip, drill: drill);
+    final analysis = await analyzer.analyse(
+      clip,
+      drill: drill,
+      mode: _profile.analysisMode,
+    );
     if (analysis == null || !mounted) return;
     _analyses[clip.segmentIndex] = analysis;
 
     final inRest = _engine.currentSegment?.isRest ?? false;
     if (inRest && _engine.voiceEnabled) {
-      await _voice.speak(analysis.overallSummary, CuePriority.routine);
-      if (analysis.correctionPriorities.isNotEmpty) {
-        await _voice.speak(
-          analysis.correctionPriorities.first.description,
-          CuePriority.routine,
-        );
+      // In an AI mode the model's coaching is the headline; otherwise speak the
+      // rules' summary + top correction.
+      final ai = analysis.modelCoaching;
+      if (ai != null && ai.isNotEmpty) {
+        await _voice.speak(ai, CuePriority.routine);
+      } else {
+        await _voice.speak(analysis.overallSummary, CuePriority.routine);
+        if (analysis.correctionPriorities.isNotEmpty) {
+          await _voice.speak(
+            analysis.correctionPriorities.first.description,
+            CuePriority.routine,
+          );
+        }
       }
     }
   }

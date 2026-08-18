@@ -1,3 +1,4 @@
+import '../analysis/analysis_mode.dart';
 import '../analysis/drill.dart';
 import '../analysis/landmarks.dart';
 import '../analysis/school.dart';
@@ -14,6 +15,7 @@ class UserProfile {
     this.stance = Stance.orthodox,
     this.style = Style.highGuard,
     this.school,
+    this.analysisMode = AnalysisMode.offline,
   });
 
   final Stance stance;
@@ -21,6 +23,10 @@ class UserProfile {
 
   /// The national/tactical school to coach toward. Null = no school feedback.
   final School? school;
+
+  /// How rounds are analysed — offline rules only, or with an AI model layered
+  /// on key frames / the whole round.
+  final AnalysisMode analysisMode;
 
   DrillContext toDrill({Set<String> focus = const <String>{}, String notes = ''}) =>
       DrillContext(
@@ -36,16 +42,19 @@ class UserProfile {
     Style? style,
     School? school,
     bool clearSchool = false,
+    AnalysisMode? analysisMode,
   }) => UserProfile(
     stance: stance ?? this.stance,
     style: style ?? this.style,
     school: clearSchool ? null : (school ?? this.school),
+    analysisMode: analysisMode ?? this.analysisMode,
   );
 
   Map<String, Object?> toJson() => <String, Object?>{
     'stance': stance.name,
     'style': style.value,
     'school': school?.value,
+    'analysisMode': analysisMode.value,
   };
 
   factory UserProfile.fromJson(Map<String, Object?> json) => UserProfile(
@@ -55,5 +64,6 @@ class UserProfile {
       orElse: () => Style.highGuard,
     ),
     school: School.fromValue(json['school'] as String?),
+    analysisMode: AnalysisMode.fromValue(json['analysisMode'] as String?),
   );
 }
