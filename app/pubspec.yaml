@@ -34,6 +34,10 @@ dependencies:
   share_plus: ^13.3.0
   http: ^1.6.0
 
+  # Backend: auth (email / Google / Apple), Postgres persistence, and Storage
+  # for keyframes + pose. RLS scopes every row to the signed-in user.
+  supabase_flutter: ^2.8.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

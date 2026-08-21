@@ -1,9 +1,9 @@
 import 'package:boxing_coach/data/session_templates.dart';
 import 'package:boxing_coach/domain/session_settings.dart';
 import 'package:boxing_coach/engine/session_plan_builder.dart';
-import 'package:boxing_coach/main.dart';
 import 'package:boxing_coach/services/coach_voice.dart';
 import 'package:boxing_coach/ui/screens/exercise_library_screen.dart';
+import 'package:boxing_coach/ui/screens/home_screen.dart';
 import 'package:boxing_coach/ui/screens/session_screen.dart';
 import 'package:boxing_coach/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +11,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('the home screen lists every template', (tester) async {
-    await tester.pumpWidget(const BoxingCoachApp());
+    // HomeScreen directly: BoxingCoachApp is now behind an auth gate, which
+    // needs an initialised Supabase this unit test has no business booting.
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.dark(), home: const HomeScreen()),
+    );
     await tester.pumpAndSettle();
 
     for (final template in SessionTemplates.all) {
