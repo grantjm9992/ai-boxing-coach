@@ -91,7 +91,7 @@ class PoseLandmarkerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                         val frames = grabFrames(videoPath, times.map { it.toLong() })
                         mainHandler.post { result.success(frames) }
                     } catch (t: Throwable) {
-                        mainHandler.post { result.error("grab_failed", t.message ?: "$t", null) }
+                        mainHandler.post { result.error("grab_failed", describe(t), null) }
                     }
                 }.start()
             }
@@ -203,8 +203,33 @@ class PoseLandmarkerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 events.endOfStream()
             }
         } catch (t: Throwable) {
-            post(events) { events.error("estimation_failed", t.message ?: "$t", null) }
+            post(events) { events.error("estimation_failed", describe(t), null) }
         }
+    }
+
+    /**
+     * A diagnostic, one-line rendering of a throwable: its class name, message,
+     * and the whole `cause` chain, plus the top native/stack frame of the root
+     * cause. MediaPipe wraps the real failure several layers deep, and only the
+     * message reaches the UI — so surface enough here to identify it without a
+     * logcat. Temporary aid while chasing the pose-init regression.
+     */
+    private fun describe(t: Throwable): String {
+        val sb = StringBuilder()
+        var cur: Throwable? = t
+        var depth = 0
+        while (cur != null && depth < 8) {
+            if (depth > 0) sb.append("  ← caused by: ")
+            sb.append(cur.javaClass.name)
+            cur.message?.let { sb.append(": ").append(it) }
+            val next = cur.cause
+            if (next == null) {
+                cur.stackTrace.firstOrNull()?.let { sb.append("  @ ").append(it.toString()) }
+            }
+            cur = if (next === cur) null else next
+            depth++
+        }
+        return sb.toString()
     }
 
     /**
@@ -462,11 +487,14 @@ class PoseLandmarkerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     // -- MediaPipe ----------------------------------------------------------
 
     private fun buildLandmarker(modelPath: String): PoseLandmarker {
-        return try {
-            createLandmarker(readFileToDirectBuffer(modelPath), Delegate.GPU)
-        } catch (_: Throwable) {
-            createLandmarker(readFileToDirectBuffer(modelPath), Delegate.CPU)
-        }
+        // CPU only. Selecting the GPU delegate makes MediaPipe populate its GPU
+        // acceleration options proto, and on some devices' ART that proto's
+        // schema fails to build reflectively — "Field platform_ for <obf> not
+        // found" — taking createFromOptions down with it. The old GPU-first,
+        // CPU-fallback path didn't help: the GPU attempt already triggers the
+        // bad schema build, and the fallback just rebuilds and rethrows it.
+        // VIDEO-mode pose over a recorded clip is fine on CPU.
+        return createLandmarker(readFileToDirectBuffer(modelPath), Delegate.CPU)
     }
 
     private fun createLandmarker(model: ByteBuffer, delegate: Delegate): PoseLandmarker {

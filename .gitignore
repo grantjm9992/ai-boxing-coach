@@ -11,3 +11,9 @@ dist/
 
 # Bundled pose models (binary, fetched via scripts/fetch_pose_model.sh)
 app/assets/models/*.task
+
+# IDE
+.idea/
+
+# Ad-hoc device screenshots dropped in the repo root for debugging
+Screenshot_*.jpg

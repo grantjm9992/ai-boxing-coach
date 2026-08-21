@@ -84,19 +84,30 @@ class OpenAiCompatibleVisionModel implements VisionModel {
     if (choices is! List || choices.isEmpty) {
       throw const VisionModelException('No choices in response.');
     }
-    final message = (choices.first as Map)['message'];
+    final choice = choices.first as Map;
+    final message = choice['message'];
     final content = message is Map ? message['content'] : null;
-    if (content is String) return content.trim();
+    if (content is String && content.trim().isNotEmpty) return content.trim();
     // Some servers return content as a list of parts.
     if (content is List) {
-      return content
+      final text = content
           .whereType<Map>()
           .map((p) => p['text'])
           .whereType<String>()
           .join()
           .trim();
+      if (text.isNotEmpty) return text;
     }
-    throw const VisionModelException('No text content in response.');
+    // No usable text. Surface finish_reason — it's the difference between "the
+    // server misbehaved" and the common Gemini case: a thinking model spends a
+    // tight max_tokens budget entirely on reasoning and returns null content
+    // with finish_reason "length". Raising max_tokens fixes that.
+    final reason = choice['finish_reason'];
+    throw VisionModelException(
+      reason == null
+          ? 'No text content in response.'
+          : 'No text content in response (finish_reason: $reason).',
+    );
   }
 
   static String _briefly(String body) =>
