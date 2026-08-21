@@ -42,6 +42,11 @@ android {
 }
 
 dependencies {
-    // Pose Landmarker lives in tasks-vision.
-    implementation 'com.google.mediapipe:tasks-vision:0.10.14'
+    // Pose Landmarker lives in tasks-vision. Pinned to 0.10.35: 0.10.14's AAR
+    // ships a pre-R8'd protobuf whose `platform_` field was stripped from a GPU
+    // options message while its descriptor still names it, so on some devices'
+    // ART the reflection path throws "Field platform_ for x6.d0 not found" when
+    // PoseLandmarker.createFromOptions builds its graph. Newer AARs regenerate
+    // those protos against a current protobuf and don't hit it.
+    implementation 'com.google.mediapipe:tasks-vision:0.10.35'
 }

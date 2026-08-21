@@ -108,7 +108,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const VisionRequest(
           systemPrompt: 'You are a boxing coach.',
           userPrompt: 'Reply with the single word: ready.',
-          maxTokens: 8,
+          // Not 8: thinking models (e.g. Gemini 2.5) spend the token budget on
+          // reasoning first and return empty content with finish_reason=length.
+          maxTokens: 512,
         ),
       );
       if (mounted) setState(() => _testResult = 'Connected — model said: "$reply"');

@@ -6,11 +6,17 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../analysis/analysis_mode.dart';
 import '../../analysis/pose_only_adapter.dart';
 import '../../analysis/round_analysis.dart';
 import '../../domain/round_clip.dart';
 import '../../domain/user_profile.dart';
+import '../../services/ai/ai_settings_store.dart';
+import '../../services/ai/coaching_prompt.dart';
+import '../../services/ai/openai_compatible_vision_model.dart';
+import '../../services/ai/vision_model.dart';
 import '../../services/clip_store.dart';
+import '../../services/frame_grabber.dart';
 import '../../services/pose_estimator.dart';
 import '../../services/profile_store.dart';
 import '../format.dart';
@@ -144,6 +150,10 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
 
   UserProfile _profile = const UserProfile();
 
+  // TEMP (debug): a human-readable note of where the analysis shown below came
+  // from — "offline rules" vs "AI · <model> · <mode>". Surfaced in the results.
+  String? _source;
+
   @override
   void initState() {
     super.initState();
@@ -184,6 +194,7 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
             _analysis = analysis;
             _state = _AnalysisState.done;
           });
+          await _maybeEnrichWithAi(result, analysis);
         }
       }
     } on Object catch (error) {
@@ -192,6 +203,70 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
         _state = _AnalysisState.failed;
         _error = '$error';
       });
+    }
+  }
+
+  /// TEMP (debug): mirror the live session's AI step here so the review screen
+  /// reflects the selected analysis mode and shows where coaching comes from.
+  /// Offline pose+rules stays the base; in an AI mode with a configured
+  /// endpoint we grab the same frames the session would and call the model.
+  Future<void> _maybeEnrichWithAi(
+    PoseAnalysisResult result,
+    RoundAnalysis analysis,
+  ) async {
+    // Load fresh so a slow initState future can't leave us reading the default
+    // (offline) profile / an empty config.
+    final profile = await const ProfileStore().load();
+    final config = await const AiSettingsStore().load();
+    final mode = profile.analysisMode;
+    // Diagnostic: each bail-out names itself, so the SOURCE badge says exactly
+    // why AI was or wasn't used.
+    void setSource(String s) {
+      if (mounted) setState(() => _source = s);
+    }
+
+    if (!mode.usesAi) {
+      setSource('offline rules (mode=${mode.value})');
+      return;
+    }
+    if (!config.isConfigured) {
+      setSource('offline (AI config not set: base/model missing)');
+      return;
+    }
+    setSource('AI (${mode.value}) running…');
+    try {
+      final drill = profile.toDrill();
+      final timestamps = mode == AnalysisMode.keyframe
+          ? CoachingPrompt.keyframeTimestamps(analysis)
+          : CoachingPrompt.sampledTimestamps(result.sequence.durationMs);
+      if (timestamps.isEmpty) {
+        setSource('offline (mode=${mode.value}: no frames to send)');
+        return;
+      }
+      final images = await PluginFrameGrabber().grab(
+        widget.clip.path,
+        timestamps,
+      );
+      if (images.isEmpty) {
+        setSource('offline (frame grab returned 0 of ${timestamps.length})');
+        return;
+      }
+      final request = mode == AnalysisMode.keyframe
+          ? CoachingPrompt.keyframeRequest(analysis, drill, images)
+          : CoachingPrompt.fullFrameRequest(drill, images);
+      final model = OpenAiCompatibleVisionModel(config);
+      final coaching = await model.complete(request);
+      model.close();
+      if (!mounted) return;
+      setState(() {
+        _analysis = analysis.withModelCoaching(coaching.trim());
+        _source = 'AI · ${config.model} · ${mode.value} · ${images.length} '
+            'frames';
+      });
+    } on VisionModelException catch (error) {
+      setSource('AI failed: ${error.message}');
+    } on Object catch (error) {
+      setSource('AI failed: $error');
     }
   }
 
@@ -336,10 +411,49 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
       children: <Widget>[
         _FactsRow(result: result),
         const SizedBox(height: 16),
+        if (_source != null) ...<Widget>[
+          // TEMP (debug): where the analysis below came from.
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AppTheme.accent.withValues(alpha: 0.4)),
+            ),
+            child: Text(
+              'SOURCE: ${_source!.toUpperCase()}',
+              style: const TextStyle(
+                fontSize: 11,
+                letterSpacing: 0.8,
+                fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
+                color: AppTheme.accent,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         Text(
           analysis.overallSummary,
           style: const TextStyle(fontSize: 15, height: 1.4),
         ),
+        if (analysis.modelCoaching != null &&
+            analysis.modelCoaching!.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 16),
+          const Text(
+            'AI COACH',
+            style: TextStyle(
+              fontSize: 11,
+              letterSpacing: 1.2,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            analysis.modelCoaching!,
+            style: const TextStyle(fontSize: 15, height: 1.4),
+          ),
+        ],
         if (analysis.correctionPriorities.isNotEmpty) ...<Widget>[
           const SizedBox(height: 16),
           const Text(
