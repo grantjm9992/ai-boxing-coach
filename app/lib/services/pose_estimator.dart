@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart' show rootBundle;
@@ -57,14 +58,40 @@ class MediaPipePoseEstimator implements PoseEstimator {
   final PoseLandmarker _landmarker;
   final PoseModelProvisioner _provisioner;
 
+  // The native landmarker is a single shared resource. Concurrent runs (a live
+  // session round + the review screen re-analysing, say) stall each other —
+  // frames sit at frac=0.0 and a ~9s clip takes ~50s. Serialise every run
+  // process-wide so only one touches native at a time.
+  static Future<void> _gate = Future<void>.value();
+
   @override
   Stream<PoseAnalysisProgress> analyse(
     String videoPath, {
     Duration sampleEvery = const Duration(milliseconds: 33),
     PoseModel model = PoseModel.lite,
   }) async* {
-    void trace(String step) => DebugLog.instance.log(step, tag: 'pose');
+    final name = videoPath.split('/').last;
+    void trace(String step) => DebugLog.instance.log('$name $step', tag: 'pose');
 
+    // Wait our turn, then hand the next run a fresh gate to wait on.
+    final previous = _gate;
+    final release = Completer<void>();
+    _gate = release.future;
+    await previous;
+    try {
+      yield* _run(videoPath, name, trace, sampleEvery, model);
+    } finally {
+      release.complete();
+    }
+  }
+
+  Stream<PoseAnalysisProgress> _run(
+    String videoPath,
+    String name,
+    void Function(String) trace,
+    Duration sampleEvery,
+    PoseModel model,
+  ) async* {
     trace('ensuring model ${model.name}');
     final modelPath = await _provisioner.ensureModel(model);
     trace('model ready: $modelPath');
@@ -73,12 +100,18 @@ class MediaPipePoseEstimator implements PoseEstimator {
         ? 1000.0 / sampleEvery.inMilliseconds
         : 30.0;
 
-    final stream = _landmarker.estimate(
-      videoPath,
-      modelPath: modelPath,
-      sampleEvery: sampleEvery,
-      model: model,
-    );
+    // Timeout guards against a native stream that stalls without erroring or
+    // closing. Per-event (resets each update), and applied here — not around
+    // the serialisation wait above — so a run queued behind another isn't
+    // killed while waiting its turn.
+    final stream = _landmarker
+        .estimate(
+          videoPath,
+          modelPath: modelPath,
+          sampleEvery: sampleEvery,
+          model: model,
+        )
+        .timeout(const Duration(seconds: 45));
     trace('estimate stream opened for $videoPath');
 
     var updates = 0;
