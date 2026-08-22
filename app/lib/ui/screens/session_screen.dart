@@ -117,6 +117,10 @@ class _SessionScreenState extends State<SessionScreen> {
   /// Analyses produced this session, keyed by the round's segment index.
   final Map<int, RoundAnalysis> _analyses = <int, RoundAnalysis>{};
 
+  /// Segment indices whose analysis is running right now — drives the
+  /// "Analysing…" badge. Pose runs are serialised, so this is usually one.
+  final Set<int> _analysing = <int>{};
+
   /// The athlete's profile — rounds are analysed against it. Starts neutral and
   /// is replaced once loaded (or taken from the injected value).
   UserProfile _profile = const UserProfile();
@@ -281,11 +285,17 @@ class _SessionScreenState extends State<SessionScreen> {
     );
     final analyzer = _analyzer ??= RoundAnalyzer();
     final drill = _profile.toDrill(notes: clip.title ?? '');
-    final analysis = await analyzer.analyse(
-      clip,
-      drill: drill,
-      mode: _profile.analysisMode,
-    );
+    if (mounted) setState(() => _analysing.add(clip.segmentIndex));
+    RoundAnalysis? analysis;
+    try {
+      analysis = await analyzer.analyse(
+        clip,
+        drill: drill,
+        mode: _profile.analysisMode,
+      );
+    } finally {
+      if (mounted) setState(() => _analysing.remove(clip.segmentIndex));
+    }
     if (analysis == null) {
       DebugLog.instance.log(
         'seg${clip.segmentIndex} analysis returned null — not synced',
@@ -487,9 +497,49 @@ class _SessionScreenState extends State<SessionScreen> {
                   right: 8,
                   child: _RecordingIndicator(recorder: _recorder),
                 ),
+              if (_analysing.isNotEmpty)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: _AnalysingBadge(count: _analysing.length),
+                ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A small pill shown while a round's analysis is running, so it's clear the
+/// coach is still working on the last round (and won't be re-triggered).
+class _AnalysingBadge extends StatelessWidget {
+  const _AnalysingBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            count > 1 ? 'Analysing $count rounds…' : 'Analysing round…',
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
+        ],
       ),
     );
   }
