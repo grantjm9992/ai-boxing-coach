@@ -101,6 +101,16 @@ class SessionRecord {
       ?SkillCategory.fromKey(entry.key): Duration(seconds: entry.value),
   };
 
+  /// The session-level summary persisted to the cloud (in `sessions.plan`) so
+  /// the history list and weekly balance can be rebuilt from the DB on a fresh
+  /// install or another device — the per-round rows don't carry these totals.
+  Map<String, Object?> get rollupJson => <String, Object?>{
+    'totalSeconds': totalSeconds,
+    'workSeconds': workSeconds,
+    'roundCount': roundCount,
+    'categorySeconds': categorySeconds,
+  };
+
   Map<String, Object?> toJson() => <String, Object?>{
     'sessionId': sessionId,
     'templateName': templateName,

@@ -51,6 +51,7 @@ abstract interface class RoundSync {
     String clientSessionId, {
     DateTime? endedAt,
     String? title,
+    Map<String, Object?>? rollup,
   });
 }
 
@@ -185,12 +186,15 @@ class SupabaseRoundSync implements RoundSync {
   }
 
   /// Mark a session finished. Safe to call even if no round synced (updates 0
-  /// rows).
+  /// rows). [rollup] is the session-level summary (total/work seconds, round
+  /// count, category seconds) stored so the history list + weekly balance can be
+  /// rebuilt from the cloud on a fresh install or another device.
   @override
   Future<SyncOutcome> finalizeSession(
     String clientSessionId, {
     DateTime? endedAt,
     String? title,
+    Map<String, Object?>? rollup,
   }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return const SyncOutcome(SyncStatus.skippedSignedOut);
@@ -200,6 +204,7 @@ class SupabaseRoundSync implements RoundSync {
           .update(<String, Object?>{
             'ended_at': (endedAt ?? DateTime.now()).toIso8601String(),
             'title': ?title,
+            'plan': ?rollup,
           })
           .eq('user_id', userId)
           .eq('client_session_id', clientSessionId);

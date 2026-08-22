@@ -21,6 +21,7 @@ class SyncJob {
     this.title,
     this.mode,
     this.clientSessionId,
+    this.rollup,
     this.attempts = 0,
   });
 
@@ -29,6 +30,7 @@ class SyncJob {
   final String? title;
   final String? mode; // round jobs
   final String? clientSessionId; // finalize jobs
+  final Map<String, Object?>? rollup; // finalize jobs — session-level summary
   int attempts;
 
   /// One job per round / per session — re-enqueuing replaces rather than dupes.
@@ -42,6 +44,7 @@ class SyncJob {
     'title': title,
     'mode': mode,
     'clientSessionId': clientSessionId,
+    'rollup': rollup,
     'attempts': attempts,
   };
 
@@ -57,12 +60,14 @@ class SyncJob {
     if (kind == SyncJobKind.round && clip == null) return null;
     final clientSessionId = json['clientSessionId'] as String?;
     if (kind == SyncJobKind.finalize && clientSessionId == null) return null;
+    final rollupJson = json['rollup'];
     return SyncJob(
       kind: kind,
       clip: clip,
       title: json['title'] as String?,
       mode: json['mode'] as String?,
       clientSessionId: clientSessionId,
+      rollup: rollupJson is Map ? rollupJson.cast<String, Object?>() : null,
       attempts: (json['attempts'] as num?)?.toInt() ?? 0,
     );
   }
@@ -109,12 +114,17 @@ class BackfillQueue {
     );
   }
 
-  Future<void> enqueueFinalize(String clientSessionId, {String? title}) async {
+  Future<void> enqueueFinalize(
+    String clientSessionId, {
+    String? title,
+    Map<String, Object?>? rollup,
+  }) async {
     await _upsert(
       SyncJob(
         kind: SyncJobKind.finalize,
         clientSessionId: clientSessionId,
         title: title,
+        rollup: rollup,
       ),
     );
   }
@@ -180,7 +190,11 @@ class BackfillQueue {
   Future<SyncOutcome> _run(SyncJob job) {
     return job.kind == SyncJobKind.round
         ? _sync.syncRound(job.clip!, title: job.title, mode: job.mode)
-        : _sync.finalizeSession(job.clientSessionId!, title: job.title);
+        : _sync.finalizeSession(
+            job.clientSessionId!,
+            title: job.title,
+            rollup: job.rollup,
+          );
   }
 
   bool _isStale(SyncJob job) {

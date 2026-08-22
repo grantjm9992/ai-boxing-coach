@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../domain/session_record.dart';
 import '../debug_log.dart';
 
 /// One keyframe image for a past round: a short-lived signed URL into the
@@ -70,6 +71,89 @@ class SupabaseHistoryReader {
 
   /// How long the keyframe image URLs stay valid — long enough to browse.
   static const int _signedUrlTtlSeconds = 3600;
+
+  /// The whole history list, rebuilt from the cloud: one [SessionRecord] per
+  /// session, newest first, with the session-level rollup (persisted in
+  /// `sessions.plan` at finalize) and a thin per-round summary. This is what lets
+  /// the History tab show past sessions on a fresh install / another device,
+  /// even after the local video + analysis have been swept.
+  ///
+  /// Best-effort: signed out, offline, or any failed call returns an empty list,
+  /// and the caller keeps the local history.
+  Future<List<SessionRecord>> listSessions() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return const <SessionRecord>[];
+    try {
+      final rows = await _client
+          .from('sessions')
+          .select(
+            'client_session_id, title, plan, started_at, ended_at, '
+            'rounds(segment_index, round_number, title, analyses(summary))',
+          )
+          .eq('user_id', userId)
+          .order('started_at', ascending: false);
+
+      final records = <SessionRecord>[];
+      for (final row in rows) {
+        final record = _toRecord(row);
+        if (record != null) records.add(record);
+      }
+      DebugLog.instance
+          .log('listed ${records.length} cloud sessions', tag: 'history');
+      return records;
+    } on Object catch (error) {
+      DebugLog.instance.log('list failed: $error', tag: 'history');
+      debugPrint('History list failed: $error');
+      return const <SessionRecord>[];
+    }
+  }
+
+  /// Rebuild a [SessionRecord] from a `sessions` row and its embedded rounds.
+  /// The totals come from the rollup in `plan`; a round counts as analysed when
+  /// it has an analysis summary (drives the "N analysed" line + tappability).
+  SessionRecord? _toRecord(Map<String, Object?> row) {
+    final sessionId = row['client_session_id'] as String?;
+    if (sessionId == null) return null;
+    final completedAt = DateTime.tryParse(
+      (row['ended_at'] ?? row['started_at']) as String? ?? '',
+    );
+    if (completedAt == null) return null;
+
+    final rollup = _one(row['plan']) ?? const <String, Object?>{};
+
+    final rounds = <RoundSummary>[];
+    for (final r in _list(row['rounds']).whereType<Map>()) {
+      final analysis = _one(r['analyses']);
+      rounds.add(
+        RoundSummary(
+          segmentIndex: (r['segment_index'] as num?)?.toInt() ?? 0,
+          title: r['title'] as String? ?? 'Round',
+          roundNumber: (r['round_number'] as num?)?.toInt(),
+          summary: analysis?['summary'] as String?,
+        ),
+      );
+    }
+    rounds.sort((a, b) => a.segmentIndex.compareTo(b.segmentIndex));
+
+    return SessionRecord(
+      sessionId: sessionId,
+      templateName: row['title'] as String? ?? 'Session',
+      completedAt: completedAt,
+      totalSeconds: (rollup['totalSeconds'] as num?)?.toInt() ?? 0,
+      workSeconds: (rollup['workSeconds'] as num?)?.toInt() ?? 0,
+      roundCount: (rollup['roundCount'] as num?)?.toInt() ?? rounds.length,
+      categorySeconds: _intMap(rollup['categorySeconds']),
+      rounds: rounds,
+    );
+  }
+
+  Map<String, int> _intMap(Object? value) {
+    if (value is! Map) return const <String, int>{};
+    return <String, int>{
+      for (final e in value.entries)
+        if (e.value is num) e.key.toString(): (e.value as num).toInt(),
+    };
+  }
 
   Future<HistorySession?> loadSession(String clientSessionId) async {
     final userId = _client.auth.currentUser?.id;
