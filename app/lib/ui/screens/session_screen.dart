@@ -144,6 +144,11 @@ class _SessionScreenState extends State<SessionScreen> {
 
   bool _navigatedToSummary = false;
 
+  /// Set when the session ends. After that, each late-landing analysis re-saves
+  /// the history rollup (AI rounds often finish well after the screen is gone),
+  /// so the entry becomes openable once any round has actually been analysed.
+  DateTime? _completedAt;
+
   @override
   void initState() {
     super.initState();
@@ -305,6 +310,12 @@ class _SessionScreenState extends State<SessionScreen> {
     }
     _analyses[clip.segmentIndex] = analysis;
 
+    // If this analysis landed after the session already ended (AI rounds often
+    // do — pose + a network call takes tens of seconds), refresh the local
+    // history rollup so the session's entry reflects it and becomes openable.
+    // Mid-session completions are covered by the save at session end.
+    if (_completedAt != null) _persistSessionRecord();
+
     // Durable enqueue, then drain. The round is persisted first, so even if the
     // upload fails now (offline / signed out) it retries on a later launch or
     // sign-in — nothing recorded is lost. Deliberately BEFORE the mounted check:
@@ -351,6 +362,23 @@ class _SessionScreenState extends State<SessionScreen> {
   /// every session — the weighted-minutes balance comes from the plan whether or
   /// not any round was analysed.
   void _saveHistory() {
+    _completedAt = DateTime.now();
+    _persistSessionRecord();
+    // Mark the session finished in the cloud (queued so it retries with the
+    // rounds). Only meaningful when rounds were recorded this session.
+    if (_recordingEnabled) {
+      _queue
+          .enqueueFinalize(_sessionId, title: widget.plan.template.name)
+          .then((_) => _queue.process())
+          .ignore();
+    }
+  }
+
+  /// Build the local history rollup from whatever analyses have completed so far
+  /// and persist it (idempotent overwrite by session id). Called at session end
+  /// and again as each late analysis lands, so the entry ends up reflecting
+  /// every analysed round even when analysis outlives the session screen.
+  void _persistSessionRecord() {
     final rounds = <RoundSummary>[];
     for (final segment in widget.plan.segments) {
       if (segment.phase != SessionPhase.technical || !segment.isWork) continue;
@@ -362,7 +390,8 @@ class _SessionScreenState extends State<SessionScreen> {
           title: segment.title,
           roundNumber: segment.roundNumber,
           summary: analysis?.overallSummary,
-          topCorrection: corrections.isNotEmpty ? corrections.first.description : null,
+          topCorrection:
+              corrections.isNotEmpty ? corrections.first.description : null,
           punchesThrown: analysis?.metrics.punchesThrown,
           guardReturnRate: analysis?.metrics.guardReturnRate,
         ),
@@ -373,19 +402,11 @@ class _SessionScreenState extends State<SessionScreen> {
           SessionRecord.fromPlan(
             widget.plan,
             sessionId: _sessionId,
-            completedAt: DateTime.now(),
+            completedAt: _completedAt ?? DateTime.now(),
             rounds: rounds,
           ),
         )
         .ignore();
-    // Mark the session finished in the cloud (queued so it retries with the
-    // rounds). Only meaningful when rounds were recorded this session.
-    if (_recordingEnabled) {
-      _queue
-          .enqueueFinalize(_sessionId, title: widget.plan.template.name)
-          .then((_) => _queue.process())
-          .ignore();
-    }
   }
 
   /// Whether a queued job is the round we just filed — the one whose outcome we
