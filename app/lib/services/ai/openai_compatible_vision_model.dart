@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'vision_model.dart';
@@ -87,7 +88,14 @@ class OpenAiCompatibleVisionModel implements VisionModel {
     final choice = choices.first as Map;
     final message = choice['message'];
     final content = message is Map ? message['content'] : null;
-    if (content is String && content.trim().isNotEmpty) return content.trim();
+    if (content is String && content.trim().isNotEmpty) {
+      if (choice['finish_reason'] == 'length') {
+        // Returned text, but the model hit max_tokens mid-thought — surface it
+        // so a clipped coaching read is diagnosable rather than silent.
+        debugPrint('AI response truncated (finish_reason: length).');
+      }
+      return content.trim();
+    }
     // Some servers return content as a list of parts.
     if (content is List) {
       final text = content

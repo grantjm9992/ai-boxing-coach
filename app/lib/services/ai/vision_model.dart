@@ -19,7 +19,9 @@ class VisionRequest {
     required this.systemPrompt,
     required this.userPrompt,
     this.images = const <VisionImage>[],
-    this.maxTokens = 600,
+    // Headroom so a full coach's read (summary + two corrections) isn't cut off
+    // mid-sentence; thinking models also spend part of this budget reasoning.
+    this.maxTokens = 1200,
     this.temperature = 0.4,
   });
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
@@ -28,10 +30,38 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
   bool _initializing = true;
   String? _error;
 
+  /// Once the athlete confirms framing we count down before recording starts —
+  /// time to prop the phone and step into position, so the first round isn't
+  /// analysed while they're still setting up. Null until the countdown runs.
+  int? _countdown;
+  Timer? _timer;
+
+  static const int _countdownFrom = 5;
+
   @override
   void initState() {
     super.initState();
     _init();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  /// Count down [_countdownFrom]→1, then confirm (pop true → recording starts).
+  void _startCountdown() {
+    setState(() => _countdown = _countdownFrom);
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final next = (_countdown ?? 1) - 1;
+      if (next <= 0) {
+        timer.cancel();
+        if (mounted) Navigator.of(context).pop(true);
+        return;
+      }
+      if (mounted) setState(() => _countdown = next);
+    });
   }
 
   Future<void> _init() async {
@@ -135,6 +165,28 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
               ),
             ),
           ),
+          if (_countdown != null)
+            Container(
+              color: Colors.black.withValues(alpha: 0.55),
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const Text(
+                    'Get in position',
+                    style: TextStyle(fontSize: 18, color: Colors.white70),
+                  ),
+                  Text(
+                    '$_countdown',
+                    style: const TextStyle(
+                      fontSize: 96,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -147,6 +199,14 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
         FilledButton(
           onPressed: () => Navigator.of(context).pop(false),
           child: const Text('Continue without recording'),
+        ),
+      ];
+    }
+    if (_countdown != null) {
+      return <Widget>[
+        const Text(
+          'Recording starts when the countdown ends — step into the box.',
+          style: TextStyle(color: AppTheme.textSecondary, height: 1.4),
         ),
       ];
     }
@@ -168,9 +228,7 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: FilledButton(
-              onPressed: _initializing
-                  ? null
-                  : () => Navigator.of(context).pop(true),
+              onPressed: _initializing ? null : _startCountdown,
               child: const Text("I'm in frame"),
             ),
           ),

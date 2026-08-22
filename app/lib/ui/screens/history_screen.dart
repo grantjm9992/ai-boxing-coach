@@ -244,10 +244,6 @@ class _CloudRoundCard extends StatelessWidget {
                 : round.title,
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
-          if (round.keyframes.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 10),
-            _KeyframeStrip(keyframes: round.keyframes),
-          ],
           if (round.summary != null && round.summary!.isNotEmpty) ...<Widget>[
             const SizedBox(height: 10),
             Text(round.summary!, style: const TextStyle(height: 1.4)),
@@ -258,7 +254,27 @@ class _CloudRoundCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(round.aiCoaching!, style: const TextStyle(height: 1.4)),
           ],
-          if (round.corrections.isNotEmpty) ...<Widget>[
+          if (round.moments.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            const _MiniLabel('MOMENTS'),
+            for (var i = 0; i < round.moments.length; i++)
+              _MomentSection(
+                index: i + 1,
+                label: round.moments[i].label,
+                frameCount: round.moments[i].keyframes.length,
+                thumb: (j) =>
+                    _NetworkThumb(url: round.moments[i].keyframes[j].url),
+                onTapFrame: (j) => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => _KeyframeViewer(
+                      keyframes: round.moments[i].keyframes,
+                      initialIndex: j,
+                    ),
+                  ),
+                ),
+              ),
+          ] else if (round.corrections.isNotEmpty) ...<Widget>[
+            // Older rounds (synced before per-moment frames): text only.
             const SizedBox(height: 12),
             const _MiniLabel('CORRECTIONS'),
             const SizedBox(height: 6),
@@ -328,59 +344,94 @@ class _LocalRoundCard extends StatelessWidget {
   }
 }
 
-/// Horizontal row of keyframe thumbnails; tap any to open the full-screen viewer.
-class _KeyframeStrip extends StatelessWidget {
-  const _KeyframeStrip({required this.keyframes});
+/// One flagged moment: its numbered label and the horizontal strip of frames the
+/// model reviewed for it. Tap any frame to open the full-screen viewer.
+class _MomentSection extends StatelessWidget {
+  const _MomentSection({
+    required this.index,
+    required this.label,
+    required this.frameCount,
+    required this.thumb,
+    this.onTapFrame,
+  });
 
-  final List<HistoryKeyframe> keyframes;
+  final int index;
+  final String label;
+  final int frameCount;
+  final Widget Function(int i) thumb;
+  final void Function(int i)? onTapFrame;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 96,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: keyframes.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, i) => GestureDetector(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) =>
-                  _KeyframeViewer(keyframes: keyframes, initialIndex: i),
-            ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            '$index. $label',
+            style: const TextStyle(fontWeight: FontWeight.w600, height: 1.3),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              keyframes[i].url,
-              width: 128,
-              height: 96,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, progress) => progress == null
-                  ? child
-                  : Container(
-                      width: 128,
-                      height: 96,
-                      color: AppTheme.surfaceAlt,
-                      child: const Center(
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                    ),
-              errorBuilder: (context, _, _) => Container(
-                width: 128,
-                height: 96,
-                color: AppTheme.surfaceAlt,
-                child: const Icon(
-                  Icons.broken_image_outlined,
-                  color: AppTheme.textSecondary,
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 96,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: frameCount,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, i) => GestureDetector(
+                onTap: onTapFrame == null ? null : () => onTapFrame!(i),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: thumb(i),
                 ),
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A fixed-size keyframe thumbnail from a signed URL, with loading + error
+/// placeholders.
+class _NetworkThumb extends StatelessWidget {
+  const _NetworkThumb({required this.url});
+
+  final String url;
+
+  static const double _w = 128;
+  static const double _h = 96;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.network(
+      url,
+      width: _w,
+      height: _h,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) => progress == null
+          ? child
+          : Container(
+              width: _w,
+              height: _h,
+              color: AppTheme.surfaceAlt,
+              child: const Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+      errorBuilder: (context, _, _) => Container(
+        width: _w,
+        height: _h,
+        color: AppTheme.surfaceAlt,
+        child: const Icon(
+          Icons.broken_image_outlined,
+          color: AppTheme.textSecondary,
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -152,6 +153,11 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
   PoseAnalysisResult? _result;
   RoundAnalysis? _analysis;
 
+  /// The flagged moments and the frames the model reviewed for each — grabbed
+  /// from the local clip so the review shows them moment by moment.
+  List<_ReviewMoment> _moments = const <_ReviewMoment>[];
+  bool _loadingMoments = false;
+
   UserProfile _profile = const UserProfile();
 
   // TEMP (debug): a human-readable note of where the analysis shown below came
@@ -207,6 +213,40 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
       _source = 'saved from session'
           '${analysis.modelCoaching != null ? ' · incl. AI' : ''}';
     });
+    unawaited(_loadMoments(analysis, pose.durationMs.toDouble()));
+  }
+
+  /// Grab the burst of frames around each flagged moment (the same the model
+  /// reviews) from the local clip, grouped moment by moment.
+  Future<void> _loadMoments(RoundAnalysis analysis, double durationMs) async {
+    final bursts =
+        CoachingPrompt.keyframeBursts(analysis, durationMs: durationMs);
+    if (bursts.isEmpty) return;
+    setState(() => _loadingMoments = true);
+    try {
+      // One grab for the whole round; keep each burst's length so we can slice
+      // the flat result back into moments.
+      final counts = <int>[for (final b in bursts) b.timestamps.length];
+      final timestamps = <double>[for (final b in bursts) ...b.timestamps];
+      final images = await PluginFrameGrabber().grab(widget.clip.path, timestamps);
+      final moments = <_ReviewMoment>[];
+      var offset = 0;
+      for (var i = 0; i < bursts.length; i++) {
+        final end = offset + counts[i];
+        if (offset >= images.length) break;
+        moments.add(_ReviewMoment(
+          label: bursts[i].label ?? 'Flagged moment',
+          centerMs: bursts[i].centerMs,
+          frames: images.sublist(offset, end.clamp(0, images.length)),
+        ));
+        offset = end;
+      }
+      if (mounted) setState(() => _moments = moments);
+    } on Object catch (error) {
+      DebugLog.instance.log('review moments grab failed: $error', tag: 'review');
+    } finally {
+      if (mounted) setState(() => _loadingMoments = false);
+    }
   }
 
   @override
@@ -235,6 +275,7 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
             _analysis = analysis;
             _state = _AnalysisState.done;
           });
+          unawaited(_loadMoments(analysis, result.sequence.durationMs.toDouble()));
           await _maybeEnrichWithAi(result, analysis);
         }
       }
@@ -501,7 +542,31 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
             style: const TextStyle(fontSize: 15, height: 1.4),
           ),
         ],
-        if (analysis.correctionPriorities.isNotEmpty) ...<Widget>[
+        if (_moments.isNotEmpty || _loadingMoments) ...<Widget>[
+          const SizedBox(height: 16),
+          Row(
+            children: <Widget>[
+              const Text(
+                'MOMENTS',
+                style: TextStyle(
+                  fontSize: 11,
+                  letterSpacing: 1.2,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              if (_loadingMoments) ...<Widget>[
+                const SizedBox(width: 8),
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (var i = 0; i < _moments.length; i++) _reviewMoment(i),
+        ] else if (analysis.correctionPriorities.isNotEmpty) ...<Widget>[
           const SizedBox(height: 16),
           const Text(
             'CORRECTIONS',
@@ -538,6 +603,103 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
             ),
         ],
       ],
+    );
+  }
+
+  /// One flagged moment: its numbered correction text, a jump-to-video button,
+  /// and the strip of frames the model reviewed. Tap a frame to open it full.
+  Widget _reviewMoment(int i) {
+    final m = _moments[i];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  '${i + 1}. ${m.label}',
+                  style: const TextStyle(fontWeight: FontWeight.w600, height: 1.3),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _controller
+                    .seekTo(Duration(milliseconds: m.centerMs.round())),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 32),
+                ),
+                child: Text('${(m.centerMs / 1000).toStringAsFixed(1)}s'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 96,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: m.frames.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, j) => GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        _MemoryKeyframeViewer(frames: m.frames, initialIndex: j),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.memory(
+                    m.frames[j].bytes,
+                    width: 128,
+                    height: 96,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A flagged moment in the review screen: correction text + the frames grabbed
+/// for it from the local clip.
+class _ReviewMoment {
+  const _ReviewMoment({
+    required this.label,
+    required this.centerMs,
+    required this.frames,
+  });
+
+  final String label;
+  final double centerMs;
+  final List<VisionImage> frames;
+}
+
+/// Full-screen, swipeable, pinch-to-zoom viewer over in-memory frames.
+class _MemoryKeyframeViewer extends StatelessWidget {
+  const _MemoryKeyframeViewer({required this.frames, required this.initialIndex});
+
+  final List<VisionImage> frames;
+  final int initialIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(backgroundColor: Colors.black),
+      body: PageView.builder(
+        controller: PageController(initialPage: initialIndex),
+        itemCount: frames.length,
+        itemBuilder: (context, i) => InteractiveViewer(
+          child: Center(child: Image.memory(frames[i].bytes, fit: BoxFit.contain)),
+        ),
+      ),
     );
   }
 }
