@@ -288,13 +288,13 @@ class _SessionScreenState extends State<SessionScreen> {
       );
       return;
     }
-    if (!mounted) return;
     _analyses[clip.segmentIndex] = analysis;
 
     // Best-effort push to the cloud (pose + keyframes + rows). The local stores
     // already hold everything, so a failure here just means it syncs later.
-    // Outcome surfaced in-app so a release build shows why a round did/didn't
-    // sync (signed out / no analysis / failed), instead of a silent debugPrint.
+    // Deliberately BEFORE the mounted check below: analysis (esp. AI mode) often
+    // finishes after the session screen is gone, and this upload must still run
+    // — it touches no widget state. Outcome surfaced in-app / in the log.
     _sync
         .syncRound(
           clip,
@@ -304,6 +304,9 @@ class _SessionScreenState extends State<SessionScreen> {
         .then((outcome) => _reportSync(outcome, clip: clip))
         .ignore();
 
+    // Everything past here drives the live screen (round map, spoken coaching),
+    // so it's fine to stop if we've since left the session.
+    if (!mounted) return;
     final inRest = _engine.currentSegment?.isRest ?? false;
     if (inRest && _engine.voiceEnabled) {
       // In an AI mode the model's coaching is the headline; otherwise speak the
@@ -373,7 +376,6 @@ class _SessionScreenState extends State<SessionScreen> {
     RoundClip? clip,
     bool onlyOnFailure = false,
   }) {
-    if (!mounted) return;
     if (onlyOnFailure && !outcome.isFailure) return;
     final where = clip != null ? 'Round ${clip.segmentIndex + 1}' : 'Session';
     final String message;
@@ -389,7 +391,10 @@ class _SessionScreenState extends State<SessionScreen> {
       case SyncStatus.failed:
         message = '$where sync failed: ${outcome.error}';
     }
+    // Log always — a round frequently syncs after the screen is gone, and that
+    // outcome is exactly what we need on disk. SnackBar only when still live.
     DebugLog.instance.log(message, tag: 'sync');
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
