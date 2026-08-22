@@ -101,9 +101,16 @@ void main() {
 
     expect(analysis!.modelCoaching, 'AI: snap the jab straight back.');
     expect(model.requests, hasLength(1));
-    // It grabbed exactly the rule-flagged timestamps.
+    // It grabbed a burst of frames around each rule-flagged moment — more than
+    // the one-per-moment history set.
     expect(grabber.calls, hasLength(1));
-    expect(grabber.calls.single, CoachingPrompt.keyframeTimestamps(analysis));
+    final bursts =
+        CoachingPrompt.keyframeBursts(analysis, durationMs: sequence.durationMs);
+    expect(grabber.calls.single, <double>[for (final b in bursts) ...b.timestamps]);
+    expect(
+      grabber.calls.single.length,
+      greaterThan(CoachingPrompt.keyframeTimestamps(analysis).length),
+    );
     expect(model.requests.single.images, isNotEmpty);
   });
 

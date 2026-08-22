@@ -277,8 +277,14 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
     setSource('AI (${mode.value}) running…');
     try {
       final drill = profile.toDrill();
+      final bursts = mode == AnalysisMode.keyframe
+          ? CoachingPrompt.keyframeBursts(
+              analysis,
+              durationMs: result.sequence.durationMs,
+            )
+          : const <KeyframeBurst>[];
       final timestamps = mode == AnalysisMode.keyframe
-          ? CoachingPrompt.keyframeTimestamps(analysis)
+          ? <double>[for (final b in bursts) ...b.timestamps]
           : CoachingPrompt.sampledTimestamps(result.sequence.durationMs);
       if (timestamps.isEmpty) {
         setSource('offline (mode=${mode.value}: no frames to send)');
@@ -293,7 +299,7 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
         return;
       }
       final request = mode == AnalysisMode.keyframe
-          ? CoachingPrompt.keyframeRequest(analysis, drill, images)
+          ? CoachingPrompt.keyframeRequest(analysis, drill, bursts, images)
           : CoachingPrompt.fullFrameRequest(drill, images);
       final model = OpenAiCompatibleVisionModel(config);
       final coaching = await model.complete(request);
