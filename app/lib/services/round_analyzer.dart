@@ -45,6 +45,8 @@ class RoundAnalyzer {
   }) async {
     try {
       PoseAnalysisResult? result;
+      // The estimator serialises native runs and guards each against a stall
+      // internally, so here we just consume progress.
       await for (final progress in _estimator.analyse(clip.path)) {
         if (progress.result != null) result = progress.result;
       }
@@ -87,17 +89,24 @@ class RoundAnalyzer {
     double durationMs,
   ) async {
     try {
-      final timestamps = mode == AnalysisMode.keyframe
-          ? CoachingPrompt.keyframeTimestamps(analysis)
-          : CoachingPrompt.sampledTimestamps(durationMs);
-      if (timestamps.isEmpty) return null;
-
-      final images = await frameGrabber!.grab(clip.path, timestamps);
-      if (images.isEmpty) return null;
-
-      final request = mode == AnalysisMode.keyframe
-          ? CoachingPrompt.keyframeRequest(analysis, drill, images)
-          : CoachingPrompt.fullFrameRequest(drill, images);
+      final VisionRequest request;
+      if (mode == AnalysisMode.keyframe) {
+        // A burst of frames around each flagged moment — motion context, not a
+        // single still.
+        final bursts =
+            CoachingPrompt.keyframeBursts(analysis, durationMs: durationMs);
+        final timestamps = <double>[for (final b in bursts) ...b.timestamps];
+        if (timestamps.isEmpty) return null;
+        final images = await frameGrabber!.grab(clip.path, timestamps);
+        if (images.isEmpty) return null;
+        request = CoachingPrompt.keyframeRequest(analysis, drill, bursts, images);
+      } else {
+        final timestamps = CoachingPrompt.sampledTimestamps(durationMs);
+        if (timestamps.isEmpty) return null;
+        final images = await frameGrabber!.grab(clip.path, timestamps);
+        if (images.isEmpty) return null;
+        request = CoachingPrompt.fullFrameRequest(drill, images);
+      }
       return await visionModel!.complete(request);
     } on VisionModelException catch (error) {
       debugPrint('AI coaching unavailable: ${error.message}');

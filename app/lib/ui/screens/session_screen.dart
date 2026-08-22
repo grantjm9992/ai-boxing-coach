@@ -15,11 +15,14 @@ import '../../services/ai/openai_compatible_vision_model.dart';
 import '../../services/camera_round_recorder.dart';
 import '../../services/clip_store.dart';
 import '../../services/coach_voice.dart';
+import '../../services/debug_log.dart';
 import '../../services/device_coach_voice.dart';
 import '../../services/frame_grabber.dart';
 import '../../services/round_analyzer.dart';
 import '../../services/profile_store.dart';
 import '../../services/round_recorder.dart';
+import '../../services/sync/backfill_queue.dart';
+import '../../services/sync/round_sync.dart';
 import '../../services/round_recording_controller.dart';
 import '../../services/session_history_store.dart';
 import '../format.dart';
@@ -43,6 +46,7 @@ class SessionScreen extends StatefulWidget {
     this.analyzer,
     this.historyStore,
     this.profile,
+    this.sync,
     super.key,
   });
 
@@ -60,6 +64,10 @@ class SessionScreen extends StatefulWidget {
 
   /// Persists the completed session for history + the weekly balance.
   final SessionHistoryStore? historyStore;
+
+  /// Best-effort cloud sync of each round. Injectable for tests; defaults to
+  /// the real Supabase-backed sync.
+  final SupabaseRoundSync? sync;
 
   /// Records technical rounds. Defaults to the real camera; tests inject a
   /// [FakeRoundRecorder]. Left null on platforms with no camera, where the
@@ -98,6 +106,13 @@ class _SessionScreenState extends State<SessionScreen> {
   RoundAnalyzer? _analyzer;
   late final SessionHistoryStore _historyStore =
       widget.historyStore ?? SessionHistoryStore();
+  // Durable "upload when online" queue. Lazy: only touched when a round is
+  // actually filed, so tests that never record never touch Supabase. Uses the
+  // app-wide instance in production (shared with start-up / sign-in drains); an
+  // injected sync gets an isolated queue for tests.
+  late final BackfillQueue _queue = widget.sync != null
+      ? BackfillQueue(sync: widget.sync!)
+      : BackfillQueue.instance;
 
   /// Analyses produced this session, keyed by the round's segment index.
   final Map<int, RoundAnalysis> _analyses = <int, RoundAnalysis>{};
@@ -260,6 +275,10 @@ class _SessionScreenState extends State<SessionScreen> {
   /// correction. Analysis is best-effort: a null result (no camera/model) simply
   /// means no coaching for that round, never a broken session.
   Future<void> _onClipSaved(RoundClip clip) async {
+    DebugLog.instance.log(
+      'clip saved seg${clip.segmentIndex} (${clip.durationMs}ms) — analysing',
+      tag: 'session',
+    );
     final analyzer = _analyzer ??= RoundAnalyzer();
     final drill = _profile.toDrill(notes: clip.title ?? '');
     final analysis = await analyzer.analyse(
@@ -267,9 +286,38 @@ class _SessionScreenState extends State<SessionScreen> {
       drill: drill,
       mode: _profile.analysisMode,
     );
-    if (analysis == null || !mounted) return;
+    if (analysis == null) {
+      DebugLog.instance.log(
+        'seg${clip.segmentIndex} analysis returned null — not synced',
+        tag: 'session',
+      );
+      return;
+    }
     _analyses[clip.segmentIndex] = analysis;
 
+    // Durable enqueue, then drain. The round is persisted first, so even if the
+    // upload fails now (offline / signed out) it retries on a later launch or
+    // sign-in — nothing recorded is lost. Deliberately BEFORE the mounted check:
+    // analysis (esp. AI mode) often finishes after the session screen is gone,
+    // and this must still run — it touches no widget state.
+    _queue
+        .enqueueRound(
+          clip,
+          title: widget.plan.template.name,
+          mode: _profile.analysisMode.value,
+        )
+        .then(
+          (_) => _queue.process(
+            onOutcome: (job, outcome) {
+              if (_isCurrentRound(job, clip)) _reportSync(outcome, clip: clip);
+            },
+          ),
+        )
+        .ignore();
+
+    // Everything past here drives the live screen (round map, spoken coaching),
+    // so it's fine to stop if we've since left the session.
+    if (!mounted) return;
     final inRest = _engine.currentSegment?.isRest ?? false;
     if (inRest && _engine.voiceEnabled) {
       // In an AI mode the model's coaching is the headline; otherwise speak the
@@ -320,6 +368,57 @@ class _SessionScreenState extends State<SessionScreen> {
           ),
         )
         .ignore();
+    // Mark the session finished in the cloud (queued so it retries with the
+    // rounds). Only meaningful when rounds were recorded this session.
+    if (_recordingEnabled) {
+      _queue
+          .enqueueFinalize(_sessionId, title: widget.plan.template.name)
+          .then((_) => _queue.process())
+          .ignore();
+    }
+  }
+
+  /// Whether a queued job is the round we just filed — the one whose outcome we
+  /// surface in-app (older backfilled jobs drain quietly, logged only).
+  bool _isCurrentRound(SyncJob job, RoundClip clip) =>
+      job.kind == SyncJobKind.round &&
+      job.clip?.sessionId == clip.sessionId &&
+      job.clip?.segmentIndex == clip.segmentIndex;
+
+  /// Surface a sync attempt in-app. During bring-up we show every per-round
+  /// outcome (uploaded / no-analysis / signed-out / failed) so a release APK on
+  /// a device tells us exactly what happened; [onlyOnFailure] quiets the
+  /// finalize call to just its errors.
+  void _reportSync(
+    SyncOutcome outcome, {
+    RoundClip? clip,
+    bool onlyOnFailure = false,
+  }) {
+    if (onlyOnFailure && !outcome.isFailure) return;
+    final where = clip != null ? 'Round ${clip.segmentIndex + 1}' : 'Session';
+    final String message;
+    switch (outcome.status) {
+      case SyncStatus.uploaded:
+        message = clip != null
+            ? '$where synced (${outcome.keyframeCount} keyframes)'
+            : '$where finalised in cloud';
+      case SyncStatus.skippedSignedOut:
+        message = '$where not synced — signed out';
+      case SyncStatus.skippedNoAnalysis:
+        message = '$where not synced — no analysis';
+      case SyncStatus.failed:
+        message = '$where sync failed: ${outcome.error}';
+    }
+    // Log always — a round frequently syncs after the screen is gone, and that
+    // outcome is exactly what we need on disk. SnackBar only when still live.
+    DebugLog.instance.log(message, tag: 'sync');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: outcome.isFailure ? 8 : 3),
+      ),
+    );
   }
 
   @override

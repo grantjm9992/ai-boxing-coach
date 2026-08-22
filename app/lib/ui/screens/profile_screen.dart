@@ -11,6 +11,7 @@ import '../../services/ai/vision_model.dart';
 import '../../services/ai/vision_model_config.dart';
 import '../../services/profile_store.dart';
 import '../theme.dart';
+import 'debug_log_screen.dart';
 
 /// Pick the athlete's stance, guard style and the school they're training
 /// toward. This is what turns the (fully-ported) style/school coaching on: every
@@ -125,7 +126,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Your profile')),
+      appBar: AppBar(
+        title: const Text('Your profile'),
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Debug log',
+            icon: const Icon(Icons.bug_report_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const DebugLogScreen(),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: !_loaded
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -195,8 +209,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     label: mode.label,
                     blurb: mode.blurb,
                     selected: _profile.analysisMode == mode,
-                    onTap: () =>
-                        _update(_profile.copyWith(analysisMode: mode)),
+                    enabled: mode.available,
+                    badge: mode.available ? null : 'Coming soon',
+                    onTap: mode.available
+                        ? () => _update(_profile.copyWith(analysisMode: mode))
+                        : null,
                   ),
                 if (_profile.analysisMode.usesAi) ...<Widget>[
                   const SizedBox(height: 16),
@@ -277,57 +294,114 @@ class _StyleTile extends StatelessWidget {
     required this.blurb,
     required this.selected,
     required this.onTap,
+    this.enabled = true,
+    this.badge,
   });
 
   final String label;
   final String blurb;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+
+  /// When false the tile is dimmed and can't be tapped (e.g. a parked mode).
+  final bool enabled;
+
+  /// Optional pill next to the label, e.g. 'Coming soon'.
+  final String? badge;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: selected ? AppTheme.surfaceAlt : AppTheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
+      child: Opacity(
+        opacity: enabled ? 1 : 0.55,
+        child: Material(
+          color: selected ? AppTheme.surfaceAlt : AppTheme.surface,
           borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Icon(
-                  selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                  color: selected ? AppTheme.accent : AppTheme.textSecondary,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        label,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        blurb,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondary,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: enabled ? onTap : null,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(
+                    !enabled
+                        ? Icons.lock_outline
+                        : selected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                    color: selected ? AppTheme.accent : AppTheme.textSecondary,
+                    size: 20,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            Flexible(
+                              child: Text(
+                                label,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            if (badge != null) ...<Widget>[
+                              const SizedBox(width: 8),
+                              _Badge(badge!),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          blurb,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textSecondary,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A small pill label, e.g. the 'Coming soon' marker on a parked mode.
+class _Badge extends StatelessWidget {
+  const _Badge(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceAlt,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppTheme.textSecondary.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Text(
+        text.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 9,
+          letterSpacing: 0.8,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.textSecondary,
         ),
       ),
     );

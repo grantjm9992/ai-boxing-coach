@@ -34,6 +34,46 @@ void main() {
     expect(t, <double>[300, 900]);
   });
 
+  group('keyframeBursts', () {
+    test('one burst per flagged moment, 7 frames, centered and ascending', () {
+      final bursts = CoachingPrompt.keyframeBursts(analysis(), durationMs: 10000);
+      expect(bursts, hasLength(2)); // 300 and 900
+      for (final b in bursts) {
+        expect(b.timestamps, hasLength(7)); // main + 3 before + 3 after
+        expect(b.timestamps[3], b.centerMs); // middle is the flagged instant
+        for (var i = 1; i < b.timestamps.length; i++) {
+          expect(b.timestamps[i], greaterThan(b.timestamps[i - 1]));
+        }
+      }
+    });
+
+    test('shifts the window so it never goes negative', () {
+      final bursts = CoachingPrompt.keyframeBursts(analysis(), durationMs: 10000);
+      // center 300, 3×100ms before → clamped start at 0.
+      expect(bursts.first.timestamps.first, 0);
+    });
+
+    test('respects the moment cap', () {
+      final many = RoundAnalysis(
+        overallSummary: 's',
+        flaggedMoments: <FlaggedMoment>[
+          for (var i = 0; i < 20; i++)
+            FlaggedMoment(
+              timestampMs: i * 1000.0,
+              reason: 'x',
+              severity: Severity.minor,
+            ),
+        ],
+      );
+      final bursts = CoachingPrompt.keyframeBursts(
+        many,
+        durationMs: 60000,
+        maxMoments: 4,
+      );
+      expect(bursts, hasLength(4));
+    });
+  });
+
   test('keyframeTimestamps are capped', () {
     final many = RoundAnalysis(
       overallSummary: 's',
@@ -72,16 +112,21 @@ void main() {
   });
 
   test('keyframeRequest carries the corrections and the images', () {
+    final a = analysis();
+    final bursts = CoachingPrompt.keyframeBursts(a, durationMs: 10000);
     final images = <VisionImage>[
       VisionImage(bytes: Uint8List.fromList(<int>[0, 0, 0])),
     ];
     final req = CoachingPrompt.keyframeRequest(
-      analysis(),
+      a,
       const DrillContext(),
+      bursts,
       images,
     );
     expect(req.userPrompt, contains('Hand drops.'));
     expect(req.userPrompt, contains('orthodox stance'));
+    // Explains the burst grouping (7 frames per flagged point).
+    expect(req.userPrompt, contains('7 consecutive frames per point'));
     expect(req.images, hasLength(1));
   });
 
