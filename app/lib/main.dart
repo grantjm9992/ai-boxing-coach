@@ -3,11 +3,15 @@ import 'package:flutter/services.dart';
 
 import 'services/auth/auth_service.dart';
 import 'services/clip_store.dart';
+import 'services/debug_log.dart';
 import 'ui/screens/auth_gate.dart';
 import 'ui/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // On-device diagnostic log first, so it captures everything below (it also
+  // routes debugPrint through itself).
+  await DebugLog.instance.init();
   // A boxing timer is held in one hand or propped on the floor; rotating it
   // mid-round helps nobody.
   SystemChrome.setPreferredOrientations(<DeviceOrientation>[

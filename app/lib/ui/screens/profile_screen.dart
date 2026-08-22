@@ -11,6 +11,7 @@ import '../../services/ai/vision_model.dart';
 import '../../services/ai/vision_model_config.dart';
 import '../../services/profile_store.dart';
 import '../theme.dart';
+import 'debug_log_screen.dart';
 
 /// Pick the athlete's stance, guard style and the school they're training
 /// toward. This is what turns the (fully-ported) style/school coaching on: every
@@ -125,7 +126,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Your profile')),
+      appBar: AppBar(
+        title: const Text('Your profile'),
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Debug log',
+            icon: const Icon(Icons.bug_report_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const DebugLogScreen(),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: !_loaded
           ? const Center(child: CircularProgressIndicator())
           : ListView(
