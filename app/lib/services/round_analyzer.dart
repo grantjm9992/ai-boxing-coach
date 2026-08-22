@@ -45,7 +45,14 @@ class RoundAnalyzer {
   }) async {
     try {
       PoseAnalysisResult? result;
-      await for (final progress in _estimator.analyse(clip.path)) {
+      // Guard against a native pose stream that stalls without erroring or
+      // closing (seen on release builds): a gap this long between updates means
+      // something is wrong — fail the round rather than hang it forever. The
+      // timeout is per-event, so a slow-but-progressing run is unaffected.
+      final stream = _estimator
+          .analyse(clip.path)
+          .timeout(const Duration(seconds: 45));
+      await for (final progress in stream) {
         if (progress.result != null) result = progress.result;
       }
       if (result == null) return null;

@@ -6,6 +6,7 @@ import 'package:pose_landmarker/pose_landmarker.dart';
 
 import '../analysis/pose.dart';
 import '../analysis/pose_estimation.dart';
+import 'debug_log.dart';
 
 /// Progress of a pose-estimation run, and — when done — its result.
 class PoseAnalysisProgress {
@@ -62,7 +63,11 @@ class MediaPipePoseEstimator implements PoseEstimator {
     Duration sampleEvery = const Duration(milliseconds: 33),
     PoseModel model = PoseModel.lite,
   }) async* {
+    void trace(String step) => DebugLog.instance.log(step, tag: 'pose');
+
+    trace('ensuring model ${model.name}');
     final modelPath = await _provisioner.ensureModel(model);
+    trace('model ready: $modelPath');
     final stopwatch = Stopwatch()..start();
     final fps = sampleEvery.inMilliseconds > 0
         ? 1000.0 / sampleEvery.inMilliseconds
@@ -74,13 +79,18 @@ class MediaPipePoseEstimator implements PoseEstimator {
       sampleEvery: sampleEvery,
       model: model,
     );
+    trace('estimate stream opened for $videoPath');
 
+    var updates = 0;
     await for (final progress in stream) {
+      updates++;
+      if (updates == 1) trace('first update (frac=${progress.fraction})');
       final rawFrames = progress.frames;
       if (rawFrames == null) {
         yield PoseAnalysisProgress(fraction: progress.fraction);
         continue;
       }
+      trace('frames received (${rawFrames.length}) after $updates updates');
       final sequence = rawFramesToSequence(
         rawFrames,
         fps: fps,
@@ -100,6 +110,8 @@ class MediaPipePoseEstimator implements PoseEstimator {
         ),
       );
     }
+    trace('estimate stream closed after $updates updates '
+        '(${stopwatch.elapsedMilliseconds}ms)');
   }
 }
 
