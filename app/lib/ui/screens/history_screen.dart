@@ -11,9 +11,10 @@ import '../widgets/category_widgets.dart';
 /// Session history and the weekly category balance — the spec's MVP "am I
 /// training in balance?" view, rolled up across every completed session.
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({this.store, super.key});
+  const HistoryScreen({this.store, this.reader, super.key});
 
   final SessionHistoryStore? store;
+  final SupabaseHistoryReader? reader;
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -21,6 +22,8 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   late final SessionHistoryStore _store = widget.store ?? SessionHistoryStore();
+  late final SupabaseHistoryReader _reader =
+      widget.reader ?? SupabaseHistoryReader();
   late Future<_HistoryData> _data;
 
   @override
@@ -29,10 +32,34 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _data = _load();
   }
 
+  /// Loads the list from the cloud (the source of truth that survives a
+  /// reinstall / another device), merged with the local history so anything not
+  /// yet synced — or recorded while signed out / offline — still shows. Cloud
+  /// wins per session; local fills the gaps and is the fallback when the cloud
+  /// call returns nothing. The weekly balance is rolled up from the merged set.
   Future<_HistoryData> _load() async {
-    final sessions = await _store.list();
-    final weekly = await _store.weeklyBalance();
+    final local = await _store.list();
+    final cloud = await _reader.listSessions();
+    final sessions = _merge(cloud: cloud, local: local);
+    final weekly = _store.weeklyBalanceFrom(sessions);
     return _HistoryData(sessions: sessions, weeklySeconds: weekly);
+  }
+
+  /// Union of cloud + local sessions, keyed by session id, cloud preferred.
+  /// Sorted newest first.
+  List<SessionRecord> _merge({
+    required List<SessionRecord> cloud,
+    required List<SessionRecord> local,
+  }) {
+    final byId = <String, SessionRecord>{
+      for (final s in local) s.sessionId: s,
+    };
+    for (final s in cloud) {
+      byId[s.sessionId] = s; // cloud is authoritative on conflict
+    }
+    final merged = byId.values.toList()
+      ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
+    return merged;
   }
 
   @override

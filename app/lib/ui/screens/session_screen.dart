@@ -365,10 +365,21 @@ class _SessionScreenState extends State<SessionScreen> {
     _completedAt = DateTime.now();
     _persistSessionRecord();
     // Mark the session finished in the cloud (queued so it retries with the
-    // rounds). Only meaningful when rounds were recorded this session.
+    // rounds). Only meaningful when rounds were recorded this session. The
+    // rollup travels along so the history list + weekly balance can be rebuilt
+    // from the DB on another device.
     if (_recordingEnabled) {
+      final rollup = SessionRecord.fromPlan(
+        widget.plan,
+        sessionId: _sessionId,
+        completedAt: _completedAt!,
+      ).rollupJson;
       _queue
-          .enqueueFinalize(_sessionId, title: widget.plan.template.name)
+          .enqueueFinalize(
+            _sessionId,
+            title: widget.plan.template.name,
+            rollup: rollup,
+          )
           .then((_) => _queue.process())
           .ignore();
     }

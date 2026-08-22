@@ -145,6 +145,17 @@ void main() {
       expect(weekly['footwork'], 50);
     });
 
+    test('weeklyBalanceFrom windows an in-memory list (merged cloud + local)',
+        () {
+      final now = DateTime(2026, 8, 10, 12);
+      final store = SessionHistoryStore(baseDir: tempDir, now: () => now);
+      final weekly = store.weeklyBalanceFrom(<SessionRecord>[
+        record('recent', now.subtract(const Duration(days: 2)), {'defence': 70}),
+        record('old', now.subtract(const Duration(days: 20)), {'defence': 999}),
+      ]);
+      expect(weekly['defence'], 70); // old one outside the 7-day window
+    });
+
     test('aggregateCategorySeconds is a pure sum', () {
       final totals = SessionHistoryStore.aggregateCategorySeconds(<SessionRecord>[
         record('x', DateTime(2026), {'defence': 30, 'jab': 10}),

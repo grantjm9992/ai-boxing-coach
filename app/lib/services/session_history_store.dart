@@ -62,9 +62,18 @@ class SessionHistoryStore {
   Future<Map<String, int>> weeklyBalance({
     Duration window = const Duration(days: 7),
   }) async {
+    return weeklyBalanceFrom(await list(), window: window);
+  }
+
+  /// The same weekly rollup, but from an already-loaded list of records — used
+  /// by the history screen after it has merged the cloud + local sessions, so
+  /// the balance covers both without a second disk read.
+  Map<String, int> weeklyBalanceFrom(
+    Iterable<SessionRecord> records, {
+    Duration window = const Duration(days: 7),
+  }) {
     final cutoff = _now().subtract(window);
-    final recent =
-        (await list()).where((r) => r.completedAt.isAfter(cutoff));
+    final recent = records.where((r) => r.completedAt.isAfter(cutoff));
     return aggregateCategorySeconds(recent);
   }
 

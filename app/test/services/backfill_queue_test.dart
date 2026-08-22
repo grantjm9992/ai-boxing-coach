@@ -30,6 +30,7 @@ class FakeRoundSync implements RoundSync {
     String clientSessionId, {
     DateTime? endedAt,
     String? title,
+    Map<String, Object?>? rollup,
   }) async {
     finalized.add(clientSessionId);
     return outcome;
