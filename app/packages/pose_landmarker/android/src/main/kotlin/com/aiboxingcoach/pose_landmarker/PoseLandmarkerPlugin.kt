@@ -2,11 +2,8 @@ package com.aiboxingcoach.pose_landmarker
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.graphics.Matrix
-import android.graphics.Rect
-import android.graphics.YuvImage
 import android.media.Image
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
@@ -437,51 +434,55 @@ class PoseLandmarkerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
     // -- YUV_420_888 -> Bitmap ----------------------------------------------
 
+    /**
+     * Convert the decoded frame straight to an ARGB_8888 [Bitmap]. The previous
+     * path went YUV → NV21 → JPEG-encode → JPEG-decode per frame — a full codec
+     * round-trip just to get a Bitmap, and the dominant cost of a pose run. Here
+     * we do one integer BT.601 (full-range) conversion pass and hand MediaPipe
+     * the same pixels directly. Stride-aware, so it is correct for both planar
+     * and semi-planar YUV_420_888 layouts.
+     */
     private fun imageToBitmap(image: Image): Bitmap? {
         if (image.format != ImageFormat.YUV_420_888) return null
-        val nv21 = yuv420ToNv21(image)
-        val yuv = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
-        val out = ByteArrayOutputStream()
-        yuv.compressToJpeg(Rect(0, 0, image.width, image.height), 85, out)
-        val bytes = out.toByteArray()
-        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-    }
-
-    private fun yuv420ToNv21(image: Image): ByteArray {
         val width = image.width
         val height = image.height
-        val chromaWidth = width / 2
-        val chromaHeight = height / 2
-        val nv21 = ByteArray(width * height + 2 * chromaWidth * chromaHeight)
 
         val yPlane = image.planes[0]
-        val yBuffer = yPlane.buffer
-        val yRowStride = yPlane.rowStride
-        val yPixStride = yPlane.pixelStride
-        var pos = 0
-        for (row in 0 until height) {
-            val rowStart = row * yRowStride
-            for (col in 0 until width) {
-                nv21[pos++] = yBuffer.get(rowStart + col * yPixStride)
-            }
-        }
-
-        // NV21 chroma is interleaved V, U.
         val uPlane = image.planes[1]
         val vPlane = image.planes[2]
+        val yBuffer = yPlane.buffer
         val uBuffer = uPlane.buffer
         val vBuffer = vPlane.buffer
+        val yRowStride = yPlane.rowStride
+        val yPixStride = yPlane.pixelStride
         val uRowStride = uPlane.rowStride
         val uPixStride = uPlane.pixelStride
         val vRowStride = vPlane.rowStride
         val vPixStride = vPlane.pixelStride
-        for (row in 0 until chromaHeight) {
-            for (col in 0 until chromaWidth) {
-                nv21[pos++] = vBuffer.get(row * vRowStride + col * vPixStride)
-                nv21[pos++] = uBuffer.get(row * uRowStride + col * uPixStride)
+
+        val argb = IntArray(width * height)
+        var idx = 0
+        for (row in 0 until height) {
+            val yRowStart = row * yRowStride
+            val chromaRow = row shr 1
+            val uRowStart = chromaRow * uRowStride
+            val vRowStart = chromaRow * vRowStride
+            for (col in 0 until width) {
+                val y = yBuffer.get(yRowStart + col * yPixStride).toInt() and 0xFF
+                val chromaCol = col shr 1
+                val u = (uBuffer.get(uRowStart + chromaCol * uPixStride).toInt() and 0xFF) - 128
+                val v = (vBuffer.get(vRowStart + chromaCol * vPixStride).toInt() and 0xFF) - 128
+                // Full-range BT.601, fixed-point (×256): 1.402, 0.344, 0.714, 1.772.
+                var r = y + ((359 * v) shr 8)
+                var g = y - ((88 * u) shr 8) - ((183 * v) shr 8)
+                var b = y + ((454 * u) shr 8)
+                if (r < 0) r = 0 else if (r > 255) r = 255
+                if (g < 0) g = 0 else if (g > 255) g = 255
+                if (b < 0) b = 0 else if (b > 255) b = 255
+                argb[idx++] = -0x1000000 or (r shl 16) or (g shl 8) or b
             }
         }
-        return nv21
+        return Bitmap.createBitmap(argb, width, height, Bitmap.Config.ARGB_8888)
     }
 
     // -- MediaPipe ----------------------------------------------------------
