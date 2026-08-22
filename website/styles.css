@@ -500,7 +500,26 @@ h1, h2, h3, .section__title, .final__title, .hero__title {
 .faq__list details[open] .faq__mk::after { transform: scaleY(0); }
 .faq__list details p { padding: 0 20px 20px; color: var(--muted); }
 
+/* ---- Statement bands (FightCamp-style positioning punctuation) ---- */
+.statement {
+  padding-block: clamp(72px, 12vw, 134px);
+  text-align: center;
+  border-block: 1px solid var(--line);
+  background:
+    radial-gradient(85% 150% at 50% 50%, rgba(255,59,48,.11), transparent 60%),
+    var(--bg);
+}
+.statement--plain {
+  background: radial-gradient(70% 130% at 50% 120%, rgba(255,59,48,.08), transparent 60%), var(--bg-2);
+}
+.statement__text {
+  font-family: var(--display); text-transform: uppercase;
+  font-size: clamp(2rem, 6.4vw, 4.2rem); line-height: .98; letter-spacing: .01em;
+  max-width: 22ch; margin-inline: auto;
+}
+
 /* ---- Final CTA ---- */
+.final__eyebrow { justify-content: center; margin-bottom: 16px; }
 .final {
   padding-block: clamp(70px, 12vw, 150px); text-align: center;
   background:
