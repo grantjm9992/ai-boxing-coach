@@ -21,6 +21,7 @@ import '../../services/frame_grabber.dart';
 import '../../services/round_analyzer.dart';
 import '../../services/profile_store.dart';
 import '../../services/round_recorder.dart';
+import '../../services/sync/backfill_queue.dart';
 import '../../services/sync/round_sync.dart';
 import '../../services/round_recording_controller.dart';
 import '../../services/session_history_store.dart';
@@ -105,9 +106,13 @@ class _SessionScreenState extends State<SessionScreen> {
   RoundAnalyzer? _analyzer;
   late final SessionHistoryStore _historyStore =
       widget.historyStore ?? SessionHistoryStore();
-  // Best-effort cloud sync. Lazy: only constructed when a round is actually
-  // filed, so tests that never record never touch Supabase.
-  late final SupabaseRoundSync _sync = widget.sync ?? SupabaseRoundSync();
+  // Durable "upload when online" queue. Lazy: only touched when a round is
+  // actually filed, so tests that never record never touch Supabase. Uses the
+  // app-wide instance in production (shared with start-up / sign-in drains); an
+  // injected sync gets an isolated queue for tests.
+  late final BackfillQueue _queue = widget.sync != null
+      ? BackfillQueue(sync: widget.sync!)
+      : BackfillQueue.instance;
 
   /// Analyses produced this session, keyed by the round's segment index.
   final Map<int, RoundAnalysis> _analyses = <int, RoundAnalysis>{};
@@ -290,18 +295,24 @@ class _SessionScreenState extends State<SessionScreen> {
     }
     _analyses[clip.segmentIndex] = analysis;
 
-    // Best-effort push to the cloud (pose + keyframes + rows). The local stores
-    // already hold everything, so a failure here just means it syncs later.
-    // Deliberately BEFORE the mounted check below: analysis (esp. AI mode) often
-    // finishes after the session screen is gone, and this upload must still run
-    // — it touches no widget state. Outcome surfaced in-app / in the log.
-    _sync
-        .syncRound(
+    // Durable enqueue, then drain. The round is persisted first, so even if the
+    // upload fails now (offline / signed out) it retries on a later launch or
+    // sign-in — nothing recorded is lost. Deliberately BEFORE the mounted check:
+    // analysis (esp. AI mode) often finishes after the session screen is gone,
+    // and this must still run — it touches no widget state.
+    _queue
+        .enqueueRound(
           clip,
           title: widget.plan.template.name,
           mode: _profile.analysisMode.value,
         )
-        .then((outcome) => _reportSync(outcome, clip: clip))
+        .then(
+          (_) => _queue.process(
+            onOutcome: (job, outcome) {
+              if (_isCurrentRound(job, clip)) _reportSync(outcome, clip: clip);
+            },
+          ),
+        )
         .ignore();
 
     // Everything past here drives the live screen (round map, spoken coaching),
@@ -357,15 +368,22 @@ class _SessionScreenState extends State<SessionScreen> {
           ),
         )
         .ignore();
-    // Mark the session finished in the cloud (no-op if nothing synced / signed
-    // out). Only meaningful when rounds were recorded this session.
+    // Mark the session finished in the cloud (queued so it retries with the
+    // rounds). Only meaningful when rounds were recorded this session.
     if (_recordingEnabled) {
-      _sync
-          .finalizeSession(_sessionId, title: widget.plan.template.name)
-          .then((outcome) => _reportSync(outcome, onlyOnFailure: true))
+      _queue
+          .enqueueFinalize(_sessionId, title: widget.plan.template.name)
+          .then((_) => _queue.process())
           .ignore();
     }
   }
+
+  /// Whether a queued job is the round we just filed — the one whose outcome we
+  /// surface in-app (older backfilled jobs drain quietly, logged only).
+  bool _isCurrentRound(SyncJob job, RoundClip clip) =>
+      job.kind == SyncJobKind.round &&
+      job.clip?.sessionId == clip.sessionId &&
+      job.clip?.segmentIndex == clip.segmentIndex;
 
   /// Surface a sync attempt in-app. During bring-up we show every per-round
   /// outcome (uploaded / no-analysis / signed-out / failed) so a release APK on

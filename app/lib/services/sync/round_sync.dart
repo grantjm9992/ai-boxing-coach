@@ -42,6 +42,18 @@ class SyncOutcome {
   bool get isFailure => status == SyncStatus.failed;
 }
 
+/// The round-upload operations the backfill queue drives. Abstracted so the
+/// queue can be unit-tested with a fake, without a live Supabase client.
+abstract interface class RoundSync {
+  Future<SyncOutcome> syncRound(RoundClip clip, {String? title, String? mode});
+
+  Future<SyncOutcome> finalizeSession(
+    String clientSessionId, {
+    DateTime? endedAt,
+    String? title,
+  });
+}
+
 /// Pushes a finished round up to Supabase: the session/round/analysis rows, the
 /// pose sequence and the keyframe images to Storage.
 ///
@@ -51,7 +63,7 @@ class SyncOutcome {
 /// offline, or a failed call simply means the round syncs later, never a broken
 /// session. Idempotent via upserts, so re-running (a re-analyse, a backfill) is
 /// safe.
-class SupabaseRoundSync {
+class SupabaseRoundSync implements RoundSync {
   SupabaseRoundSync({
     SupabaseClient? client,
     AnalysisStore? store,
@@ -66,6 +78,7 @@ class SupabaseRoundSync {
 
   /// Sync one round. [title] labels the session (the template name); [mode] is
   /// the analysis mode value ('offline' | 'keyframe' | 'full_frame').
+  @override
   Future<SyncOutcome> syncRound(
     RoundClip clip, {
     String? title,
@@ -167,6 +180,7 @@ class SupabaseRoundSync {
 
   /// Mark a session finished. Safe to call even if no round synced (updates 0
   /// rows).
+  @override
   Future<SyncOutcome> finalizeSession(
     String clientSessionId, {
     DateTime? endedAt,
