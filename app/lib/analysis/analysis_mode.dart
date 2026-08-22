@@ -33,6 +33,11 @@ enum AnalysisMode {
   /// True if the mode calls an AI model at all.
   bool get usesAi => this != AnalysisMode.offline;
 
+  /// Whether this mode can currently be chosen. Full AI review is parked until
+  /// the self-hosted vision endpoint lands — it's offered again then, so the
+  /// pipeline for it is kept intact, just not selectable in the profile.
+  bool get available => this != AnalysisMode.fullFrame;
+
   static AnalysisMode fromValue(String? value) => AnalysisMode.values.firstWhere(
     (m) => m.value == value,
     orElse: () => AnalysisMode.offline,
