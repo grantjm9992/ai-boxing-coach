@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../analysis/analysis_mode.dart';
+import '../../analysis/pose_estimation.dart';
 import '../../analysis/pose_only_adapter.dart';
 import '../../analysis/round_analysis.dart';
 import '../../domain/round_clip.dart';
@@ -15,7 +16,9 @@ import '../../services/ai/ai_settings_store.dart';
 import '../../services/ai/coaching_prompt.dart';
 import '../../services/ai/openai_compatible_vision_model.dart';
 import '../../services/ai/vision_model.dart';
+import '../../services/analysis_store.dart';
 import '../../services/clip_store.dart';
+import '../../services/debug_log.dart';
 import '../../services/frame_grabber.dart';
 import '../../services/pose_estimator.dart';
 import '../../services/profile_store.dart';
@@ -140,6 +143,7 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
   late final VideoPlayerController _controller;
   late final PoseEstimator _estimator =
       widget.estimator ?? MediaPipePoseEstimator();
+  final AnalysisStore _store = AnalysisStore();
   bool _ready = false;
 
   _AnalysisState _state = _AnalysisState.idle;
@@ -165,6 +169,43 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
     });
     const ProfileStore().load().then((profile) {
       if (mounted) _profile = profile;
+    });
+    _loadSaved();
+  }
+
+  /// The session already ran pose (and, in an AI mode, the model) and saved both
+  /// to the [AnalysisStore]. Read that back and show it instantly — no second,
+  /// redundant analysis pass. Only if nothing was saved (analysis failed live,
+  /// or an old clip) do we fall back to the on-demand "Analyse pose" button.
+  Future<void> _loadSaved() async {
+    final sessionId = widget.clip.sessionId;
+    final segment = widget.clip.segmentIndex;
+    final analysis = await _store.loadAnalysis(sessionId, segment);
+    final pose = await _store.loadPose(sessionId, segment);
+    if (!mounted) return;
+    if (analysis == null || pose == null) {
+      DebugLog.instance.log(
+        'review seg$segment: no saved analysis — offering recompute',
+        tag: 'review',
+      );
+      return; // stays idle → user can recompute on demand
+    }
+    DebugLog.instance.log(
+      'review seg$segment: showing saved analysis'
+      '${analysis.modelCoaching != null ? " (incl. AI)" : ""}',
+      tag: 'review',
+    );
+    setState(() {
+      _result = PoseAnalysisResult(
+        sequence: pose,
+        framesAnalysed: pose.length,
+        fullBodyVisibleFraction: fullBodyVisibleFraction(pose),
+        elapsed: Duration.zero, // not recomputed — nothing to time
+      );
+      _analysis = analysis;
+      _state = _AnalysisState.done;
+      _source = 'saved from session'
+          '${analysis.modelCoaching != null ? ' · incl. AI' : ''}';
     });
   }
 
@@ -512,10 +553,13 @@ class _FactsRow extends StatelessWidget {
       child: Row(
         children: <Widget>[
           _Fact(label: 'Frames', value: '${result.framesAnalysed}'),
-          _Fact(
-            label: 'Took',
-            value: '${(result.elapsed.inMilliseconds / 1000).toStringAsFixed(1)}s',
-          ),
+          // Only meaningful for a fresh run; saved analyses carry no timing.
+          if (result.elapsed > Duration.zero)
+            _Fact(
+              label: 'Took',
+              value:
+                  '${(result.elapsed.inMilliseconds / 1000).toStringAsFixed(1)}s',
+            ),
           _Fact(label: 'You in frame', value: '$visible%'),
         ],
       ),
