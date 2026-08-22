@@ -17,3 +17,6 @@ app/assets/models/*.task
 
 # Ad-hoc device screenshots dropped in the repo root for debugging
 Screenshot_*.jpg
+
+# macOS
+.DS_Store
