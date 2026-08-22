@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/session_record.dart';
 import '../../domain/skill_category.dart';
 import '../../services/session_history_store.dart';
+import '../../services/sync/history_reader.dart';
 import '../format.dart';
 import '../theme.dart';
 import '../widgets/category_widgets.dart';
@@ -142,55 +143,296 @@ class _SessionTile extends StatelessWidget {
   }
 }
 
-class _SessionDetailScreen extends StatelessWidget {
+/// A completed session's rounds and their full feedback. Reads the rich
+/// analysis + keyframe images back from Supabase (which survives the local
+/// 7-day sweep of the video), and falls back to the thin local rollup while
+/// that loads or when offline / signed out.
+class _SessionDetailScreen extends StatefulWidget {
   const _SessionDetailScreen({required this.session});
 
   final SessionRecord session;
 
   @override
+  State<_SessionDetailScreen> createState() => _SessionDetailScreenState();
+}
+
+class _SessionDetailScreenState extends State<_SessionDetailScreen> {
+  HistorySession? _cloud;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    HistorySession? cloud;
+    try {
+      cloud = await SupabaseHistoryReader().loadSession(widget.session.sessionId);
+    } on Object {
+      cloud = null; // any failure → local fallback
+    }
+    if (!mounted) return;
+    setState(() {
+      _cloud = cloud;
+      _loading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final analysed = session.rounds.where((r) => r.summary != null).toList();
+    final cloud = _cloud;
+    final localRounds =
+        widget.session.rounds.where((r) => r.summary != null).toList();
     return Scaffold(
-      appBar: AppBar(title: Text(session.templateName)),
+      appBar: AppBar(title: Text(widget.session.templateName)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: <Widget>[
-          for (final round in analysed)
-            Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    round.roundNumber != null
-                        ? 'Round ${round.roundNumber}: ${round.title}'
-                        : round.title,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(round.summary ?? '', style: const TextStyle(height: 1.4)),
-                  if (round.topCorrection != null) ...<Widget>[
-                    const SizedBox(height: 6),
+          if (cloud != null)
+            for (final round in cloud.rounds) _CloudRoundCard(round: round)
+          else ...<Widget>[
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: <Widget>[
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 10),
                     Text(
-                      round.topCorrection!,
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 13,
-                      ),
+                      'Loading full feedback…',
+                      style: TextStyle(color: AppTheme.textSecondary),
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
+            for (final round in localRounds) _LocalRoundCard(round: round),
+          ],
         ],
       ),
     );
   }
+}
+
+/// A round rendered from the full cloud analysis: summary, AI coaching, every
+/// correction, positive notes, and its keyframe images.
+class _CloudRoundCard extends StatelessWidget {
+  const _CloudRoundCard({required this.round});
+
+  final HistoryRound round;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            round.roundNumber != null
+                ? 'Round ${round.roundNumber}: ${round.title}'
+                : round.title,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          if (round.keyframes.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 10),
+            _KeyframeStrip(keyframes: round.keyframes),
+          ],
+          if (round.summary != null && round.summary!.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 10),
+            Text(round.summary!, style: const TextStyle(height: 1.4)),
+          ],
+          if (round.aiCoaching != null && round.aiCoaching!.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            const _MiniLabel('AI COACH'),
+            const SizedBox(height: 6),
+            Text(round.aiCoaching!, style: const TextStyle(height: 1.4)),
+          ],
+          if (round.corrections.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            const _MiniLabel('CORRECTIONS'),
+            const SizedBox(height: 6),
+            for (final c in round.corrections)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text('• $c', style: const TextStyle(height: 1.35)),
+              ),
+          ],
+          if (round.positiveNotes.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            for (final note in round.positiveNotes)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Icon(Icons.check, size: 16, color: AppTheme.rest),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(note)),
+                  ],
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The fallback card: the one-line rollup kept on-device.
+class _LocalRoundCard extends StatelessWidget {
+  const _LocalRoundCard({required this.round});
+
+  final RoundSummary round;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            round.roundNumber != null
+                ? 'Round ${round.roundNumber}: ${round.title}'
+                : round.title,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(round.summary ?? '', style: const TextStyle(height: 1.4)),
+          if (round.topCorrection != null) ...<Widget>[
+            const SizedBox(height: 6),
+            Text(
+              round.topCorrection!,
+              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Horizontal row of keyframe thumbnails; tap any to open the full-screen viewer.
+class _KeyframeStrip extends StatelessWidget {
+  const _KeyframeStrip({required this.keyframes});
+
+  final List<HistoryKeyframe> keyframes;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 96,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: keyframes.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, i) => GestureDetector(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) =>
+                  _KeyframeViewer(keyframes: keyframes, initialIndex: i),
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              keyframes[i].url,
+              width: 128,
+              height: 96,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) => progress == null
+                  ? child
+                  : Container(
+                      width: 128,
+                      height: 96,
+                      color: AppTheme.surfaceAlt,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    ),
+              errorBuilder: (context, _, _) => Container(
+                width: 128,
+                height: 96,
+                color: AppTheme.surfaceAlt,
+                child: const Icon(
+                  Icons.broken_image_outlined,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-screen, swipeable, pinch-to-zoom keyframe viewer.
+class _KeyframeViewer extends StatelessWidget {
+  const _KeyframeViewer({required this.keyframes, required this.initialIndex});
+
+  final List<HistoryKeyframe> keyframes;
+  final int initialIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(backgroundColor: Colors.black),
+      body: PageView.builder(
+        controller: PageController(initialPage: initialIndex),
+        itemCount: keyframes.length,
+        itemBuilder: (context, i) => InteractiveViewer(
+          child: Center(
+            child: Image.network(
+              keyframes[i].url,
+              fit: BoxFit.contain,
+              errorBuilder: (context, _, _) => const Icon(
+                Icons.broken_image_outlined,
+                color: Colors.white54,
+                size: 48,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniLabel extends StatelessWidget {
+  const _MiniLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 11,
+      letterSpacing: 1.2,
+      color: AppTheme.textSecondary,
+    ),
+  );
 }
 
 class _SectionTitle extends StatelessWidget {
