@@ -165,8 +165,14 @@ class SupabaseRoundSync implements RoundSync {
       }, onConflict: 'round_id');
       trace('analysis row ok');
 
-      // 5. Keyframe images (the flagged moments) to Storage + rows.
-      final keyframes = await _syncKeyframes(userId, roundId, clip, analysis);
+      // 5. Keyframe images (a burst per flagged moment) to Storage + rows.
+      final keyframes = await _syncKeyframes(
+        userId,
+        roundId,
+        clip,
+        analysis,
+        sequence?.durationMs.toDouble() ?? 0,
+      );
       trace('done — $keyframes keyframes');
       return SyncOutcome(SyncStatus.uploaded, keyframeCount: keyframes);
     } on Object catch (error) {
@@ -204,23 +210,41 @@ class SupabaseRoundSync implements RoundSync {
     }
   }
 
-  /// Uploads the flagged-moment images for a round; returns how many landed.
+  /// Uploads a burst of frames around each flagged moment — the same frames the
+  /// model reviews — grouped by moment (correction_index + the correction text
+  /// in correction_ref), so the review/history view can show them moment by
+  /// moment. Returns how many frames landed.
   Future<int> _syncKeyframes(
     String userId,
     String roundId,
     RoundClip clip,
     RoundAnalysis analysis,
+    double durationMs,
   ) async {
-    final timestamps = CoachingPrompt.keyframeTimestamps(analysis);
-    if (timestamps.isEmpty) return 0;
-    final images = await _grabber.grab(clip.path, timestamps);
+    final bursts = CoachingPrompt.keyframeBursts(analysis, durationMs: durationMs);
+    if (bursts.isEmpty) return 0;
+
+    // Flatten to (moment index, label, timestamp) so grabbed images map back to
+    // their moment. One grab call for the whole round.
+    final requests = <({int moment, String label, int ts})>[];
+    for (var m = 0; m < bursts.length; m++) {
+      final burst = bursts[m];
+      final label = burst.label ?? 'Flagged moment';
+      for (final ts in burst.timestamps) {
+        requests.add((moment: m, label: label, ts: ts.round()));
+      }
+    }
+    final images =
+        await _grabber.grab(clip.path, <double>[for (final r in requests) r.ts.toDouble()]);
     if (images.isEmpty) return 0;
+
     // Replace any existing frames for this round so a re-sync doesn't dupe.
     await _client.from('keyframes').delete().eq('round_id', roundId);
     final rows = <Map<String, Object?>>[];
-    for (var i = 0; i < images.length; i++) {
-      final ts = timestamps[i].round();
-      final path = '$userId/${clip.sessionId}/${clip.segmentIndex}/$ts.jpg';
+    for (var i = 0; i < images.length && i < requests.length; i++) {
+      final req = requests[i];
+      final path =
+          '$userId/${clip.sessionId}/${clip.segmentIndex}/${req.moment}_${req.ts}.jpg';
       await _client.storage.from('keyframes').uploadBinary(
             path,
             images[i].bytes,
@@ -230,7 +254,9 @@ class SupabaseRoundSync implements RoundSync {
         'user_id': userId,
         'round_id': roundId,
         'storage_path': path,
-        'timestamp_ms': ts,
+        'timestamp_ms': req.ts,
+        'correction_ref': req.label,
+        'correction_index': req.moment,
         'mime': images[i].mime,
       });
     }

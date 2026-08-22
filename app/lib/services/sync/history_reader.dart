@@ -12,8 +12,17 @@ class HistoryKeyframe {
   final int timestampMs;
 }
 
+/// One flagged moment: the correction's text and the burst of frames the model
+/// reviewed for it.
+class HistoryMoment {
+  const HistoryMoment({required this.label, required this.keyframes});
+
+  final String label;
+  final List<HistoryKeyframe> keyframes;
+}
+
 /// A round's analysis as read back from Supabase — the full feedback (not the
-/// one-line rollup kept locally) plus its keyframes.
+/// one-line rollup kept locally) plus its keyframes, grouped moment by moment.
 class HistoryRound {
   const HistoryRound({
     required this.segmentIndex,
@@ -23,7 +32,7 @@ class HistoryRound {
     this.aiCoaching,
     this.corrections = const <String>[],
     this.positiveNotes = const <String>[],
-    this.keyframes = const <HistoryKeyframe>[],
+    this.moments = const <HistoryMoment>[],
   });
 
   final int segmentIndex;
@@ -33,7 +42,10 @@ class HistoryRound {
   final String? aiCoaching;
   final List<String> corrections;
   final List<String> positiveNotes;
-  final List<HistoryKeyframe> keyframes;
+
+  /// Frames grouped by flagged moment (each ~7 frames). Empty for rounds synced
+  /// before grouping, or offline rounds with no flagged frames.
+  final List<HistoryMoment> moments;
 }
 
 /// A past session's full detail, read back from the cloud.
@@ -82,7 +94,7 @@ class SupabaseHistoryReader {
           .select(
             'id, segment_index, round_number, title, '
             'analyses(summary, ai_coaching, corrections, positive_notes), '
-            'keyframes(storage_path, timestamp_ms)',
+            'keyframes(storage_path, timestamp_ms, correction_ref, correction_index)',
           )
           .eq('session_id', sessionId)
           .order('segment_index');
@@ -90,7 +102,7 @@ class SupabaseHistoryReader {
       final rounds = <HistoryRound>[];
       for (final row in rows) {
         final analysis = _one(row['analyses']);
-        final keyframes = await _signKeyframes(_list(row['keyframes']));
+        final moments = await _signMoments(_list(row['keyframes']));
         rounds.add(
           HistoryRound(
             segmentIndex: (row['segment_index'] as num).toInt(),
@@ -100,7 +112,7 @@ class SupabaseHistoryReader {
             aiCoaching: analysis?['ai_coaching'] as String?,
             corrections: _corrections(analysis?['corrections']),
             positiveNotes: _strings(analysis?['positive_notes']),
-            keyframes: keyframes,
+            moments: moments,
           ),
         );
       }
@@ -114,25 +126,45 @@ class SupabaseHistoryReader {
     }
   }
 
-  /// Turn keyframe rows into signed URLs, sorted by moment in the round.
-  Future<List<HistoryKeyframe>> _signKeyframes(List<Object?> rows) async {
+  /// Group keyframe rows into moments (by correction_index), order the frames in
+  /// each by time, and sign every URL. Moments are ordered by index; rows with
+  /// no index (pre-grouping data) fall into a single trailing group.
+  Future<List<HistoryMoment>> _signMoments(List<Object?> rows) async {
     final frames = rows
         .whereType<Map<String, Object?>>()
         .map((r) => (
               path: r['storage_path'] as String?,
               ts: (r['timestamp_ms'] as num?)?.toInt() ?? 0,
+              index: (r['correction_index'] as num?)?.toInt() ?? -1,
+              label: r['correction_ref'] as String?,
             ))
         .where((f) => f.path != null)
-        .toList()
-      ..sort((a, b) => a.ts.compareTo(b.ts));
-    final out = <HistoryKeyframe>[];
+        .toList();
+    if (frames.isEmpty) return const <HistoryMoment>[];
+
+    final byIndex = <int, List<({String? path, int ts, int index, String? label})>>{};
     for (final f in frames) {
-      final url = await _client.storage
-          .from('keyframes')
-          .createSignedUrl(f.path!, _signedUrlTtlSeconds);
-      out.add(HistoryKeyframe(url: url, timestampMs: f.ts));
+      byIndex.putIfAbsent(f.index, () => []).add(f);
     }
-    return out;
+    final orderedKeys = byIndex.keys.toList()..sort();
+
+    final moments = <HistoryMoment>[];
+    for (final key in orderedKeys) {
+      final group = byIndex[key]!..sort((a, b) => a.ts.compareTo(b.ts));
+      final keyframes = <HistoryKeyframe>[];
+      for (final f in group) {
+        final url = await _client.storage
+            .from('keyframes')
+            .createSignedUrl(f.path!, _signedUrlTtlSeconds);
+        keyframes.add(HistoryKeyframe(url: url, timestampMs: f.ts));
+      }
+      final label = group
+              .map((f) => f.label)
+              .firstWhere((l) => l != null && l.isNotEmpty, orElse: () => null) ??
+          'Flagged moment';
+      moments.add(HistoryMoment(label: label, keyframes: keyframes));
+    }
+    return moments;
   }
 
   // Supabase returns an embedded to-one relation as a Map (or a single-element

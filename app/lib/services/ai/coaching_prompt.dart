@@ -92,6 +92,16 @@ class CoachingPrompt {
     ];
   }
 
+  /// The burst of frame timestamps around a single [centerMs] — the same window
+  /// [keyframeBursts] uses, exposed so the review/history layers can show (and
+  /// upload) exactly the frames the model saw for a moment.
+  static List<double> burstTimestamps(
+    double centerMs, {
+    required double durationMs,
+    int context = 3,
+    double spacingMs = 100,
+  }) => _burst(centerMs, context, spacingMs, durationMs);
+
   static List<double> _burst(
     double center,
     int context,
