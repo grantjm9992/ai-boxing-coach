@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1200" height="630" fill="#0A0A0B"/>
+  <radialGradient id="g" cx="82%" cy="0%" r="70%">
+    <stop offset="0%" stop-color="#FF3B30" stop-opacity="0.30"/>
+    <stop offset="55%" stop-color="#FF3B30" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <g transform="translate(84,90)">
+    <rect x="0" y="0" width="40" height="40" rx="10" fill="none" stroke="#FF3B30" stroke-width="4"/>
+    <rect x="11" y="11" width="18" height="18" rx="3" fill="#FF3B30"/>
+    <text x="58" y="29" fill="#9B9BA4" font-size="22" letter-spacing="5" font-weight="700">AI BOXING <tspan fill="#F5F5F7">COACH</tspan></text>
+  </g>
+  <text x="84" y="300" fill="#F5F5F7" font-size="94" font-weight="800" letter-spacing="-1">Train alone.</text>
+  <text x="84" y="400" fill="#F5F5F7" font-size="94" font-weight="800" letter-spacing="-1">Get feedback like</text>
+  <text x="84" y="500" fill="#FF3B30" font-size="94" font-weight="800" letter-spacing="-1">someone was watching.</text>
+  <text x="84" y="575" fill="#9B9BA4" font-size="27">AI reads your technique, catches the mistakes and tells you what to fix.</text>
+</svg>

@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI Boxing Coach — Train alone. Get coached.</title>
+  <meta name="description" content="Record your round. AI reads your technique, catches the mistakes and tells you exactly what to fix — round after round. Works on your phone, analyses on-device." />
+
+  <meta name="theme-color" content="#0A0A0B" />
+  <link rel="canonical" href="https://aiboxingcoach.example/" />
+
+  <!-- Open Graph / social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="AI Boxing Coach — Train alone. Get coached." />
+  <meta property="og:description" content="AI reads your technique, catches the mistakes and tells you what to fix. Every round, analysed." />
+  <meta property="og:image" content="assets/og.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Favicon: a technical reticle in the brand red -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0B'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23FF3B30' stroke-width='2'/%3E%3Cpath d='M16 3v6M16 23v6M3 16h6M23 16h6' stroke='%23FF3B30' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23FF3B30'/%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "AI Boxing Coach",
+    "applicationCategory": "SportsApplication",
+    "operatingSystem": "Android, iOS",
+    "description": "AI boxing coach that analyses your technique from phone video and gives specific, actionable coaching feedback — guard, stance, punch mechanics, movement — round after round.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+</head>
+<body>
+<a class="skip-link" href="#hero">Skip to content</a>
+
+<!-- ============================ NAV ============================ -->
+<header class="nav" id="top">
+  <div class="wrap nav__inner">
+    <a class="brand" href="#top" aria-label="AI Boxing Coach home">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <span class="brand__text">AI&nbsp;BOXING&nbsp;<b>COACH</b></span>
+    </a>
+
+    <nav class="nav__links" aria-label="Primary">
+      <a href="#what-it-sees">Product</a>
+      <a href="#how">How it works</a>
+      <a href="#coaches">For coaches</a>
+      <a href="#hardware">Hardware</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+
+    <a class="btn btn--primary btn--sm nav__cta" href="#final" data-analytics="cta_nav_beta">Join the Beta</a>
+
+    <button class="nav__toggle" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+  <div class="nav__mobile" id="mobile-menu" hidden>
+    <a href="#what-it-sees">Product</a>
+    <a href="#how">How it works</a>
+    <a href="#coaches">For coaches</a>
+    <a href="#hardware">Hardware</a>
+    <a href="#faq">FAQ</a>
+    <a class="btn btn--primary" href="#final" data-analytics="cta_nav_beta_mobile">Join the Beta</a>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================ HERO ============================ -->
+<section class="hero" id="hero">
+  <div class="wrap hero__grid">
+    <div class="hero__copy">
+      <p class="eyebrow">AI Boxing Coach</p>
+      <h1 class="hero__title">Train alone.<br />Get feedback like <span class="accent">someone was watching.</span></h1>
+      <p class="hero__sub">
+        Record your round. AI reads your technique, catches the mistakes and tells
+        you exactly what to fix — round after round.
+      </p>
+      <div class="hero__cta">
+        <a class="btn btn--primary" href="#final" data-analytics="cta_hero_primary">Try the AI Coach</a>
+        <a class="btn btn--ghost" href="#demo" data-analytics="cta_hero_watch">
+          <span class="btn__play" aria-hidden="true"></span> Watch how it works
+        </a>
+      </div>
+      <ul class="hero__trust">
+        <li>Works on your phone</li>
+        <li>Analyses on-device — private</li>
+        <li>No gym, no rig</li>
+      </ul>
+    </div>
+
+    <!-- Animated product demo. Swap the .demo block for real vertical footage
+         when available — the <figure> is sized for a 9:19.5 phone clip. -->
+    <figure class="hero__demo" id="demo">
+      <div class="demo" data-demo aria-label="Product demo: a round is recorded, analysed, an error is detected and corrected">
+        <div class="demo__frame">
+          <div class="demo__scene" aria-hidden="true">
+            <div class="demo__figure"></div>
+            <div class="demo__floor"></div>
+          </div>
+
+          <!-- Pose tracking overlay -->
+          <svg class="demo__pose" viewBox="0 0 100 140" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+            <g class="pose__lines">
+              <line x1="50" y1="24" x2="50" y2="42" />
+              <line x1="50" y1="42" x2="38" y2="34" />
+              <line x1="50" y1="42" x2="62" y2="34" />
+              <line class="pose__lead" x1="38" y1="34" x2="41" y2="30" />
+              <line x1="62" y1="34" x2="59" y2="30" />
+              <line x1="50" y1="42" x2="45" y2="66" />
+              <line x1="50" y1="42" x2="55" y2="66" />
+              <line x1="45" y1="66" x2="43" y2="92" />
+              <line x1="55" y1="66" x2="60" y2="92" />
+              <line x1="43" y1="92" x2="41" y2="116" />
+              <line x1="60" y1="92" x2="63" y2="116" />
+            </g>
+            <g class="pose__dots">
+              <circle cx="50" cy="22" r="2.6" />
+              <circle cx="38" cy="34" r="2" /><circle cx="62" cy="34" r="2" />
+              <circle cx="41" cy="30" r="2" /><circle cx="59" cy="30" r="2" />
+              <circle cx="45" cy="66" r="2" /><circle cx="55" cy="66" r="2" />
+              <circle cx="43" cy="92" r="2" /><circle cx="60" cy="92" r="2" />
+              <circle cx="41" cy="116" r="2" /><circle cx="63" cy="116" r="2" />
+            </g>
+          </svg>
+
+          <!-- Highlighted lead hand — drops on the error phase, returns on correct -->
+          <span class="demo__hand" aria-hidden="true"></span>
+
+          <span class="demo__scan" aria-hidden="true"></span>
+
+          <div class="demo__hud">
+            <span class="demo__status" data-demo-status>● REC</span>
+            <span class="demo__fps">16 FPS · ON-DEVICE</span>
+          </div>
+
+          <div class="demo__card">
+            <span class="demo__card-tag" data-demo-tag>Recording</span>
+            <p class="demo__card-text" data-demo-text>Recording round · front camera</p>
+          </div>
+        </div>
+      </div>
+      <figcaption class="demo__caption">Record → track → detect → fix. On repeat.</figcaption>
+    </figure>
+  </div>
+
+  <ol class="sequence wrap" aria-label="How a round becomes feedback">
+    <li><b>Throw</b><span>You box a round</span></li>
+    <li><b>Track</b><span>AI reads your pose</span></li>
+    <li><b>Detect</b><span>It flags the error</span></li>
+    <li><b>Fix</b><span>You get the correction</span></li>
+    <li><b>Repeat</b><span>Next round is better</span></li>
+  </ol>
+</section>
+
+<!-- ======================= WHAT IT SEES ======================= -->
+<section class="section" id="what-it-sees">
+  <div class="wrap">
+    <header class="section__head reveal">
+      <p class="eyebrow">What it sees</p>
+      <h2 class="section__title">It sees the mistakes you miss.</h2>
+      <p class="section__lead">On-device pose estimation and a rule engine read every round and turn it into specific, plain-language coaching — not a score you have to interpret.</p>
+    </header>
+
+    <div class="cards">
+      <article class="card reveal">
+        <span class="card__num">01</span>
+        <h3>Guard</h3>
+        <p>Catches when your hands leave the positions that keep you safe — the drop after the cross, the lazy return.</p>
+      </article>
+      <article class="card reveal">
+        <span class="card__num">02</span>
+        <h3>Stance &amp; balance</h3>
+        <p>Reads foot position, width and weight so you know when your base is working against you.</p>
+      </article>
+      <article class="card reveal">
+        <span class="card__num">03</span>
+        <h3>Punch mechanics</h3>
+        <p>Tracks extension, hip rotation and how the hand recovers — where power comes from and where it leaks.</p>
+      </article>
+      <article class="card reveal">
+        <span class="card__num">04</span>
+        <h3>Movement</h3>
+        <p>Reviews head movement and body positioning through the round, not just at the moment you punch.</p>
+      </article>
+      <article class="card reveal card--wide">
+        <span class="card__num">05</span>
+        <h3>Technique over time</h3>
+        <p>Watches whether the habits you're grooving are actually improving — session after session, not one clip.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== STATEMENT BAND ==================== -->
+<section class="statement" aria-label="Positioning">
+  <div class="wrap">
+    <p class="statement__text">Your coach can't watch every round.<br /><span class="accent">Your AI coach can.</span></p>
+  </div>
+</section>
+
+<!-- ======================== HOW IT WORKS ======================== -->
+<section class="section section--alt" id="how">
+  <div class="wrap">
+    <header class="section__head reveal">
+      <p class="eyebrow">How it works</p>
+      <h2 class="section__title">Three steps. No setup.</h2>
+    </header>
+
+    <ol class="steps">
+      <li class="step reveal">
+        <span class="step__num">01</span>
+        <h3>Record</h3>
+        <p>Prop up your phone and train normally. Front camera, no mic, no rig.</p>
+      </li>
+      <li class="step reveal">
+        <span class="step__num">02</span>
+        <h3>Analyse</h3>
+        <p>AI reviews the round on your device and finds the technical issues.</p>
+      </li>
+      <li class="step reveal">
+        <span class="step__num">03</span>
+        <h3>Improve</h3>
+        <p>Get specific feedback and take it straight into your next round.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============== MISTAKE → FEEDBACK → CORRECTION ============== -->
+<section class="section" id="correction">
+  <div class="wrap">
+    <header class="section__head reveal">
+      <p class="eyebrow">Mistake → Feedback → Correction</p>
+      <h2 class="section__title">From mistake to correction.</h2>
+      <p class="section__lead">Drag to compare the same combination — before and after the note landed.</p>
+    </header>
+
+    <div class="compare reveal" data-compare>
+      <!-- Replace both panels with matched before/after clips when available. -->
+      <div class="compare__viewer">
+        <div class="compare__panel compare__panel--after" aria-hidden="true">
+          <div class="compare__scene compare__scene--good"></div>
+          <span class="compare__badge compare__badge--good">Corrected · guard tight</span>
+        </div>
+        <div class="compare__panel compare__panel--before" data-compare-top aria-hidden="true">
+          <div class="compare__scene compare__scene--bad"></div>
+          <span class="compare__badge compare__badge--bad">Guard error detected</span>
+        </div>
+        <div class="compare__divider" data-compare-divider>
+          <span class="compare__handle"></span>
+        </div>
+        <input class="compare__range" type="range" min="0" max="100" value="50"
+               aria-label="Compare before and after" data-compare-range />
+      </div>
+
+      <aside class="feedback">
+        <div class="feedback__card feedback__card--error">
+          <span class="feedback__label">Detected</span>
+          <p>Your <b>left hand dropped</b> during the right cross, leaving your head exposed.</p>
+        </div>
+        <div class="feedback__card feedback__card--fix">
+          <span class="feedback__label">The fix</span>
+          <p>Keep the lead hand tight to the cheek while you rotate through the rear hand.</p>
+        </div>
+        <p class="feedback__note">Feedback is written the way a coach would say it — the specific error, then what to do about it.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= TRAIN ANYWHERE ======================= -->
+<section class="section section--alt" id="anywhere">
+  <div class="wrap">
+    <header class="section__head reveal">
+      <p class="eyebrow">Train anywhere</p>
+      <h2 class="section__title">No gym required.</h2>
+    </header>
+
+    <div class="places">
+      <article class="place reveal">
+        <div class="place__media place__media--home" aria-hidden="true"></div>
+        <h3>Home</h3>
+        <p>Shadowbox in the living room. Set the phone down and go.</p>
+      </article>
+      <article class="place reveal">
+        <div class="place__media place__media--bag" aria-hidden="true"></div>
+        <h3>The bag</h3>
+        <p>Analyse real work on the heavy bag in the garage or garden.</p>
+      </article>
+      <article class="place reveal">
+        <div class="place__media place__media--park" aria-hidden="true"></div>
+        <h3>Outside</h3>
+        <p>Take your coach to the park. Same feedback, open air.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== STATEMENT BAND ==================== -->
+<section class="statement statement--plain" aria-label="Positioning">
+  <div class="wrap">
+    <p class="statement__text">Stop grooving the same mistake.<br /><span class="accent">Round after round.</span></p>
+  </div>
+</section>
+
+<!-- ===================== FULL-ROUND ANALYSIS ===================== -->
+<section class="section" id="full-round">
+  <div class="wrap full-round">
+    <div class="full-round__copy reveal">
+      <p class="eyebrow">Full-round analysis</p>
+      <h2 class="section__title">Not just one punch. The whole round.</h2>
+      <p class="section__lead">The advanced analysis reviews you across a complete round — so you see the patterns, not a lucky snapshot.</p>
+      <ul class="ticks">
+        <li>Spot repeated mistakes across the round</li>
+        <li>Catch technique slipping as you tire</li>
+        <li>See patterns across combinations</li>
+        <li>Compare your early-round and late-round form</li>
+        <li>Measure how consistent you actually are</li>
+      </ul>
+    </div>
+
+    <div class="full-round__viz reveal" aria-hidden="true">
+      <div class="timeline">
+        <div class="timeline__row"><span class="timeline__label">Guard</span><div class="timeline__track"><i style="--l:6%;--w:5%"></i><i class="bad" style="--l:58%;--w:6%"></i><i class="bad" style="--l:82%;--w:7%"></i></div></div>
+        <div class="timeline__row"><span class="timeline__label">Rotation</span><div class="timeline__track"><i style="--l:14%;--w:6%"></i><i style="--l:44%;--w:6%"></i><i class="bad" style="--l:88%;--w:6%"></i></div></div>
+        <div class="timeline__row"><span class="timeline__label">Footwork</span><div class="timeline__track"><i style="--l:22%;--w:5%"></i><i style="--l:52%;--w:5%"></i><i style="--l:74%;--w:5%"></i></div></div>
+        <div class="timeline__row"><span class="timeline__label">Head mvmt</span><div class="timeline__track"><i style="--l:10%;--w:6%"></i><i class="bad" style="--l:66%;--w:7%"></i></div></div>
+        <div class="timeline__axis"><span>0:00</span><span>Round 1 · 3:00</span></div>
+      </div>
+      <p class="viz__note">Illustrative timeline — flagged moments across a round.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= PROGRESS ========================= -->
+<section class="section section--alt" id="progress">
+  <div class="wrap full-round full-round--rev">
+    <div class="full-round__copy reveal">
+      <p class="eyebrow">Progress</p>
+      <h2 class="section__title">See whether you're actually getting better.</h2>
+      <p class="section__lead">Every analysed round rolls up, so the habits you're fixing — and the ones you're not — stop being a feeling and start being visible.</p>
+      <div class="stats">
+        <div class="stat"><b data-count="6">0</b><span>technique checks per round</span></div>
+        <div class="stat"><b data-count="7">0</b><span>frames per flagged moment</span></div>
+        <div class="stat"><b data-count="100" data-suffix="%">0</b><span>on-device &amp; private</span></div>
+      </div>
+    </div>
+
+    <div class="full-round__viz reveal" aria-hidden="true">
+      <div class="chart">
+        <div class="chart__head"><span>Guard consistency</span><span class="chart__trend">▲ trending up</span></div>
+        <div class="chart__bars">
+          <i style="--h:38%"></i><i style="--h:46%"></i><i style="--h:42%"></i>
+          <i style="--h:58%"></i><i style="--h:64%"></i><i style="--h:61%"></i>
+          <i style="--h:72%"></i><i style="--h:80%"></i>
+        </div>
+        <div class="chart__axis"><span>Session 1</span><span>Latest</span></div>
+      </div>
+      <p class="viz__note">Illustrative — shows the kind of trend tracking, not real data.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= FREE / PRO ========================= -->
+<section class="section" id="pricing">
+  <div class="wrap">
+    <header class="section__head reveal">
+      <p class="eyebrow">Free tier</p>
+      <h2 class="section__title">Start training for free.</h2>
+    </header>
+
+    <div class="pricing">
+      <article class="plan reveal">
+        <h3 class="plan__name">Free</h3>
+        <p class="plan__price">£0<span>/forever</span></p>
+        <ul class="plan__feats">
+          <li>Up to 3 detailed AI analyses / week</li>
+          <li>Core technique feedback</li>
+          <li>Basic session analysis</li>
+        </ul>
+        <a class="btn btn--ghost plan__cta" href="#final" data-analytics="cta_plan_free">Start Free</a>
+      </article>
+
+      <article class="plan plan--pro reveal">
+        <span class="plan__flag">Early access</span>
+        <h3 class="plan__name">Pro</h3>
+        <p class="plan__price">Coming soon</p>
+        <ul class="plan__feats">
+          <li>Unlimited detailed analysis</li>
+          <li>Full error breakdown</li>
+          <li>Coaching recommendations</li>
+          <li>Progress tracking</li>
+          <li>Advanced full-round analysis</li>
+        </ul>
+        <a class="btn btn--primary plan__cta" href="#final" data-analytics="cta_plan_pro">Join early access</a>
+      </article>
+
+      <!-- Error teaser: shows the free/paid split without gutting the free tier -->
+      <aside class="teaser reveal">
+        <p class="teaser__head"><b>3</b> issues detected this round</p>
+        <ul class="teaser__list">
+          <li class="is-open"><span class="tick">✓</span> Lead hand drops after right cross</li>
+          <li class="is-locked"><span class="lock">🔒</span> Rear foot rotation</li>
+          <li class="is-locked"><span class="lock">🔒</span> Head position during the jab</li>
+        </ul>
+        <p class="teaser__foot">Free shows you the first fix. Pro breaks down the rest.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= HARDWARE ========================= -->
+<section class="section section--alt" id="hardware">
+  <div class="wrap hardware">
+    <div class="hardware__copy reveal">
+      <p class="eyebrow">On the horizon</p>
+      <h2 class="section__title">Want even deeper analysis?</h2>
+      <p class="section__lead">We're developing a multi-camera system for a much clearer picture of what your body is actually doing — better tracking, fewer blind spots, real 3D.</p>
+      <ul class="ticks">
+        <li>Multi-angle tracking</li>
+        <li>Better handling of occlusion</li>
+        <li>Truer 3D reconstruction</li>
+        <li>Punch-trajectory analysis</li>
+      </ul>
+      <a class="btn btn--primary" href="#hardware-form" data-analytics="cta_hardware_beta">Join the Hardware Beta</a>
+      <p class="micro">In testing — not finished. Join to help shape it.</p>
+    </div>
+
+    <div class="hardware__rig reveal" aria-hidden="true">
+      <div class="rig">
+        <span class="rig__cam rig__cam--tl">CAM</span>
+        <span class="rig__cam rig__cam--tr">CAM</span>
+        <span class="rig__cam rig__cam--bl">CAM</span>
+        <span class="rig__cam rig__cam--br">CAM</span>
+        <span class="rig__center">🥊</span>
+        <svg class="rig__lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <rect x="12" y="12" width="76" height="76" rx="2" />
+          <line x1="12" y1="12" x2="88" y2="88" /><line x1="88" y1="12" x2="12" y2="88" />
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== COACH / GYM TEASER ==================== -->
+<section class="section" id="coaches">
+  <div class="wrap band reveal">
+    <div class="band__copy">
+      <p class="eyebrow">For coaches &amp; gyms</p>
+      <h2 class="section__title">Coaching athletes?</h2>
+      <p class="section__lead">We're building tools for coaches and gyms to analyse athletes objectively, track development and review sessions over time.</p>
+    </div>
+    <form class="signup" data-signup="coach_beta" novalidate>
+      <label class="sr-only" for="coach-email">Work email</label>
+      <input id="coach-email" type="email" name="email" placeholder="Work email" required autocomplete="email" />
+      <button class="btn btn--primary" type="submit" data-analytics="cta_coach_beta">Join the Coach Beta</button>
+      <p class="signup__msg" data-signup-msg role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<!-- ============================ FAQ ============================ -->
+<section class="section section--alt" id="faq">
+  <div class="wrap faq">
+    <header class="section__head reveal">
+      <p class="eyebrow">FAQ</p>
+      <h2 class="section__title">Straight answers.</h2>
+    </header>
+
+    <div class="faq__list reveal">
+      <details><summary>Do I need special equipment?<span class="faq__mk"></span></summary><p>No. The app works with your phone camera. Prop it up and train.</p></details>
+      <details><summary>Do I need a coach?<span class="faq__mk"></span></summary><p>No. It's built to give you extra feedback when you train alone — and it complements coached sessions rather than replacing them.</p></details>
+      <details><summary>Does it work with a heavy bag?<span class="faq__mk"></span></summary><p>Yes. Bag work is one of the training environments it's designed for.</p></details>
+      <details><summary>Does it work outdoors?<span class="faq__mk"></span></summary><p>Yes — living room, garage bag or the park all work.</p></details>
+      <details><summary>What does the AI analyse?<span class="faq__mk"></span></summary><p>Today: guard and hand return, stance and balance, punch mechanics and rotation, head movement and footwork — and whether those habits improve over time.</p></details>
+      <details><summary>Is this supposed to replace a boxing coach?<span class="faq__mk"></span></summary><p>No. It gives you more feedback, more often — between coached sessions or when no one's watching.</p></details>
+      <details><summary>Is multi-camera support coming?<span class="faq__mk"></span></summary><p>A dedicated multi-camera system is being explored and tested. Join the hardware beta to follow along.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= FINAL CTA ========================= -->
+<section class="final" id="final">
+  <div class="wrap final__inner reveal">
+    <p class="eyebrow final__eyebrow">The hardest part is pressing record</p>
+    <h2 class="final__title">Your next round should <span class="accent">teach you something.</span></h2>
+    <form class="signup signup--lg" id="hardware-form" data-signup="app_beta" novalidate>
+      <label class="sr-only" for="beta-email">Email address</label>
+      <input id="beta-email" type="email" name="email" placeholder="Enter your email" required autocomplete="email" />
+      <button class="btn btn--primary btn--lg" type="submit" data-analytics="cta_final_beta">Join the Beta</button>
+      <p class="signup__msg" data-signup-msg role="status" aria-live="polite"></p>
+    </form>
+    <p class="final__alt">
+      Interested in the multi-camera rig?
+      <a href="#" data-signup-jump data-analytics="cta_final_hardware_waitlist">Join the hardware waitlist →</a>
+    </p>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================ FOOTER ============================ -->
+<footer class="footer">
+  <div class="wrap footer__inner">
+    <div class="footer__brand">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <span class="brand__text">AI&nbsp;BOXING&nbsp;<b>COACH</b></span>
+      <p>More feedback. More often.</p>
+    </div>
+    <nav class="footer__cols" aria-label="Footer">
+      <div>
+        <h4>Product</h4>
+        <a href="#what-it-sees">What it sees</a>
+        <a href="#how">How it works</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+      <div>
+        <h4>Explore</h4>
+        <a href="#full-round">Full-round analysis</a>
+        <a href="#hardware">Hardware</a>
+        <a href="#coaches">For coaches</a>
+      </div>
+      <div>
+        <h4>Get started</h4>
+        <a href="#final">Join the beta</a>
+        <a href="#faq">FAQ</a>
+      </div>
+    </nav>
+  </div>
+  <div class="wrap footer__base">
+    <span>© <span data-year>2026</span> AI Boxing Coach</span>
+    <span>Boxing is the product. AI is the technology underneath.</span>
+  </div>
+</footer>
+
+<script src="main.js" defer></script>
+</body>
+</html>
