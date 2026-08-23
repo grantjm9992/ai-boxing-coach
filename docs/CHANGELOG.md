@@ -23,6 +23,11 @@ Feature areas referenced below have their own deep-dive docs — see
   rows don't carry. See [`BACKEND_SYNC.md`](BACKEND_SYNC.md).
 
 ### Changed
+- **The coach picks the phone's most natural voice.** `DeviceCoachVoice` now
+  enumerates installed TTS voices on init and switches off the robotic default to
+  the best English neural/enhanced voice available (Apple premium/enhanced/Siri,
+  Google online "network"), via the pure `pickBestVoice`. Best-effort and offline
+  — no network, cost or new dependency. See [`SESSION_ENGINE.md`](SESSION_ENGINE.md).
 - **Pose frames convert straight to a Bitmap.** The native Android pose plugin
   dropped its per-frame `YUV → NV21 → JPEG-encode → JPEG-decode → Bitmap` round
   trip for a single integer BT.601 pass straight to `ARGB_8888`. Resolution and

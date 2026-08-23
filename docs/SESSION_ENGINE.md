@@ -73,6 +73,27 @@ a `CuePriority.critical` cue is never dropped; a `CuePriority.routine` cue never
 interrupts one already being spoken. The app uses `DeviceCoachVoice`
 (flutter_tts); tests use `SilentCoachVoice`.
 
+### Natural voice selection
+
+Device TTS ships several voices per language of very different quality, and the
+OS default is often one of the old robotic "compact"/eloquence voices — the main
+reason synthesized speech sounds artificial. On init, `DeviceCoachVoice`
+enumerates the installed voices and switches to the most natural English one,
+using the pure, plugin-free `pickBestVoice` (`services/coach_voice_selection.dart`):
+
+- **up:** Apple `premium` / `enhanced` / Siri voices, Google's online `network`
+  voices, and an exact-locale (en-GB) accent match;
+- **down:** `eloquence` and `compact` low-fi voices;
+- returns `null` when nothing clearly beats the default, so the default is left
+  untouched rather than swapped for something no better.
+
+It's best-effort and fully offline — no network, no cost, no added dependency,
+so the on-device/private path is unchanged. The chosen voice is logged under the
+`[voice]` tag in `DebugLog` so it can be confirmed on a device. Note some iOS
+enhanced/premium voices need a one-time download in Settings before they appear.
+A genuinely branded, cloud-neural coach voice would be a separate, deliberate
+step (cost + latency + a live-session network dependency).
+
 ## Where recording and analysis hook in
 
 The session screen watches segment transitions and, for **technical work rounds
