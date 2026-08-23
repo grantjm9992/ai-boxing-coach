@@ -11,6 +11,12 @@ Feature areas referenced below have their own deep-dive docs — see
 ## [Unreleased]
 
 ### Added
+- **Progress / trends view.** A new Progress screen (home → insights icon) rolls
+  the session history up into whether you're actually improving: guard-consistency
+  and punch-volume trends over time, the corrections that keep recurring, all-time
+  totals, and the all-time category balance. Computed by the pure
+  `ProgressStats.from` over real per-round analysis only — a session that wasn't
+  analysed doesn't move a line, and nothing is fabricated.
 - **History list loads from the database.** The History tab now rebuilds its
   list from Supabase (`SupabaseHistoryReader.listSessions()`) and merges it with
   the on-device history — cloud authoritative per session, local filling
