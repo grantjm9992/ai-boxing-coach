@@ -80,3 +80,22 @@ keyframe payload ([`AI_INTEGRATION.md`](AI_INTEGRATION.md)).
   rollup. `SessionRecord.rollupJson` is the session-level summary
   (total/work seconds, round count, category seconds) that also gets persisted to
   the cloud so the History list can be rebuilt on another device.
+
+## Progress / trends
+
+The Progress screen (`ui/screens/progress_screen.dart`, reached from the home
+screen's insights icon) reads the whole local history and rolls it up into
+whether the boxer is improving. The maths is a pure model, `ProgressStats.from`
+(`domain/progress_stats.dart`), unit-tested with no store or UI:
+
+- **Guard consistency** — per-session average `RoundSummary.guardReturnRate`, as a
+  trend with the change since the first session.
+- **Punch volume** — per-session total `punchesThrown`.
+- **Recurring flags** — a tally of each round's `topCorrection`, most common first.
+- **Totals** — sessions, analysed rounds, work time, punches; plus the all-time
+  category balance (reusing `CategoryBalance`).
+
+Everything comes from real per-round analysis, so an un-analysed round simply
+doesn't contribute — no invented metrics. Source today is the local
+`SessionHistoryStore` (the device's training log); the richer per-round metrics
+aren't in the cloud read-back yet, so cross-device rollups are a later step.

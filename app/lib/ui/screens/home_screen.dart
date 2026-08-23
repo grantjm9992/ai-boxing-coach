@@ -11,6 +11,7 @@ import '../widgets/phase_bar.dart';
 import 'exercise_library_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
+import 'progress_screen.dart';
 import 'template_detail_screen.dart';
 
 /// Template picker — the entry point of the app.
@@ -35,6 +36,15 @@ class HomeScreen extends StatelessWidget {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const ProfileScreen(),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.insights_outlined),
+            tooltip: 'Progress & trends',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ProgressScreen(),
               ),
             ),
           ),
