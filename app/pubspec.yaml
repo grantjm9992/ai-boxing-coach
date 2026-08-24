@@ -1,7 +1,7 @@
 name: boxing_coach
-description: "AI Boxing Coach — v0.1 proof of concept: structured sessions, round timer and an anticipatory coach."
+description: "AI Boxing Coach — record a round, get AI technique feedback: guard, stance, punch mechanics, footwork and progress over time."
 publish_to: 'none'
-version: 0.1.0+1
+version: 1.0.0+1
 
 environment:
   sdk: ^3.12.2
