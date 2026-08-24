@@ -5,6 +5,7 @@ import '../../analysis/drill.dart';
 import '../../analysis/landmarks.dart';
 import '../../analysis/school.dart';
 import '../../domain/user_profile.dart';
+import '../../services/ai/ai_quota_service.dart';
 import '../../services/ai/ai_settings_store.dart';
 import '../../services/ai/openai_compatible_vision_model.dart';
 import '../../services/ai/vision_model.dart';
@@ -18,11 +19,18 @@ import 'debug_log_screen.dart';
 /// toward. This is what turns the (fully-ported) style/school coaching on: every
 /// technical round is analysed against the profile chosen here.
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({this.store, this.aiStore, this.auth, super.key});
+  const ProfileScreen({
+    this.store,
+    this.aiStore,
+    this.auth,
+    this.quota,
+    super.key,
+  });
 
   final ProfileStore? store;
   final AiSettingsStore? aiStore;
   final AuthService? auth;
+  final AiQuotaService? quota;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -42,6 +50,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return null;
     }
   }
+
+  late final AiQuotaService _quota = widget.quota ?? AiQuotaService();
+  int? _aiRemaining;
 
   bool _deleting = false;
   UserProfile _profile = const UserProfile();
@@ -88,6 +99,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _apiKey.text = _config.apiKey;
         _loaded = true;
       });
+    });
+    _refreshQuota();
+  }
+
+  void _refreshQuota() {
+    _quota.remaining().then((n) {
+      if (mounted) setState(() => _aiRemaining = n);
     });
   }
 
@@ -245,6 +263,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     'in; your allowance resets every Monday.',
                     style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                   ),
+                  if (!_config.useCustomEndpoint && _aiRemaining != null) ...<Widget>[
+                    const SizedBox(height: 12),
+                    _QuotaBadge(remaining: _aiRemaining!, limit: kWeeklyAiLimit),
+                  ],
                   const SizedBox(height: 8),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
@@ -537,6 +559,60 @@ class _Badge extends StatelessWidget {
           fontWeight: FontWeight.w700,
           color: AppTheme.textSecondary,
         ),
+      ),
+    );
+  }
+}
+
+/// "N of 3 AI analyses left this week" — reads the server-side weekly quota.
+class _QuotaBadge extends StatelessWidget {
+  const _QuotaBadge({required this.remaining, required this.limit});
+
+  final int remaining;
+  final int limit;
+
+  @override
+  Widget build(BuildContext context) {
+    final none = remaining <= 0;
+    final color = none ? AppTheme.accent : AppTheme.rest;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(none ? Icons.hourglass_bottom : Icons.bolt, size: 16, color: color),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text.rich(
+              TextSpan(
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.textPrimary,
+                ),
+                children: none
+                    ? const <InlineSpan>[
+                        TextSpan(text: 'No AI analyses left'),
+                        TextSpan(
+                          text: ' — resets Monday',
+                          style: TextStyle(color: AppTheme.textSecondary),
+                        ),
+                      ]
+                    : <InlineSpan>[
+                        TextSpan(
+                          text: '$remaining of $limit',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        const TextSpan(text: ' AI analyses left this week'),
+                      ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
