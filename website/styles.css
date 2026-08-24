@@ -548,3 +548,18 @@ h1, h2, h3, .section__title, .final__title, .hero__title {
   .footer__inner { grid-template-columns: 1.2fr 2fr; }
   .footer__cols { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ============================ LEGAL PAGES ============================ */
+.legal { max-width: 760px; margin-inline: auto; padding: 40px var(--pad) 80px; }
+.legal__back { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 700; margin-bottom: 28px; }
+.legal h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.1; margin-bottom: 8px; }
+.legal .updated { color: var(--text-2, #9a99a3); font-size: 13px; margin-bottom: 32px; }
+.legal h2 { font-size: 20px; margin: 34px 0 10px; }
+.legal h3 { font-size: 16px; margin: 22px 0 8px; }
+.legal p, .legal li { color: #cfced6; line-height: 1.65; }
+.legal p { margin-bottom: 14px; }
+.legal ul { margin: 0 0 16px 20px; }
+.legal li { margin-bottom: 8px; }
+.legal a { color: var(--accent); }
+.legal strong { color: var(--text); }
+.legal .callout { background: var(--surface); border: 1px solid var(--line, #26252b); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px 16px; margin: 20px 0; }

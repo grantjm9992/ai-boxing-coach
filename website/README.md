@@ -34,7 +34,26 @@ python3 -m http.server 8080     # then visit http://localhost:8080
   → how it works → mistake→correction → train anywhere → full-round → progress →
   free/pro → hardware → coaches → FAQ → final CTA → footer.
 
-## ⚠️ Placeholders — replace before launch
+## ✅ Wired up (Aug 2026)
+
+- **Signup forms** now POST to the Supabase `waitlist` table (`main.js`
+  `saveSignup`); insert-only via the publishable key, RLS-protected. Run
+  migration `supabase/migrations/0004_waitlist.sql` to create the table. Read
+  the list in the Supabase dashboard.
+- **Legal pages**: `privacy.html`, `terms.html`, `delete-account.html` (linked
+  in the footer). The delete-account page is required by Google Play; drafts
+  need a professional review + your operator legal name.
+- **OG share image**: `assets/og.png` (1200×630, exported from `og.svg`); the
+  meta tags point at it.
+
+## ⚠️ Still to do before launch
+
+- **Set the real domain**: `index.html` still has `aiboxingcoach.example` in
+  `<link rel="canonical">`/`og:url`. Update it, and make `og:image` an absolute
+  URL once the domain is live.
+- **Deploy target**: this is a static site — a static host (Cloudflare Pages /
+  Netlify) is simpler/free vs Railway. For Railway you need a tiny static
+  server (Caddy / `serve`) container.
 
 The brief is emphatic that **real product footage does most of the selling**.
 This build ships credible *stand-ins* so the layout and motion are real, with
