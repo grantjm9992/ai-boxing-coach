@@ -11,7 +11,7 @@ Thin federated plugin around MediaPipe Tasks Vision Pose Landmarker. Runs pose
 estimation over a recorded video file and streams the landmark sequence back to
 Dart on the same method/event channels as the Android implementation.
                        DESC
-  s.homepage         = 'https://aiboxingcoach.example'
+  s.homepage         = 'https://aicornerman.com'
   s.license          = { :type => 'Proprietary' }
   s.author           = { 'AI Boxing Coach' => 'phisoluciones.es@gmail.com' }
   s.source           = { :path => '.' }

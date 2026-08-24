@@ -48,9 +48,6 @@ python3 -m http.server 8080     # then visit http://localhost:8080
 
 ## ⚠️ Still to do before launch
 
-- **Set the real domain**: `index.html` still has `aiboxingcoach.example` in
-  `<link rel="canonical">`/`og:url`. Update it, and make `og:image` an absolute
-  URL once the domain is live.
 - **Deploy target**: this is a static site — a static host (Cloudflare Pages /
   Netlify) is simpler/free vs Railway. For Railway you need a tiny static
   server (Caddy / `serve`) container.
