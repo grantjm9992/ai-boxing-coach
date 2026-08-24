@@ -10,6 +10,7 @@ import '../../domain/session_record.dart';
 import '../../domain/user_profile.dart';
 import '../../engine/coach_cue.dart';
 import '../../engine/session_engine.dart';
+import '../../services/ai/ai_quota_service.dart';
 import '../../services/ai/ai_settings_store.dart';
 import '../../services/ai/coach_vision_model.dart';
 import '../../services/camera_round_recorder.dart';
@@ -125,6 +126,11 @@ class _SessionScreenState extends State<SessionScreen> {
   /// is replaced once loaded (or taken from the injected value).
   UserProfile _profile = const UserProfile();
 
+  /// The AI analyses this user has left this week (hosted path only), for the
+  /// on-screen hint. Null = unknown / not applicable → the hint stays hidden.
+  final AiQuotaService _quota = AiQuotaService();
+  int? _aiRemaining;
+
   /// True once this session contains technical rounds and we have offered the
   /// framing check. It is offered exactly once, before the first such round.
   bool _cameraChecked = false;
@@ -186,6 +192,12 @@ class _SessionScreenState extends State<SessionScreen> {
       } else {
         _analyzer = RoundAnalyzer();
       }
+    }
+    // Fetch the weekly AI allowance for the on-screen hint, but only on the
+    // hosted path (a custom endpoint isn't metered).
+    if (profile.analysisMode.usesAi && !config.useCustomEndpoint) {
+      final remaining = await _quota.remaining();
+      if (mounted) setState(() => _aiRemaining = remaining);
     }
   }
 
@@ -538,6 +550,13 @@ class _SessionScreenState extends State<SessionScreen> {
                   left: 8,
                   child: _AnalysingBadge(count: _analysing.length),
                 ),
+              if (_profile.analysisMode.usesAi && _aiRemaining != null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 10,
+                  child: Center(child: _QuotaHint(remaining: _aiRemaining!)),
+                ),
             ],
           ),
         ),
@@ -574,6 +593,40 @@ class _AnalysingBadge extends StatelessWidget {
             count > 1 ? 'Analysing $count rounds…' : 'Analysing round…',
             style: const TextStyle(color: Colors.white, fontSize: 12),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A quiet reminder of the weekly AI allowance during a session. At zero it says
+/// rounds still record and are analysed offline — the AI enrichment just pauses
+/// until Monday, so nothing feels broken.
+class _QuotaHint extends StatelessWidget {
+  const _QuotaHint({required this.remaining});
+
+  final int remaining;
+
+  @override
+  Widget build(BuildContext context) {
+    final none = remaining <= 0;
+    const accent = Color(0xFFE8503A);
+    final text = none
+        ? 'No AI analyses left — rounds saved & analysed offline this week'
+        : '$remaining AI ${remaining == 1 ? 'analysis' : 'analyses'} left this week';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(none ? Icons.hourglass_bottom : Icons.bolt,
+              size: 14, color: none ? accent : Colors.white),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(color: Colors.white, fontSize: 12)),
         ],
       ),
     );
