@@ -90,11 +90,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _updateConfig() {
-    _config = VisionModelConfig(
+    _config = _config.copyWith(
       baseUrl: _baseUrl.text.trim(),
       model: _model.text.trim(),
       apiKey: _apiKey.text.trim(),
     );
+    _aiStore.save(_config);
+  }
+
+  void _setUseCustomEndpoint(bool value) {
+    setState(() => _config = _config.copyWith(useCustomEndpoint: value));
     _aiStore.save(_config);
   }
 
@@ -217,47 +222,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 if (_profile.analysisMode.usesAi) ...<Widget>[
                   const SizedBox(height: 16),
-                  const _Label('Model endpoint'),
+                  const _Label('AI coaching'),
                   const SizedBox(height: 4),
                   const Text(
-                    'OpenAI-compatible. Works with a hosted API now (OpenAI, '
-                    'Qwen/DashScope, OpenRouter) or your own vLLM server later — '
-                    'just point the base URL + model at it.',
+                    'Included — 3 detailed AI analyses per week on the free tier, '
+                    'nothing to set up. Runs on our servers when you\'re signed '
+                    'in; your allowance resets every Monday.',
                     style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                   ),
-                  const SizedBox(height: 12),
-                  _field(_baseUrl, 'Base URL', 'https://api.openai.com/v1'),
-                  const SizedBox(height: 10),
-                  _field(_model, 'Model', 'qwen3-vl-8b-instruct'),
-                  const SizedBox(height: 10),
-                  _field(_apiKey, 'API key', 'sk-…', obscure: true),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: <Widget>[
-                      OutlinedButton.icon(
-                        onPressed: _testing || !_config.isConfigured
-                            ? null
-                            : _testConnection,
-                        icon: _testing
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.wifi_tethering, size: 18),
-                        label: const Text('Test connection'),
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _config.useCustomEndpoint,
+                    onChanged: _setUseCustomEndpoint,
+                    title: const Text(
+                      'Use my own model endpoint',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: const Text(
+                      'Advanced — send coaching to your own OpenAI-compatible '
+                      'server (dev / self-hosted) instead of the hosted coach.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                  if (_config.useCustomEndpoint) ...<Widget>[
+                    const SizedBox(height: 8),
+                    _field(_baseUrl, 'Base URL', 'https://api.openai.com/v1'),
+                    const SizedBox(height: 10),
+                    _field(_model, 'Model', 'qwen3-vl-8b-instruct'),
+                    const SizedBox(height: 10),
+                    _field(_apiKey, 'API key', 'sk-…', obscure: true),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: <Widget>[
+                        OutlinedButton.icon(
+                          onPressed: _testing || !_config.isConfigured
+                              ? null
+                              : _testConnection,
+                          icon: _testing
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.wifi_tethering, size: 18),
+                          label: const Text('Test connection'),
+                        ),
+                      ],
+                    ),
+                    if (_testResult != null) ...<Widget>[
+                      const SizedBox(height: 10),
+                      Text(
+                        _testResult!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
                       ),
                     ],
-                  ),
-                  if (_testResult != null) ...<Widget>[
-                    const SizedBox(height: 10),
-                    Text(
-                      _testResult!,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
                   ],
                 ],
               ],

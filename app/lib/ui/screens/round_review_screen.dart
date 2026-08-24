@@ -14,8 +14,8 @@ import '../../analysis/round_analysis.dart';
 import '../../domain/round_clip.dart';
 import '../../domain/user_profile.dart';
 import '../../services/ai/ai_settings_store.dart';
+import '../../services/ai/coach_vision_model.dart';
 import '../../services/ai/coaching_prompt.dart';
-import '../../services/ai/openai_compatible_vision_model.dart';
 import '../../services/ai/vision_model.dart';
 import '../../services/analysis_store.dart';
 import '../../services/clip_store.dart';
@@ -311,8 +311,9 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
       setSource('offline rules (mode=${mode.value})');
       return;
     }
-    if (!config.isConfigured) {
-      setSource('offline (AI config not set: base/model missing)');
+    final visionModel = resolveCoachVisionModel(config: config);
+    if (visionModel == null) {
+      setSource('offline (no AI: sign in, or set a custom endpoint)');
       return;
     }
     setSource('AI (${mode.value}) running…');
@@ -342,13 +343,11 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
       final request = mode == AnalysisMode.keyframe
           ? CoachingPrompt.keyframeRequest(analysis, drill, bursts, images)
           : CoachingPrompt.fullFrameRequest(drill, images);
-      final model = OpenAiCompatibleVisionModel(config);
-      final coaching = await model.complete(request);
-      model.close();
+      final coaching = await visionModel.complete(request);
       if (!mounted) return;
       setState(() {
         _analysis = analysis.withModelCoaching(coaching.trim());
-        _source = 'AI · ${config.model} · ${mode.value} · ${images.length} '
+        _source = 'AI · ${visionModel.label} · ${mode.value} · ${images.length} '
             'frames';
       });
     } on VisionModelException catch (error) {
