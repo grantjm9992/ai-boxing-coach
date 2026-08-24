@@ -2,6 +2,10 @@
     <!-- v0.5 stage 0.2: record technical rounds for pose analysis. Video only,
          no audio, so no RECORD_AUDIO permission is needed. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Backend sync (Supabase) + the AI coaching proxy call over HTTPS. Declared
+         explicitly in the main manifest so a release build can't lose it to a
+         plugin-manifest-merge change. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <application
         android:label="AI Boxing Coach"

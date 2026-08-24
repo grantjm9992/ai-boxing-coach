@@ -8,6 +8,7 @@ class VisionModelConfig {
     this.baseUrl = '',
     this.apiKey = '',
     this.model = '',
+    this.useCustomEndpoint = false,
   });
 
   /// The OpenAI-compatible base, ending in `/v1`, e.g.
@@ -23,20 +24,32 @@ class VisionModelConfig {
   /// self-hosted server was launched with.
   final String model;
 
+  /// Advanced: send coaching to [baseUrl] directly instead of the hosted proxy.
+  /// Off by default — the shipped app routes AI through the Supabase `analyze`
+  /// function (server-side key + weekly cap). Turn this on to use your own
+  /// OpenAI-compatible endpoint (dev / self-hosted Qwen).
+  final bool useCustomEndpoint;
+
   /// Enough to attempt a call: we have somewhere to send it and something to run.
   bool get isConfigured => baseUrl.trim().isNotEmpty && model.trim().isNotEmpty;
 
-  VisionModelConfig copyWith({String? baseUrl, String? apiKey, String? model}) =>
-      VisionModelConfig(
-        baseUrl: baseUrl ?? this.baseUrl,
-        apiKey: apiKey ?? this.apiKey,
-        model: model ?? this.model,
-      );
+  VisionModelConfig copyWith({
+    String? baseUrl,
+    String? apiKey,
+    String? model,
+    bool? useCustomEndpoint,
+  }) => VisionModelConfig(
+    baseUrl: baseUrl ?? this.baseUrl,
+    apiKey: apiKey ?? this.apiKey,
+    model: model ?? this.model,
+    useCustomEndpoint: useCustomEndpoint ?? this.useCustomEndpoint,
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
     'baseUrl': baseUrl,
     'apiKey': apiKey,
     'model': model,
+    'useCustomEndpoint': useCustomEndpoint,
   };
 
   factory VisionModelConfig.fromJson(Map<String, Object?> json) =>
@@ -44,5 +57,6 @@ class VisionModelConfig {
         baseUrl: json['baseUrl'] as String? ?? '',
         apiKey: json['apiKey'] as String? ?? '',
         model: json['model'] as String? ?? '',
+        useCustomEndpoint: json['useCustomEndpoint'] as bool? ?? false,
       );
 }

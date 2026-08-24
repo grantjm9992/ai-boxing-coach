@@ -4,6 +4,23 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>AI Boxing Coach records your round from the camera so it can analyse your technique. Video is processed on your device.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.aiboxingcoach.boxing_coach</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- Deep link the Supabase OAuth flow (Google/Apple) returns to.
+				     Matches AuthService._oauthRedirect + the Supabase allow-list. -->
+				<string>com.aiboxingcoach.boxing_coach</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

@@ -11,7 +11,7 @@ import '../../domain/user_profile.dart';
 import '../../engine/coach_cue.dart';
 import '../../engine/session_engine.dart';
 import '../../services/ai/ai_settings_store.dart';
-import '../../services/ai/openai_compatible_vision_model.dart';
+import '../../services/ai/coach_vision_model.dart';
 import '../../services/camera_round_recorder.dart';
 import '../../services/clip_store.dart';
 import '../../services/coach_voice.dart';
@@ -175,9 +175,12 @@ class _SessionScreenState extends State<SessionScreen> {
     // Only build an AI-backed analyzer when the mode wants it and it's set up;
     // otherwise stay offline.
     if (_analyzer == null) {
-      if (profile.analysisMode.usesAi && config.isConfigured) {
+      final visionModel = profile.analysisMode.usesAi
+          ? resolveCoachVisionModel(config: config)
+          : null;
+      if (visionModel != null) {
         _analyzer = RoundAnalyzer(
-          visionModel: OpenAiCompatibleVisionModel(config),
+          visionModel: visionModel,
           frameGrabber: PluginFrameGrabber(),
         );
       } else {

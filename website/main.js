@@ -151,25 +151,54 @@
   });
 
   /* ---------------------------------------------------------------------
-     Signup forms (stubbed — wire to your provider in submit())
+     Signup forms -> Supabase `waitlist` table (PostgREST insert).
+     The publishable key is safe in the client: RLS allows insert-only, and
+     there is no SELECT policy, so nobody can read the list back through the API.
      --------------------------------------------------------------------- */
+  var SUPABASE_URL = 'https://bsvhldkuscurztywhhaa.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_aNKwEQrdnfD-9F1OjP49Gw_dFWH8x_R';
+
   function isEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+  function saveSignup(email, list) {
+    return fetch(SUPABASE_URL + '/rest/v1/waitlist', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        // Duplicate (email, list) is a success, not an error.
+        'Prefer': 'resolution=ignore-duplicates,return=minimal'
+      },
+      body: JSON.stringify({ email: email, list: list, source: location.pathname })
+    });
+  }
 
   document.querySelectorAll('[data-signup]').forEach(function (form) {
     var msg = form.querySelector('[data-signup-msg]');
     var input = form.querySelector('input[type="email"]');
+    var button = form.querySelector('button[type="submit"], button:not([type])');
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var email = (input && input.value || '').trim();
+      var list = form.getAttribute('data-signup') || 'app_beta';
       if (!isEmail(email)) {
         if (msg) { msg.textContent = 'Enter a valid email address.'; msg.classList.add('is-error'); }
         if (input) input.focus();
         return;
       }
-      if (msg) { msg.classList.remove('is-error'); msg.textContent = "You're on the list. We'll be in touch."; }
-      track('signup', { list: form.getAttribute('data-signup'), email_domain: email.split('@')[1] || '' });
-      form.reset();
-      // TODO: POST { email } to your beta list / CRM here.
+      if (msg) { msg.classList.remove('is-error'); msg.textContent = 'Adding you…'; }
+      if (button) button.disabled = true;
+      saveSignup(email, list).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        if (msg) { msg.classList.remove('is-error'); msg.textContent = "You're on the list. We'll be in touch."; }
+        track('signup', { list: list, email_domain: email.split('@')[1] || '' });
+        form.reset();
+      }).catch(function () {
+        if (msg) { msg.textContent = "Couldn't add you just now — please try again."; msg.classList.add('is-error'); }
+      }).finally(function () {
+        if (button) button.disabled = false;
+      });
     });
   });
 
