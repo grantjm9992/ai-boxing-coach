@@ -9,6 +9,7 @@ import '../../services/ai/ai_settings_store.dart';
 import '../../services/ai/openai_compatible_vision_model.dart';
 import '../../services/ai/vision_model.dart';
 import '../../services/ai/vision_model_config.dart';
+import '../../services/auth/auth_service.dart';
 import '../../services/profile_store.dart';
 import '../theme.dart';
 import 'debug_log_screen.dart';
@@ -17,10 +18,11 @@ import 'debug_log_screen.dart';
 /// toward. This is what turns the (fully-ported) style/school coaching on: every
 /// technical round is analysed against the profile chosen here.
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({this.store, this.aiStore, super.key});
+  const ProfileScreen({this.store, this.aiStore, this.auth, super.key});
 
   final ProfileStore? store;
   final AiSettingsStore? aiStore;
+  final AuthService? auth;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -29,6 +31,19 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   late final ProfileStore _store = widget.store ?? const ProfileStore();
   late final AiSettingsStore _aiStore = widget.aiStore ?? const AiSettingsStore();
+  late final AuthService? _auth = widget.auth ?? _tryAuth();
+
+  /// AuthService reads Supabase.instance, which isn't initialised in widget
+  /// tests — degrade to no account section rather than throwing.
+  static AuthService? _tryAuth() {
+    try {
+      return AuthService();
+    } on Object {
+      return null;
+    }
+  }
+
+  bool _deleting = false;
   UserProfile _profile = const UserProfile();
   VisionModelConfig _config = const VisionModelConfig();
   final TextEditingController _baseUrl = TextEditingController();
@@ -284,9 +299,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ],
                 ],
+                if (_auth?.isSignedIn ?? false) ..._accountSection(),
               ],
             ),
     );
+  }
+
+  List<Widget> _accountSection() {
+    final email = _auth?.currentEmail;
+    return <Widget>[
+      const SizedBox(height: 32),
+      const Divider(),
+      const SizedBox(height: 12),
+      const _Label('Account'),
+      const SizedBox(height: 8),
+      if (email != null)
+        Text(
+          'Signed in as $email',
+          style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+        ),
+      const SizedBox(height: 12),
+      OutlinedButton.icon(
+        onPressed: _deleting ? null : _signOut,
+        icon: const Icon(Icons.logout, size: 18),
+        label: const Text('Sign out'),
+      ),
+      const SizedBox(height: 8),
+      TextButton.icon(
+        onPressed: _deleting ? null : _confirmDeleteAccount,
+        icon: _deleting
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.delete_forever, size: 18, color: AppTheme.accent),
+        label: const Text(
+          'Delete account & data',
+          style: TextStyle(color: AppTheme.accent),
+        ),
+      ),
+      const SizedBox(height: 4),
+      const Text(
+        'Deletes your account and everything stored for it — sessions, '
+        'analyses and uploaded frames. This cannot be undone.',
+        style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+      ),
+    ];
+  }
+
+  Future<void> _signOut() async {
+    try {
+      await _auth?.signOut();
+    } on Object catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Could not sign out: $e')));
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete account?'),
+        content: const Text(
+          'This permanently deletes your account and all your data — '
+          'sessions, analyses and uploaded frames. It cannot be undone.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppTheme.accent),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _deleting = true);
+    try {
+      await _auth?.deleteAccount();
+      // AuthGate listens to auth state and returns to the sign-in screen once
+      // the account is deleted and signed out.
+    } on Object catch (e) {
+      if (mounted) {
+        setState(() => _deleting = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
   }
 
   Widget _field(

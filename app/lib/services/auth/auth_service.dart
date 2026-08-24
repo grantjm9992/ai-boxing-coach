@@ -77,6 +77,33 @@ class AuthService {
 
   Future<void> signOut() => _client.auth.signOut();
 
+  /// The signed-in user's email, if any (for the account UI).
+  String? get currentEmail => currentUser?.email;
+
+  /// Permanently deletes the account and all its data (Storage + DB rows), then
+  /// signs out. Backed by the `delete-account` edge function (deleting an auth
+  /// user needs the service role, which can't live on the device). Google Play
+  /// requires an in-app deletion path for apps with accounts.
+  Future<void> deleteAccount() async {
+    try {
+      final res = await _client.functions.invoke('delete-account');
+      if (res.status != 200) {
+        final data = res.data;
+        final message = data is Map && data['error'] is Map
+            ? (data['error'] as Map)['message']?.toString()
+            : null;
+        throw AuthFailure(message ?? 'Could not delete your account.');
+      }
+      await _client.auth.signOut();
+    } on AuthFailure {
+      rethrow;
+    } on FunctionException catch (e) {
+      throw AuthFailure('Could not delete your account: ${e.reasonPhrase}');
+    } on Object catch (e) {
+      throw AuthFailure('Could not delete your account: $e');
+    }
+  }
+
   /// Deep link the OAuth flow returns to. Matches the scheme registered in the
   /// Android manifest / iOS Info.plist and the Supabase redirect allow-list.
   static const String _oauthRedirect =
