@@ -2,7 +2,7 @@ name: pose_landmarker
 description: >-
   Thin federated plugin around MediaPipe Tasks Vision Pose Landmarker. Runs pose
   estimation over a recorded clip (VIDEO mode) and streams the landmark
-  sequence. Android only for v0.5; iOS is a later target.
+  sequence. Android + iOS.
 version: 0.1.0
 publish_to: "none"
 
@@ -25,4 +25,6 @@ flutter:
     platforms:
       android:
         package: com.aiboxingcoach.pose_landmarker
+        pluginClass: PoseLandmarkerPlugin
+      ios:
         pluginClass: PoseLandmarkerPlugin
