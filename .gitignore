@@ -8,8 +8,10 @@ build/
 dist/
 *.mp4
 *.mov
-# …but the small, web-optimized hero clip must ship with the site.
-!website/assets/hero.mp4
+# …but the small, web-optimized hero clip(s) must ship with the site.
+# Glob covers versioned names (hero-v2.mp4, hero-v3.mp4, …) — bump the version
+# in the filename whenever the clip changes so caches can't serve a stale one.
+!website/assets/hero*.mp4
 
 # Bundled pose models (binary, fetched via scripts/fetch_pose_model.sh)
 app/assets/models/*.task
