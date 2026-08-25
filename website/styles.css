@@ -563,3 +563,16 @@ h1, h2, h3, .section__title, .final__title, .hero__title {
 .legal a { color: var(--accent); }
 .legal strong { color: var(--text); }
 .legal .callout { background: var(--surface); border: 1px solid var(--line, #26252b); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px 16px; margin: 20px 0; }
+
+/* ======================= SCREENSHOT GALLERY ======================= */
+.shots-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; padding: 8px 0 14px; margin-top: 8px; }
+.shots-wrap::-webkit-scrollbar { height: 6px; }
+.shots-wrap::-webkit-scrollbar-thumb { background: var(--line-2, #2b2a30); border-radius: 6px; }
+.shots { display: flex; gap: 22px; width: max-content; margin-inline: auto; padding-inline: 4px; }
+.shot { scroll-snap-align: center; width: 214px; flex: none; margin: 0; }
+.shot img { width: 100%; height: auto; display: block; border-radius: 24px;
+  border: 1px solid var(--line, #26252b); background: var(--surface, #17161A);
+  box-shadow: 0 24px 60px -24px rgba(0,0,0,.75); }
+.shot figcaption { margin-top: 14px; text-align: center; font-size: 13px; font-weight: 600; color: var(--text-2, #9aa1ac); line-height: 1.35; }
+.shots__hint { text-align: center; margin-top: 14px; font-size: 13px; color: var(--text-2, #9aa1ac); }
+@media (min-width: 900px) { .shots__hint { display: none; } }
