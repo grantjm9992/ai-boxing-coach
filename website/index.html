@@ -103,15 +103,17 @@
     </div>
 
     <!-- Real product footage: the app tracking a boxer's pose during a round.
-         Vertical 9:19.5, muted/looping. Encoded from a device screen recording. -->
+         Vertical 9:19.5, muted/looping. Encoded from a device screen recording.
+         Filenames are versioned (hero-v2.*) — bump the -vN suffix here + on the
+         files whenever the clip changes, so caches can't serve a stale copy. -->
     <figure class="hero__demo" id="demo">
       <div class="demo">
         <div class="demo__frame">
           <video class="demo__video" autoplay muted loop playsinline
-                 poster="assets/hero-poster.jpg"
+                 poster="assets/hero-poster-v2.jpg"
                  aria-label="AI Boxing Coach tracking a boxer's pose during a round">
-            <source src="assets/hero.webm" type="video/webm" />
-            <source src="assets/hero.mp4" type="video/mp4" />
+            <source src="assets/hero-v2.webm" type="video/webm" />
+            <source src="assets/hero-v2.mp4" type="video/mp4" />
           </video>
         </div>
       </div>

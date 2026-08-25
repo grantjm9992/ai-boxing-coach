@@ -12,8 +12,8 @@ otherwise, so nothing here breaks local/CI debug builds.
 
 ```bash
 keytool -genkey -v \
-  -keystore ~/aiboxingcoach-upload.jks \
-  -keyalias upload \
+  -keystore ~/aicornerman-upload.jks \
+  -alias upload \
   -keyalg RSA -keysize 2048 -validity 10000
 ```
 
@@ -33,7 +33,7 @@ reset — treat it like the master key to the app.
 storePassword=<store password from step 1>
 keyPassword=<key password from step 1>
 keyAlias=upload
-storeFile=/Users/grantmacdonald/aiboxingcoach-upload.jks
+storeFile=/Users/grantmacdonald/aicornerman-upload.jks
 ```
 
 Use an absolute `storeFile` path to avoid ambiguity.
@@ -54,7 +54,7 @@ for your on-device testing; Play wants the `.aab`.)
 # Debug keystore SHA-1 you want to NOT see:
 keytool -list -v -keystore ~/.android/debug.keystore -storepass android | grep SHA1
 # Your upload key:
-keytool -list -v -keystore ~/aiboxingcoach-upload.jks | grep SHA1
+keytool -list -v -keystore ~/aicornerman-upload.jks | grep SHA1
 ```
 
 They must differ. The build also needs the **Android SDK 36 platform** installed
