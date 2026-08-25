@@ -195,6 +195,7 @@ h1, h2, h3, .section__title, .final__title, .hero__title {
   background: radial-gradient(120% 90% at 50% 0%, #1c1b22, #0b0b0d 70%);
   isolation: isolate;
 }
+.demo__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; background: #0b0b0d; }
 .demo__scene { position: absolute; inset: 0; }
 .demo__figure {
   position: absolute; left: 50%; top: 46%; translate: -50% -50%;
