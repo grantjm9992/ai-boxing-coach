@@ -77,11 +77,12 @@ and wrong.
 - Website: https://aicornerman.com
 - Privacy policy: https://aicornerman.com/privacy.html
 
-## Store assets still needed (you provide)
-- **App icon** 512×512 (have `ic_launcher` in-app; export a 512 version)
-- **Feature graphic** 1024×500 (can adapt `website/assets/og.svg` styling)
-- **Phone screenshots** ≥2 (min 320px; use the real in-app screens — recording,
-  a round's feedback, the progress/trends view)
+## Store assets
+- **Feature graphic** 1024×500 — ✅ `store-assets/feature-graphic.png`
+  (source `feature-graphic.svg`; re-render with headless Chrome if edited).
+- **App icon** 512×512 — still needed (have `ic_launcher` in-app; export a 512).
+- **Phone screenshots** ≥2 — ✅ captured on device (recording, a round's
+  feedback, progress/trends).
 - Short promo video (optional but strong — a 15–30s record→feedback loop)
 
 ---
