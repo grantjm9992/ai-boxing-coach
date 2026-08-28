@@ -11,6 +11,30 @@ Feature areas referenced below have their own deep-dive docs — see
 ## [Unreleased]
 
 ### Added
+- **V2 hybrid analysis (phases 1–7).** A deterministic CV layer measures what can
+  be measured; the AI layer reasons over the evidence. See
+  [`V2_PLAN.md`](V2_PLAN.md) for the phase-by-phase record and the brief it
+  implements.
+  - **Session types** (`SessionType`: shadow boxing / heavy bag / technical work /
+    combination drill / free training) drive analysis expectations, derived from
+    the session phase or set directly.
+  - **New analyzers** on the existing rule seam: body lean and balance — scoped to
+    what a single **frontal** view reads honestly, each carrying a confidence.
+    Observations now carry a stable fault `code` (taxonomy) + `confidence`;
+    low-confidence ones are kept for the AI layer, not shown as fact.
+  - **Combination detection & scoring.** The classified punch stream is grouped
+    into numbered combinations (1-2-3 vs 1-3-4 vs unknown), each scored for
+    execution (recovery, guard, end-balance). See [`COMBINATIONS.md`](COMBINATIONS.md).
+  - **Combination drills.** A library of target combinations, a live record →
+    analyse → score loop, and per-attempt + aggregate feedback (home → gloves
+    icon). Instructional videos are not yet sourced; the UI shows the written
+    sequence + coaching points.
+  - **Structured advanced AI** (parked with the self-hosted endpoint): CV
+    measurements in, a schema-validated JSON coaching report out — unschematic
+    output is rejected, not shown. See [`AI_INTEGRATION.md`](AI_INTEGRATION.md).
+  - **Analytics + validation.** A V2 event taxonomy and a labelled
+    regression-dataset scaffold with combination-accuracy scoring. See
+    [`ANALYTICS.md`](ANALYTICS.md).
 - **Progress / trends view.** A new Progress screen (home → insights icon) rolls
   the session history up into whether you're actually improving: guard-consistency
   and punch-volume trends over time, the corrections that keep recurring, all-time

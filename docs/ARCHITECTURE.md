@@ -16,7 +16,10 @@ Dart rule engine mirrors, used for calibration, not shipped in the app.
 | [`SESSION_ENGINE.md`](SESSION_ENGINE.md) | Templates → plan → the timed session, coach cues, voice |
 | [`RECORDING_STORAGE.md`](RECORDING_STORAGE.md) | Camera recording, clip store, 7-day retention, local persistence |
 | [`POSE_ANALYSIS.md`](POSE_ANALYSIS.md) | Native pose plugin, the Dart rule engine, punch classification, metrics |
-| [`AI_INTEGRATION.md`](AI_INTEGRATION.md) | Analysis modes, the vision-model seam, coaching prompts, keyframe bursts |
+| [`COMBINATIONS.md`](COMBINATIONS.md) | Combination detection, execution scoring, drills + library (V2) |
+| [`AI_INTEGRATION.md`](AI_INTEGRATION.md) | Analysis modes, the vision-model seam, coaching prompts, the structured advanced path |
+| [`ANALYTICS.md`](ANALYTICS.md) | V2 analytics event taxonomy + the regression-dataset scaffold |
+| [`V2_PLAN.md`](V2_PLAN.md) | The V2 hybrid-analysis build, phase by phase |
 | [`BACKEND_SYNC.md`](BACKEND_SYNC.md) | Supabase schema, auth, round sync, backfill queue, history read-back |
 | [`backend-setup.md`](backend-setup.md) | One-time Supabase project setup (operator guide) |
 | [`v0.5-pose-integration.md`](v0.5-pose-integration.md) | The original design/decision record for pose integration |
@@ -55,8 +58,11 @@ History screen ◄── SupabaseHistoryReader ◄─────────┘
 - **`engine/`** — the pure session state machine and coach script
   (`SessionEngine`, `CueScheduler`, `SessionPlanBuilder`). Testable without a
   device.
-- **`analysis/`** — pose types and the rule engine, a Dart mirror of the Python
-  reference. Pure; no plugins or platform channels.
+- **`analysis/`** — pose types, the rule engine, punch + combination detection,
+  combination-execution scoring, the structured AI report schema and the
+  regression-dataset scoring. Pure; no plugins or platform channels. (The rule
+  engine is a Dart mirror of the Python reference; the V2 additions are
+  Dart-first.)
 - **`services/`** — everything with a side effect: camera, pose plugin, stores,
   AI calls, auth, sync. Each wraps a plugin behind a small interface so the
   engine and UI depend on seams, not SDKs.
