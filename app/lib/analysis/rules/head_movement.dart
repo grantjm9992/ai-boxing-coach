@@ -1,4 +1,5 @@
 import '../context.dart';
+import '../error_codes.dart';
 import '../geometry.dart' as geo;
 import '../landmarks.dart';
 import '../round_analysis.dart';
@@ -57,6 +58,7 @@ class HeadMovementRule extends Rule {
       return <Observation>[
         Observation(
           ruleId: id,
+          code: FaultCode.headStatic,
           category: SkillCategory.headMovement,
           severity: Severity.minor,
           coachingText:

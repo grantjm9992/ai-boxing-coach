@@ -268,8 +268,10 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
         if (result == null) {
           setState(() => _progress = progress.fraction);
         } else {
-          final analysis =
-              PoseOnlyAdapter().analyse(result.sequence, _profile.toDrill());
+          final analysis = PoseOnlyAdapter().analyse(
+            result.sequence,
+            _profile.toDrill(sessionType: widget.clip.phase.sessionType),
+          );
           setState(() {
             _result = result;
             _analysis = analysis;
@@ -318,7 +320,7 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
     }
     setSource('AI (${mode.value}) running…');
     try {
-      final drill = profile.toDrill();
+      final drill = profile.toDrill(sessionType: widget.clip.phase.sessionType);
       final bursts = mode == AnalysisMode.keyframe
           ? CoachingPrompt.keyframeBursts(
               analysis,

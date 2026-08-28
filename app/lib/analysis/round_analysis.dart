@@ -1,4 +1,5 @@
 import 'landmarks.dart';
+import 'session_type.dart';
 
 /// The structured output of a round analysis — the Dart mirror of
 /// `src/boxing_coach/domain/analysis.py`. These are the shapes the coach and the
@@ -59,15 +60,29 @@ class Observation {
     required this.category,
     required this.severity,
     required this.coachingText,
+    this.code = '',
+    this.confidence = 1.0,
     this.timestampMs,
     this.metrics = const <String, double>{},
     this.highlightLandmarks = const <Landmark>[],
   });
 
   final String ruleId;
+
+  /// Stable fault code from the taxonomy (analysis/error_codes.dart), e.g.
+  /// "GUARD_001". Empty for observations that don't map to a coded fault
+  /// (e.g. positives). This is identity; [coachingText] is display (brief §25).
+  final String code;
+
   final SkillCategory category;
   final Severity severity;
   final String coachingText;
+
+  /// How sure the analyzer is (0..1). Camera-angle-sensitive reads (rotation,
+  /// lean) set this below 1.0; low-confidence observations are dropped from the
+  /// user report or escalated to the AI layer (brief §12). Defaults to 1.0.
+  final double confidence;
+
   final double? timestampMs;
   final Map<String, double> metrics;
 
@@ -77,9 +92,11 @@ class Observation {
 
   Map<String, Object?> toJson() => <String, Object?>{
     'ruleId': ruleId,
+    'code': code,
     'category': category.value,
     'severity': severity.value,
     'coachingText': coachingText,
+    'confidence': confidence,
     'timestampMs': timestampMs,
     'metrics': metrics,
     'highlight': highlightLandmarks.map((l) => l.mpIndex).toList(),
@@ -87,9 +104,11 @@ class Observation {
 
   factory Observation.fromJson(Map<String, Object?> json) => Observation(
     ruleId: json['ruleId'] as String,
+    code: json['code'] as String? ?? '',
     category: SkillCategory.fromValue(json['category'] as String),
     severity: Severity.fromValue(json['severity'] as String),
     coachingText: json['coachingText'] as String,
+    confidence: (json['confidence'] as num?)?.toDouble() ?? 1.0,
     timestampMs: (json['timestampMs'] as num?)?.toDouble(),
     metrics: <String, double>{
       for (final e in (json['metrics'] as Map<String, Object?>? ?? const {}).entries)
@@ -214,7 +233,22 @@ class RoundAnalysis {
     this.metrics = const RoundMetrics(),
     this.flaggedMoments = const <FlaggedMoment>[],
     this.modelCoaching,
+    this.analysisVersion = currentAnalysisVersion,
+    this.sessionType = SessionType.freeTraining,
   });
+
+  /// What kind of training this round was — carried from the [DrillContext] onto
+  /// the persisted result so history and analytics know the intent the round was
+  /// analysed under (brief §4, §21).
+  final SessionType sessionType;
+
+  /// The analysis-pipeline version that produced this result. Persisted on
+  /// every round so results can be compared or re-run as the algorithm evolves
+  /// (brief §21). Bump [currentAnalysisVersion] when the metrics/observations
+  /// change shape or meaning.
+  static const currentAnalysisVersion = '2.0.0';
+
+  final String analysisVersion;
 
   final String overallSummary;
   final List<Observation> specificObservations;
@@ -235,9 +269,13 @@ class RoundAnalysis {
     metrics: metrics,
     flaggedMoments: flaggedMoments,
     modelCoaching: coaching,
+    analysisVersion: analysisVersion,
+    sessionType: sessionType,
   );
 
   Map<String, Object?> toJson() => <String, Object?>{
+    'analysisVersion': analysisVersion,
+    'sessionType': sessionType.value,
     'overallSummary': overallSummary,
     'specificObservations':
         specificObservations.map((o) => o.toJson()).toList(),
@@ -250,6 +288,8 @@ class RoundAnalysis {
   };
 
   factory RoundAnalysis.fromJson(Map<String, Object?> json) => RoundAnalysis(
+    analysisVersion: json['analysisVersion'] as String? ?? '1.0.0',
+    sessionType: SessionType.fromValue(json['sessionType'] as String?),
     modelCoaching: json['modelCoaching'] as String?,
     overallSummary: json['overallSummary'] as String,
     specificObservations: <Observation>[

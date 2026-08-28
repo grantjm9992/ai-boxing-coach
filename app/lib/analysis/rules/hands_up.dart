@@ -1,4 +1,5 @@
 import '../context.dart';
+import '../error_codes.dart';
 import '../geometry.dart' as geo;
 import '../landmarks.dart';
 import '../round_analysis.dart';
@@ -75,6 +76,9 @@ class HandsUpRule extends Rule {
         observations.add(
           Observation(
             ruleId: id,
+            code: side == stance.lead
+                ? FaultCode.guardLeadHandLow
+                : FaultCode.guardRearHandLow,
             category: SkillCategory.defence,
             severity: downFraction > 0.5 ? Severity.moderate : Severity.minor,
             coachingText:

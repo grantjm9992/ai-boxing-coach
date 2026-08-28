@@ -1,4 +1,5 @@
 import '../context.dart';
+import '../error_codes.dart';
 import '../features.dart';
 import '../geometry.dart' as geo;
 import '../landmarks.dart';
@@ -109,6 +110,7 @@ class GuardReturnRule extends Rule {
       observations.add(
         Observation(
           ruleId: id,
+          code: FaultCode.recHandNotReturned,
           category: SkillCategory.defence,
           severity: Severity.moderate,
           coachingText: _coachingText(context.drill.stance, punch.side, failureMode),
