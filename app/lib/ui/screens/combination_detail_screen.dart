@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../analysis/drill_matching.dart';
 import '../../data/combination_library.dart';
+import '../../services/analytics.dart';
 import '../theme.dart';
 import 'combination_drill_screen.dart';
 
@@ -38,6 +39,10 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
   void initState() {
     super.initState();
     _result = widget.result;
+    AnalyticsScope.instance.log(
+      AnalyticsEvent.combinationSelected,
+      <String, Object?>{'id': widget.combo.id},
+    );
   }
 
   Future<void> _startDrill() async {

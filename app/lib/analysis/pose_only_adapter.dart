@@ -55,9 +55,14 @@ class PoseOnlyAdapter {
       drill: drill,
       styleProfile: resolveProfile(drill.style, drill.school),
     );
-    final observations = _engine
-        .run(context)
+    final allObservations = _engine.run(context);
+    final observations = allObservations
         .where((o) => o.confidence >= minReportedConfidence)
+        .toList();
+    // Sub-threshold observations aren't shown to the user, but are kept for the
+    // AI reasoning layer to weigh in context (brief §12).
+    final lowConfidence = allObservations
+        .where((o) => o.confidence < minReportedConfidence)
         .toList();
 
     final faults =
@@ -88,6 +93,7 @@ class PoseOnlyAdapter {
       flaggedMoments: _flagged(faults),
       combinations: combos,
       combinationAnalyses: comboAnalyses,
+      lowConfidenceObservations: lowConfidence,
       sessionType: drill.sessionType,
     );
   }

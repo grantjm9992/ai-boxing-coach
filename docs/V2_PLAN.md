@@ -149,17 +149,36 @@ The first new UI. Depends on Phases 3–4.
   loop is covered by `combination_drill_screen_test.dart` without a camera or
   MediaPipe. "Start drill" now launches this end-to-end.
 
-### Phase 6 — Advanced AI coach schema
-Tightens the existing AI layer rather than adding one.
-- Strict structured input (§17) — feed CV metrics + selected frames, not prose.
-- Strict structured output (§18) — validated schema, not free-text parsing.
-- Route low-confidence observations here (§12).
-- **Done when:** AI output validates against a schema and is grounded in the CV
-  metrics; unschematic output is rejected, not shown.
+### Phase 6 — Advanced AI coach schema — DONE
+Tightens the existing AI layer rather than adding one; kept alongside the shipped
+free-text keyframe path.
+- `analysis/ai_coach_report.dart`: `AiCoachReport` + strict `tryParse` (validates
+  the §18 schema, tolerates a ```json fence, maps HIGH/MEDIUM/LOW, rejects
+  anything malformed rather than guessing).
+- `CoachingPrompt.structuredInput` (§17 CV-measurement payload) +
+  `structuredRequest` (JSON-only instruction + schema).
+- `RoundAnalysis.lowConfidenceObservations` (§12 escalation — the adapter now
+  partitions rather than drops) + `aiReport` (persisted). `round_analyzer` wires
+  the advanced path behind `FeatureFlags.advancedAiAnalysis` (parked with the
+  self-hosted endpoint): structured request in, `AiCoachReport.tryParse` out.
+- **Done:** `ai_coach_report_test.dart` covers valid/fenced/malformed parsing,
+  severity mapping, structured input + request.
 
-### Phase 7 — Analytics + validation
-- V2 analytics events (§23); track usage, failure rate, combo-classification
-  accuracy; begin the labelled regression dataset (§26).
+### Phase 7 — Analytics + validation — DONE
+- `services/analytics.dart`: the §23 event taxonomy (stable wire names) + an
+  `Analytics` sink (`LoggingAnalytics` / `FakeAnalytics` / app-wide
+  `AnalyticsScope`). Wired at analysis start/complete/fail + advanced-request,
+  combination selection, and drill round/attempt/match events.
+- `analysis/regression_dataset.dart`: `RegressionCase`/`RegressionDataset` (§26)
+  + `sequenceMatchAccuracy` / `punchTokenAccuracy` for combo-classification
+  accuracy.
+- **Done:** `analytics_test.dart` + analytics assertions in the drill-loop test.
+
+## Status: all phases 1–7 complete
+See [`COMBINATIONS.md`](COMBINATIONS.md), [`ANALYTICS.md`](ANALYTICS.md),
+[`POSE_ANALYSIS.md`](POSE_ANALYSIS.md) and [`AI_INTEGRATION.md`](AI_INTEGRATION.md)
+for the shipped subsystems. Videos for the combination library are intentionally
+not sourced (the UI degrades to the written sequence + coaching points).
 
 ## Deferred (brief §33 LATER)
 Uppercut classification if unreliable, slips/rolls/pivots as first-class events,

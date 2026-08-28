@@ -77,11 +77,24 @@ A Dart mirror of the Python reference under `src/boxing_coach/analysis/`.
 - **`RuleEngine`** (`analysis/engine.dart`) — decides which rules apply (by
   style/school profile and drill focus), runs each, gathers observations, and
   isolates a single failing rule so one bad rule can't sink the analysis.
-- **Shipped rules** (`analysis/rules/`): `guard_return`, `hands_up`,
-  `head_movement`, `hip_rotation`, `footwork`, `school_adherence`.
+- **Shipped rules** (`analysis/rules/`): the v0.5 set — `guard_return`,
+  `hands_up`, `head_movement`, `hip_rotation`, `footwork`, `school_adherence` —
+  plus the V2 additions `body_lean` and `balance`. `engine.dart` splits these
+  into `v05Rules()` (the frozen Dart↔Python golden-parity contract) and
+  `v2Rules()`; `defaultRules()` is both.
 
 Rules emit `Observation`s carrying a `Severity`
-(`positive`/`minor`/`moderate`/`major`) and a `SkillCategory`.
+(`positive`/`minor`/`moderate`/`major`), a `SkillCategory`, a stable fault
+`code` (taxonomy in `analysis/error_codes.dart`) and a `confidence` (0..1).
+The V2 analyzers are scoped to what a single **frontal** view reads honestly
+(lateral torso lean, hips over the base of support) and set a sub-1.0
+confidence; depth-dependent faults are held back rather than inferred
+unreliably. The adapter drops sub-threshold observations from the user report
+but keeps them on `RoundAnalysis.lowConfidenceObservations` for the AI layer
+(§12). Every round also carries its `SessionType` and `analysisVersion`.
+
+Combination detection and execution scoring build on the punch stream — see
+[`COMBINATIONS.md`](COMBINATIONS.md).
 
 ## Punch detection & classification
 

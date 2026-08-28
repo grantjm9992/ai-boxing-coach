@@ -5,6 +5,7 @@ import 'package:boxing_coach/analysis/drill_matching.dart';
 import 'package:boxing_coach/analysis/punch.dart';
 import 'package:boxing_coach/analysis/round_analysis.dart';
 import 'package:boxing_coach/data/combination_library.dart';
+import 'package:boxing_coach/services/analytics.dart';
 import 'package:boxing_coach/services/round_recorder.dart';
 import 'package:boxing_coach/ui/screens/combination_drill_screen.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   testWidgets('records, evaluates and pops a DrillResult', (tester) async {
     final combo = CombinationLibrary.byId('combo_1_2_3')!;
+    final analytics = FakeAnalytics();
     DrillResult? popped;
 
     // The stubbed analysis returns two attempts: one matching 1-2-3, one not.
@@ -42,6 +44,7 @@ void main() {
                     recorder: FakeRoundRecorder(),
                     analyseOverride: analyse,
                     profileLoader: () async => const DrillContext(),
+                    analytics: analytics,
                   ),
                 ),
               );
@@ -66,6 +69,12 @@ void main() {
     expect(popped!.totalAttempts, 2);
     expect(popped!.matchedCount, 1);
     expect(popped!.averageScore, 90);
+
+    // Analytics fired for the round and each attempt (brief §23).
+    expect(analytics.count(AnalyticsEvent.technicalRoundStarted), 1);
+    expect(analytics.count(AnalyticsEvent.combinationAttemptDetected), 2);
+    expect(analytics.count(AnalyticsEvent.combinationMatchSuccess), 1);
+    expect(analytics.count(AnalyticsEvent.combinationMatchFailure), 1);
   });
 
   testWidgets('no detected combinations still pops a safe empty result',

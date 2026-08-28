@@ -86,8 +86,29 @@ there's no model configured, or the call throws, the AI modes fall back to the
 rules-only analysis — verified by tests in `app/test/round_analyzer_test.dart`
 and `app/test/ai/`.
 
+## The structured advanced path (V2, §17/§18)
+
+Alongside the free-text keyframe path, V2 adds a **structured** path that treats
+the model as a reasoner over evidence, not a prose generator:
+
+- **Input (§17)** — `CoachingPrompt.structuredInput` builds a JSON payload of the
+  CV measurements (session type, punches, combinations + execution scores,
+  metrics, detected issues, and the low-confidence observations for the model to
+  weigh). `structuredRequest` sends it (optionally with sampled frames) and
+  instructs the model to reply with JSON only.
+- **Output (§18)** — `AiCoachReport.tryParse` (`analysis/ai_coach_report.dart`)
+  validates the response against a fixed schema (summary, strengths,
+  `priority_issues` with codes/severity/confidence/timestamps, combination
+  feedback, next-session focus). **Unschematic output is rejected**, not parsed
+  as prose; the round simply keeps its on-device analysis. A valid report is
+  attached as `RoundAnalysis.aiReport`.
+
+`RoundAnalyzer` takes this path when `FeatureFlags.advancedAiAnalysis` is on and
+the mode is `full_frame`.
+
 ## Roadmap note
 
-Per the project's backend plan, full AI review is parked for a self-hosted Qwen
-vision endpoint; because the client is OpenAI-compatible, bringing it online is a
-config change plus flipping `AnalysisMode.fullFrame.available`.
+Per the project's backend plan, full AI review + the structured advanced path are
+parked for a self-hosted Qwen vision endpoint; because the client is
+OpenAI-compatible, bringing them online is a config change plus flipping
+`AnalysisMode.fullFrame.available` and `FeatureFlags.advancedAiAnalysis`.
