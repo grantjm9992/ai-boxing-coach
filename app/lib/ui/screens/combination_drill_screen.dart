@@ -7,6 +7,7 @@ import '../../analysis/pose_only_adapter.dart';
 import '../../analysis/round_analysis.dart';
 import '../../analysis/session_type.dart';
 import '../../data/combination_library.dart';
+import '../../services/analytics.dart';
 import '../../services/camera_round_recorder.dart';
 import '../../services/pose_estimator.dart';
 import '../../services/profile_store.dart';
@@ -30,11 +31,15 @@ class CombinationDrillScreen extends StatefulWidget {
     this.estimator,
     this.analyseOverride,
     this.profileLoader,
+    this.analytics,
   });
 
   final CombinationDef combo;
   final RoundRecorder? recorder;
   final PoseEstimator? estimator;
+
+  /// Analytics sink; defaults to the app-wide one.
+  final Analytics? analytics;
 
   /// Test seam: given the recorded clip path + the drill, return the analysis.
   /// When null the real pose + rules pipeline runs.
@@ -55,6 +60,7 @@ class _CombinationDrillScreenState extends State<CombinationDrillScreen> {
       widget.recorder ?? CameraRoundRecorder();
   late final PoseEstimator _estimator =
       widget.estimator ?? MediaPipePoseEstimator();
+  Analytics get _analytics => widget.analytics ?? AnalyticsScope.instance;
 
   _Stage _stage = _Stage.initializing;
   String _message = '';
@@ -94,6 +100,8 @@ class _CombinationDrillScreenState extends State<CombinationDrillScreen> {
   Future<void> _startRecording() async {
     try {
       await _recorder.startRecording();
+      _analytics.log(AnalyticsEvent.technicalRoundStarted,
+          <String, Object?>{'combo': widget.combo.id});
       if (!mounted) return;
       setState(() => _stage = _Stage.recording);
     } on Object catch (error) {
@@ -120,6 +128,16 @@ class _CombinationDrillScreenState extends State<CombinationDrillScreen> {
         widget.combo.numbers,
         analysis?.combinationAnalyses ?? const [],
       );
+      for (final attempt in result.attempts) {
+        _analytics.log(AnalyticsEvent.combinationAttemptDetected,
+            <String, Object?>{'detected': attempt.detected.join('-')});
+        _analytics.log(
+          attempt.sequenceMatch
+              ? AnalyticsEvent.combinationMatchSuccess
+              : AnalyticsEvent.combinationMatchFailure,
+          <String, Object?>{'combo': widget.combo.id},
+        );
+      }
       Navigator.of(context).pop(result);
     } on Object catch (error) {
       _fail('Analysis failed: $error');

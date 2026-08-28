@@ -7,6 +7,7 @@ import '../analysis/pose_only_adapter.dart';
 import '../analysis/round_analysis.dart';
 import '../domain/feature_flags.dart';
 import '../domain/round_clip.dart';
+import 'analytics.dart';
 import 'ai/coaching_prompt.dart';
 import 'ai/vision_model.dart';
 import 'analysis_store.dart';
@@ -28,15 +29,18 @@ class RoundAnalyzer {
     PoseEstimator? estimator,
     AnalysisStore? store,
     PoseOnlyAdapter? adapter,
+    Analytics? analytics,
     this.visionModel,
     this.frameGrabber,
   }) : _estimator = estimator ?? MediaPipePoseEstimator(),
        _store = store ?? AnalysisStore(),
-       _adapter = adapter ?? PoseOnlyAdapter();
+       _adapter = adapter ?? PoseOnlyAdapter(),
+       _analytics = analytics ?? AnalyticsScope.instance;
 
   final PoseEstimator _estimator;
   final AnalysisStore _store;
   final PoseOnlyAdapter _adapter;
+  final Analytics _analytics;
   final VisionModel? visionModel;
   final FrameGrabber? frameGrabber;
 
@@ -45,6 +49,8 @@ class RoundAnalyzer {
     DrillContext? drill,
     AnalysisMode mode = AnalysisMode.offline,
   }) async {
+    _analytics.log(AnalyticsEvent.analysisStarted,
+        <String, Object?>{'mode': mode.value});
     try {
       PoseAnalysisResult? result;
       // The estimator serialises native runs and guards each against a stall
@@ -52,7 +58,11 @@ class RoundAnalyzer {
       await for (final progress in _estimator.analyse(clip.path)) {
         if (progress.result != null) result = progress.result;
       }
-      if (result == null) return null;
+      if (result == null) {
+        _analytics.log(AnalyticsEvent.analysisFailed,
+            <String, Object?>{'reason': 'no_pose'});
+        return null;
+      }
 
       final resolvedDrill = drill ?? const DrillContext();
       var analysis = _adapter.analyse(result.sequence, resolvedDrill);
@@ -61,6 +71,7 @@ class RoundAnalyzer {
         if (FeatureFlags.advancedAiAnalysis && mode == AnalysisMode.fullFrame) {
           // Advanced path (brief §17/§18): structured measurements in, strict
           // JSON out. Unschematic output is rejected, not shown.
+          _analytics.log(AnalyticsEvent.advancedAnalysisRequested);
           final report = await _advancedReport(
             clip,
             analysis,
@@ -91,9 +102,15 @@ class RoundAnalyzer {
         analysis: analysis,
         sequence: result.sequence,
       );
+      _analytics.log(AnalyticsEvent.analysisCompleted, <String, Object?>{
+        'mode': mode.value,
+        'combinations': analysis.combinations.length,
+      });
       return analysis;
     } on Object catch (error) {
       debugPrint('Round analysis failed for ${clip.path}: $error');
+      _analytics.log(AnalyticsEvent.analysisFailed,
+          <String, Object?>{'reason': 'exception'});
       return null;
     }
   }
