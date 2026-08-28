@@ -1,4 +1,6 @@
 import '../domain/feature_flags.dart';
+import 'combination.dart';
+import 'combination_analysis.dart';
 import 'context.dart';
 import 'drill.dart';
 import 'engine.dart';
@@ -63,15 +65,29 @@ class PoseOnlyAdapter {
     final positives =
         observations.where((o) => o.severity == Severity.positive).toList();
 
+    final combos = FeatureFlags.combinationDetection
+        ? context.combinations
+        : const <Combination>[];
+    final comboAnalyses = <CombinationAnalysis>[
+      for (final combo in combos)
+        analyzeCombination(
+          context.sequence,
+          context.punches,
+          combo,
+          context.drill.stance,
+          context.bodyScale,
+        ),
+    ];
+
     return RoundAnalysis(
       overallSummary: _summary(context, faults, positives),
       specificObservations: observations,
       positiveNotes: positives.map((o) => o.coachingText).toList(),
       correctionPriorities: _corrections(faults),
-      metrics: _metrics(context, faults),
+      metrics: _metrics(context, faults, comboAnalyses),
       flaggedMoments: _flagged(faults),
-      combinations:
-          FeatureFlags.combinationDetection ? context.combinations : const [],
+      combinations: combos,
+      combinationAnalyses: comboAnalyses,
       sessionType: drill.sessionType,
     );
   }
@@ -119,7 +135,11 @@ class PoseOnlyAdapter {
     return corrections;
   }
 
-  RoundMetrics _metrics(AnalysisContext context, List<Observation> faults) {
+  RoundMetrics _metrics(
+    AnalysisContext context,
+    List<Observation> faults,
+    List<CombinationAnalysis> comboAnalyses,
+  ) {
     final n = context.punches.length;
     final guardReturnFaults = faults
         .where((o) => o.ruleId == 'guard_return' && o.severity.isFault)
@@ -140,8 +160,17 @@ class PoseOnlyAdapter {
       punchMix: _punchMix(context),
       values: <String, double>{
         'body_scale': _round(context.bodyScale, 4),
-        if (FeatureFlags.combinationDetection)
-          'combinations_detected': context.combinations.length.toDouble(),
+        if (FeatureFlags.combinationDetection) ...<String, double>{
+          'combinations_detected': comboAnalyses.length.toDouble(),
+          // Combination Execution component score (brief §27) — mean of the
+          // per-combination scores. Omitted when no combination was thrown.
+          if (comboAnalyses.isNotEmpty)
+            'combination_execution_score': _round(
+              comboAnalyses.map((c) => c.score).reduce((a, b) => a + b) /
+                  comboAnalyses.length,
+              1,
+            ),
+        },
         for (final e in features.entries) e.key: _round(e.value, 3),
       },
     );
