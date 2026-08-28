@@ -112,14 +112,20 @@ A pure function over the `List<PunchEvent>` the `PunchDetector` already produces
   an unknown sequence, plus gap-splitting, southpaw, single-punch and JSON cases
   (acceptance criterion §34).
 
-### Phase 4 — Combination-execution analysis
-Turns "matched = true" into coached feedback (§10). Depends on Phase 2 rules +
-Phase 3 combos.
-- Per-combination checks (recovery between punches, guard between punches, weight
-  transfer, final position) reusing Phase 2 analyzers scoped to a combo window.
-- Component "Combination Execution" score.
-- **Done when:** a detected `1-2-3` returns sequence match + per-issue codes with
-  severity.
+### Phase 4 — Combination-execution analysis — DONE
+Turns "matched = true" into coached feedback (§10).
+- `analysis/combination_analysis.dart`: `CombinationIssue` + `CombinationAnalysis`
+  + `analyzeCombination(...)`. Per-combo, frontal-honest checks: hand recovery
+  between punches, guard hand up during each punch, end-of-combo balance; rhythm
+  captured as a descriptive `rhythm_cv` metric (not a fault). Each issue carries
+  a taxonomy code, severity and confidence.
+- 0–100 score per combo; the round's mean surfaces as the
+  `combination_execution_score` component metric (§27). Persisted on
+  `RoundAnalysis.combinationAnalyses`.
+- Depth-dependent judgements (weight transfer, forward lean) deliberately left
+  out (brief §12, §35).
+- **Done:** `test/combination_analysis_test.dart` covers clean (100/no issues),
+  faulty (recovery + guard + balance codes, scored) and JSON round-trip.
 
 ### Phase 5 — Combination drills (UI + library)
 The first real new UI. Depends on Phases 3–4.

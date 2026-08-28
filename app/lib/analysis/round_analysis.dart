@@ -1,4 +1,5 @@
 import 'combination.dart';
+import 'combination_analysis.dart';
 import 'landmarks.dart';
 import 'session_type.dart';
 
@@ -234,6 +235,7 @@ class RoundAnalysis {
     this.metrics = const RoundMetrics(),
     this.flaggedMoments = const <FlaggedMoment>[],
     this.combinations = const <Combination>[],
+    this.combinationAnalyses = const <CombinationAnalysis>[],
     this.modelCoaching,
     this.analysisVersion = currentAnalysisVersion,
     this.sessionType = SessionType.freeTraining,
@@ -242,6 +244,10 @@ class RoundAnalysis {
   /// Punch combinations detected in the round (brief §9). Empty when combination
   /// detection is off or the round had no runs of punches.
   final List<Combination> combinations;
+
+  /// Per-combination execution verdicts — score + issues (brief §10). Empty
+  /// unless combination detection ran. Index-aligned to [combinations].
+  final List<CombinationAnalysis> combinationAnalyses;
 
   /// What kind of training this round was — carried from the [DrillContext] onto
   /// the persisted result so history and analytics know the intent the round was
@@ -275,6 +281,7 @@ class RoundAnalysis {
     metrics: metrics,
     flaggedMoments: flaggedMoments,
     combinations: combinations,
+    combinationAnalyses: combinationAnalyses,
     modelCoaching: coaching,
     analysisVersion: analysisVersion,
     sessionType: sessionType,
@@ -285,6 +292,8 @@ class RoundAnalysis {
     'sessionType': sessionType.value,
     'overallSummary': overallSummary,
     'combinations': combinations.map((c) => c.toJson()).toList(),
+    'combinationAnalyses':
+        combinationAnalyses.map((c) => c.toJson()).toList(),
     'specificObservations':
         specificObservations.map((o) => o.toJson()).toList(),
     'positiveNotes': positiveNotes,
@@ -301,6 +310,11 @@ class RoundAnalysis {
     combinations: <Combination>[
       for (final c in (json['combinations'] as List<Object?>? ?? const []))
         Combination.fromJson((c as Map).cast<String, Object?>()),
+    ],
+    combinationAnalyses: <CombinationAnalysis>[
+      for (final c
+          in (json['combinationAnalyses'] as List<Object?>? ?? const []))
+        CombinationAnalysis.fromJson((c as Map).cast<String, Object?>()),
     ],
     modelCoaching: json['modelCoaching'] as String?,
     overallSummary: json['overallSummary'] as String,
