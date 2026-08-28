@@ -80,15 +80,24 @@ phase has to migrate the data model again.
 - **Done when:** a recorded round carries a `SessionType`, persists it, and round-
   trips through SQLite + Supabase; existing golden tests still pass.
 
-### Phase 2 — New analyzer rules (on the existing `Rule` seam)
+### Phase 2 — New analyzer rules (on the existing `Rule` seam) — DONE
 Pure additive rules; immediately visible in reports; no UI change.
-- `rules/body_lean.dart` (§11.1), `rules/rotation.dart` (§11.2, extends what
-  `hip_rotation.dart` already reads), `rules/body_position.dart` (§11.3),
-  `rules/balance.dart` (§11.7), recovery checks folded into guard/hands rules
-  (§11.6). Register in `defaultRules()`.
-- Each emits `code` + `confidence`; thresholds keyed off `SessionType`.
-- **Done when:** each rule has fixture tests (synthetic landmark sequences for
-  lean / off-balance / poor rotation) and appears in a report with a stable code.
+- **Shipped:** `rules/body_lean.dart` (§11.1, lateral torso tilt) and
+  `rules/balance.dart` (§11.7, hips vs base of support) — the two faults a
+  single **frontal** view reads honestly. Both emit a `code` + a sub-1.0
+  `confidence`; registered via `engine.dart` `v2Rules()`.
+- **§12 confidence gate:** `PoseOnlyAdapter` drops observations below
+  `minReportedConfidence` (0.5) from the user report.
+- **Golden contract:** the golden observation/style tests were pinned to the
+  frozen `v05Rules()` so V2 rules don't perturb the Dart↔Python fixtures.
+- **Deliberately deferred** (not fabricated from a frontal projection — brief
+  §12/§35): forward/back lean and knee-bend/"too upright" body position (§11.3)
+  are depth-dependent; extended rotation (§11.2) beyond the existing
+  `hip_rotation` rule; recovery (§11.6) is already covered by `guard_return`.
+  These wait on a camera-view signal or side-view support.
+- **Done:** fixture tests (`test/v2_rules_test.dart`) cover lean + off-balance
+  fire/silent cases; both appear in reports with stable codes. Session-type
+  threshold tuning lands with the analyzers that need it in later phases.
 
 ### Phase 3 — Combination detection
 The biggest differentiator and self-contained: a pure function over the
