@@ -127,13 +127,25 @@ Turns "matched = true" into coached feedback (§10).
 - **Done:** `test/combination_analysis_test.dart` covers clean (100/no issues),
   faulty (recovery + guard + balance codes, scored) and JSON round-trip.
 
-### Phase 5 — Combination drills (UI + library)
-The first real new UI. Depends on Phases 3–4.
-- `data/combination_library.dart` (starter set §14); combination detail screen;
-  instructional video plumbing; expected-vs-detected comparison; per-attempt +
-  aggregate result (§15).
-- **Done when:** user selects a combo, watches an example, performs reps, and sees
-  detected attempts + score (acceptance criterion §34).
+### Phase 5 — Combination drills (UI + library) — DONE (bar the live hookup)
+The first new UI. Depends on Phases 3–4.
+- `data/combination_library.dart`: `CombinationDef` + `CombinationDifficulty` +
+  the punches-only starter set (§14); `punchNameForNumber` display map.
+- `analysis/drill_matching.dart`: `evaluateDrill(expected, analyses)` →
+  `DrillResult` with per-attempt `sequenceMatch` + execution score and an
+  aggregate (match rate, average score over matched attempts only) (§15).
+- `ui/screens/combination_library_screen.dart` (difficulty filter, list) +
+  `combination_detail_screen.dart` (sequence strip, coaching points, video
+  placeholder, and a drill-result view when given a `DrillResult`). Home-screen
+  entry + starter data gated by `FeatureFlags.combinationDrills` (now on).
+- **Done:** `combination_drills_test.dart` (library integrity + matching) and
+  `combination_screens_test.dart` (widget smoke incl. rendered result).
+- **Remaining incremental step (not blocking):** the live camera→drill loop —
+  launch a technical-round recording from "Start drill" with the target combo,
+  then feed the recorded round's `combinationAnalyses` through `evaluateDrill`
+  and reopen the detail screen with the result. The evaluation + rendering are
+  done; only the session-flow wiring is left. Today "Start drill" points the
+  user at recording a technical round.
 
 ### Phase 6 — Advanced AI coach schema
 Tightens the existing AI layer rather than adding one.
