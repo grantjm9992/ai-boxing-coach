@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import '../../analysis/drill_matching.dart';
 import '../../data/combination_library.dart';
 import '../theme.dart';
+import 'combination_drill_screen.dart';
 
 /// A combination's detail + drill view (brief §15). Shows the sequence, the
 /// coaching points and — once a drill round has been analysed — the per-attempt
 /// and aggregate result.
 ///
-/// [result] is optional: opened from the library it's null (browse mode); after
-/// a drill round it carries the evaluation to render.
-class CombinationDetailScreen extends StatelessWidget {
+/// [result] seeds the view (null = browse mode); running a drill from here
+/// records a round, evaluates it, and updates the view with the fresh result.
+class CombinationDetailScreen extends StatefulWidget {
   const CombinationDetailScreen({
     super.key,
     required this.combo,
@@ -20,10 +21,44 @@ class CombinationDetailScreen extends StatelessWidget {
 
   final CombinationDef combo;
   final DrillResult? result;
+
+  /// Test seam: overrides launching the live recorder when "Start drill" is
+  /// tapped. Production leaves this null and pushes [CombinationDrillScreen].
   final VoidCallback? onStartDrill;
 
   @override
+  State<CombinationDetailScreen> createState() =>
+      _CombinationDetailScreenState();
+}
+
+class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
+  DrillResult? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    _result = widget.result;
+  }
+
+  Future<void> _startDrill() async {
+    if (widget.onStartDrill != null) {
+      widget.onStartDrill!();
+      return;
+    }
+    final result = await Navigator.of(context).push<DrillResult>(
+      MaterialPageRoute<DrillResult>(
+        builder: (_) => CombinationDrillScreen(combo: widget.combo),
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() => _result = result);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final combo = widget.combo;
+    final result = _result;
     return Scaffold(
       appBar: AppBar(title: Text(combo.numberLabel)),
       body: ListView(
@@ -65,19 +100,11 @@ class CombinationDetailScreen extends StatelessWidget {
             const SizedBox(height: 28),
             const _SectionHeader('Your drill'),
             const SizedBox(height: 8),
-            _DrillResultView(result: result!),
+            _DrillResultView(result: result),
           ],
           const SizedBox(height: 28),
           FilledButton.icon(
-            onPressed: onStartDrill ??
-                () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Record a technical round of this combination to see '
-                          'your attempts scored.',
-                        ),
-                      ),
-                    ),
+            onPressed: _startDrill,
             icon: const Icon(Icons.play_arrow),
             label: Text(result == null ? 'Start drill' : 'Drill again'),
           ),

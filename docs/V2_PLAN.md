@@ -140,12 +140,14 @@ The first new UI. Depends on Phases 3–4.
   entry + starter data gated by `FeatureFlags.combinationDrills` (now on).
 - **Done:** `combination_drills_test.dart` (library integrity + matching) and
   `combination_screens_test.dart` (widget smoke incl. rendered result).
-- **Remaining incremental step (not blocking):** the live camera→drill loop —
-  launch a technical-round recording from "Start drill" with the target combo,
-  then feed the recorded round's `combinationAnalyses` through `evaluateDrill`
-  and reopen the detail screen with the result. The evaluation + rendering are
-  done; only the session-flow wiring is left. Today "Start drill" points the
-  user at recording a technical round.
+- **Live camera→drill loop — DONE:** `ui/screens/combination_drill_screen.dart`
+  records a round for the target combo (reusing `CameraRoundRecorder` +
+  `MediaPipePoseEstimator`), runs pose + rules → combination detection +
+  execution scoring with `SessionType.combinationDrill`, evaluates it against the
+  target via `evaluateDrill`, and pops a `DrillResult` that the (now stateful)
+  detail screen renders. Recorder/estimator/analysis are injectable, so the whole
+  loop is covered by `combination_drill_screen_test.dart` without a camera or
+  MediaPipe. "Start drill" now launches this end-to-end.
 
 ### Phase 6 — Advanced AI coach schema
 Tightens the existing AI layer rather than adding one.
