@@ -51,7 +51,8 @@ void main() {
         drill: drill,
         styleProfile: resolveProfile(style, school),
       );
-      final got = RuleEngine(defaultRules()).run(context);
+      // Frozen to the v0.5 rule set (Dart↔Python golden parity contract).
+      final got = RuleEngine(v05Rules()).run(context);
       final want = (c['observations'] as List<Object?>)
           .map((e) => e as Map<String, Object?>)
           .toList();

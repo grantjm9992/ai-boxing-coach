@@ -1,3 +1,6 @@
+import '../domain/feature_flags.dart';
+import 'combination.dart';
+import 'combination_analysis.dart';
 import 'context.dart';
 import 'drill.dart';
 import 'engine.dart';
@@ -41,26 +44,51 @@ class PoseOnlyAdapter {
     'head_movement': 'Slip-line drill: slip left/right after every jab.',
   };
 
+  /// Observations the analyzers are less sure of than this are dropped from the
+  /// user-facing report rather than shown as confident coaching (brief §12).
+  /// The AI reasoning layer may still be handed them to weigh in context.
+  static const double minReportedConfidence = 0.5;
+
   RoundAnalysis analyse(PoseSequence sequence, DrillContext drill) {
     final context = AnalysisContext(
       sequence: sequence,
       drill: drill,
       styleProfile: resolveProfile(drill.style, drill.school),
     );
-    final observations = _engine.run(context);
+    final observations = _engine
+        .run(context)
+        .where((o) => o.confidence >= minReportedConfidence)
+        .toList();
 
     final faults =
         observations.where((o) => o.severity.isFault).toList();
     final positives =
         observations.where((o) => o.severity == Severity.positive).toList();
 
+    final combos = FeatureFlags.combinationDetection
+        ? context.combinations
+        : const <Combination>[];
+    final comboAnalyses = <CombinationAnalysis>[
+      for (final combo in combos)
+        analyzeCombination(
+          context.sequence,
+          context.punches,
+          combo,
+          context.drill.stance,
+          context.bodyScale,
+        ),
+    ];
+
     return RoundAnalysis(
       overallSummary: _summary(context, faults, positives),
       specificObservations: observations,
       positiveNotes: positives.map((o) => o.coachingText).toList(),
       correctionPriorities: _corrections(faults),
-      metrics: _metrics(context, faults),
+      metrics: _metrics(context, faults, comboAnalyses),
       flaggedMoments: _flagged(faults),
+      combinations: combos,
+      combinationAnalyses: comboAnalyses,
+      sessionType: drill.sessionType,
     );
   }
 
@@ -107,7 +135,11 @@ class PoseOnlyAdapter {
     return corrections;
   }
 
-  RoundMetrics _metrics(AnalysisContext context, List<Observation> faults) {
+  RoundMetrics _metrics(
+    AnalysisContext context,
+    List<Observation> faults,
+    List<CombinationAnalysis> comboAnalyses,
+  ) {
     final n = context.punches.length;
     final guardReturnFaults = faults
         .where((o) => o.ruleId == 'guard_return' && o.severity.isFault)
@@ -128,6 +160,17 @@ class PoseOnlyAdapter {
       punchMix: _punchMix(context),
       values: <String, double>{
         'body_scale': _round(context.bodyScale, 4),
+        if (FeatureFlags.combinationDetection) ...<String, double>{
+          'combinations_detected': comboAnalyses.length.toDouble(),
+          // Combination Execution component score (brief §27) — mean of the
+          // per-combination scores. Omitted when no combination was thrown.
+          if (comboAnalyses.isNotEmpty)
+            'combination_execution_score': _round(
+              comboAnalyses.map((c) => c.score).reduce((a, b) => a + b) /
+                  comboAnalyses.length,
+              1,
+            ),
+        },
         for (final e in features.entries) e.key: _round(e.value, 3),
       },
     );

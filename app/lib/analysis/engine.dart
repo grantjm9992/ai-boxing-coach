@@ -1,6 +1,8 @@
 import 'context.dart';
 import 'round_analysis.dart';
 import 'rule.dart';
+import 'rules/balance.dart';
+import 'rules/body_lean.dart';
 import 'rules/footwork.dart';
 import 'rules/guard_return.dart';
 import 'rules/hands_up.dart';
@@ -50,10 +52,31 @@ class RuleEngine {
 /// hip_rotation reads z (least certain from a single view); school_adherence
 /// runs only when the drill names a School.
 List<Rule> defaultRules() => <Rule>[
+  ...v05Rules(),
+  ...v2Rules(),
+];
+
+/// The v0.5 rule set — the Dart↔Python parity contract the golden fixtures were
+/// generated against. Frozen: the golden observations tests run exactly these,
+/// so their output stays stable as the shipped set grows.
+List<Rule> v05Rules() => <Rule>[
   GuardReturnRule(),
   HandsUpRule(),
   FootworkRule(),
   HeadMovementRule(),
   HipRotationRule(),
   SchoolAdherenceRule(),
+];
+
+/// V2 analyzers added on top of the v0.5 set (brief §11). Dart-only for now;
+/// each carries a confidence reflecting the single-view read (brief §12).
+///
+/// Scoped deliberately to faults a single frontal view reads honestly: lateral
+/// torso lean and lateral hip-over-base balance. Depth-dependent faults
+/// (forward/back lean, knee bend / "too upright", body position) are held back
+/// until a camera-view signal or side-view support exists rather than inferred
+/// unreliably from a frontal projection (brief §12, §35).
+List<Rule> v2Rules() => <Rule>[
+  BodyLeanRule(),
+  BalanceRule(),
 ];

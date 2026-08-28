@@ -39,7 +39,10 @@ void main() {
         sequence: sequence,
         drill: const DrillContext(),
       );
-      final got = RuleEngine(defaultRules()).run(context);
+      // Frozen to the v0.5 rule set — this is the Dart↔Python golden parity
+      // contract. V2 analyzers (engine.dart v2Rules) are Dart-first and tested
+      // separately, so they must not perturb these fixtures.
+      final got = RuleEngine(v05Rules()).run(context);
       final want = ((expected['observations'] as List<Object?>?) ??
               const <Object?>[])
           .map((e) => e as Map<String, Object?>)

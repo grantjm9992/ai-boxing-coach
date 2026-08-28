@@ -1,3 +1,5 @@
+import '../analysis/session_type.dart';
+
 /// The five-phase session arc from the spec.
 ///
 /// Every full session follows this arc in order. Warm-up is never skipped.
@@ -116,6 +118,17 @@ enum SessionPhase {
   /// The spec is explicit that the warm-up is never skipped, and a cool-down
   /// that can be dropped is a cool-down that never happens.
   bool get isOptional => isRoundBased;
+
+  /// The analysis intent for a round recorded during this phase (brief §4).
+  /// This is how a guided-session round gets its [SessionType]; standalone
+  /// recordings set one directly. Non-boxing phases (warm-up, cool-down) are
+  /// not recorded for analysis, so they map to free training.
+  SessionType get sessionType => switch (this) {
+    SessionPhase.shadow => SessionType.shadowBoxing,
+    SessionPhase.technical => SessionType.technicalWork,
+    SessionPhase.conditioning => SessionType.heavyBag,
+    SessionPhase.warmUp || SessionPhase.coolDown => SessionType.freeTraining,
+  };
 
   static SessionPhase? fromKey(String key) {
     for (final phase in SessionPhase.values) {

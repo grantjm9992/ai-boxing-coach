@@ -57,6 +57,7 @@ enum Side {
       this == Side.left ? Landmark.leftShoulder : Landmark.rightShoulder;
   Landmark get elbow => this == Side.left ? Landmark.leftElbow : Landmark.rightElbow;
   Landmark get hip => this == Side.left ? Landmark.leftHip : Landmark.rightHip;
+  Landmark get knee => this == Side.left ? Landmark.leftKnee : Landmark.rightKnee;
   Landmark get ankle => this == Side.left ? Landmark.leftAnkle : Landmark.rightAnkle;
 }
 

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../context.dart';
+import '../error_codes.dart';
 import '../geometry.dart' as geo;
 import '../landmarks.dart';
 import '../punch.dart';
@@ -54,6 +55,7 @@ class HipRotationRule extends Rule {
         observations.add(
           Observation(
             ruleId: id,
+            code: FaultCode.rotInsufficient,
             category: SkillCategory.straight,
             severity: Severity.moderate,
             coachingText:
