@@ -1,5 +1,6 @@
 import 'landmarks.dart';
 import 'school.dart';
+import 'session_type.dart';
 
 /// A fighting style — selects a [StyleProfile] in the analysis layer. Mirror of
 /// `src/boxing_coach/domain/style.py`. "Correct" technique is style-dependent,
@@ -24,12 +25,18 @@ class DrillContext {
     this.stance = Stance.orthodox,
     this.style = Style.highGuard,
     this.school,
+    this.sessionType = SessionType.freeTraining,
     this.focus = const <String>{},
     this.notes = '',
   });
 
   final Stance stance;
   final Style style;
+
+  /// What kind of training this round is — drives session-type-specific
+  /// thresholds in the analyzers (brief §4). Defaults to free training so
+  /// callers that don't care are unaffected.
+  final SessionType sessionType;
 
   /// National/tactical school to coach toward. Null = no school feedback.
   final School? school;

@@ -1,4 +1,5 @@
 import '../context.dart';
+import '../error_codes.dart';
 import '../geometry.dart' as geo;
 import '../landmarks.dart';
 import '../round_analysis.dart';
@@ -49,6 +50,7 @@ class FootworkRule extends Rule {
       return <Observation>[
         Observation(
           ruleId: id,
+          code: FaultCode.footFlatFooted,
           category: SkillCategory.footwork,
           severity: Severity.moderate,
           coachingText:

@@ -2,6 +2,7 @@ import '../analysis/analysis_mode.dart';
 import '../analysis/drill.dart';
 import '../analysis/landmarks.dart';
 import '../analysis/school.dart';
+import '../analysis/session_type.dart';
 
 /// Who the athlete is, for analysis. The spec's open question 3: the stance (and
 /// now the style/school the round is coached against) has to come from
@@ -28,11 +29,16 @@ class UserProfile {
   /// on key frames / the whole round.
   final AnalysisMode analysisMode;
 
-  DrillContext toDrill({Set<String> focus = const <String>{}, String notes = ''}) =>
+  DrillContext toDrill({
+    Set<String> focus = const <String>{},
+    String notes = '',
+    SessionType sessionType = SessionType.freeTraining,
+  }) =>
       DrillContext(
         stance: stance,
         style: style,
         school: school,
+        sessionType: sessionType,
         focus: focus,
         notes: notes,
       );

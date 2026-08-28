@@ -61,6 +61,7 @@ class PoseOnlyAdapter {
       correctionPriorities: _corrections(faults),
       metrics: _metrics(context, faults),
       flaggedMoments: _flagged(faults),
+      sessionType: drill.sessionType,
     );
   }
 
