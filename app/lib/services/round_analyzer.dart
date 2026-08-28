@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 
+import '../analysis/ai_coach_report.dart';
 import '../analysis/analysis_mode.dart';
 import '../analysis/drill.dart';
 import '../analysis/pose_only_adapter.dart';
 import '../analysis/round_analysis.dart';
+import '../domain/feature_flags.dart';
 import '../domain/round_clip.dart';
 import 'ai/coaching_prompt.dart';
 import 'ai/vision_model.dart';
@@ -56,15 +58,30 @@ class RoundAnalyzer {
       var analysis = _adapter.analyse(result.sequence, resolvedDrill);
 
       if (mode.usesAi && visionModel != null && frameGrabber != null) {
-        final coaching = await _aiCoaching(
-          mode,
-          clip,
-          analysis,
-          resolvedDrill,
-          result.sequence.durationMs,
-        );
-        if (coaching != null && coaching.trim().isNotEmpty) {
-          analysis = analysis.withModelCoaching(coaching.trim());
+        if (FeatureFlags.advancedAiAnalysis && mode == AnalysisMode.fullFrame) {
+          // Advanced path (brief §17/§18): structured measurements in, strict
+          // JSON out. Unschematic output is rejected, not shown.
+          final report = await _advancedReport(
+            clip,
+            analysis,
+            resolvedDrill,
+            result.sequence.durationMs,
+          );
+          if (report != null) {
+            analysis =
+                analysis.withAiReport(report).withModelCoaching(report.summary);
+          }
+        } else {
+          final coaching = await _aiCoaching(
+            mode,
+            clip,
+            analysis,
+            resolvedDrill,
+            result.sequence.durationMs,
+          );
+          if (coaching != null && coaching.trim().isNotEmpty) {
+            analysis = analysis.withModelCoaching(coaching.trim());
+          }
         }
       }
 
@@ -113,6 +130,42 @@ class RoundAnalyzer {
       return null;
     } on Object catch (error) {
       debugPrint('AI coaching failed: $error');
+      return null;
+    }
+  }
+
+  /// The advanced structured path: send the CV measurements (+ sampled frames)
+  /// and require a schema-valid JSON report back. Returns null — no report,
+  /// never fabricated coaching — if the model errors or the output doesn't
+  /// validate (brief §18).
+  Future<AiCoachReport?> _advancedReport(
+    RoundClip clip,
+    RoundAnalysis analysis,
+    DrillContext drill,
+    double durationMs,
+  ) async {
+    try {
+      final timestamps = CoachingPrompt.sampledTimestamps(durationMs);
+      final images = timestamps.isEmpty
+          ? const <VisionImage>[]
+          : await frameGrabber!.grab(clip.path, timestamps);
+      final request = CoachingPrompt.structuredRequest(
+        analysis,
+        drill,
+        images: images,
+        durationSeconds: durationMs / 1000.0,
+      );
+      final raw = await visionModel!.complete(request);
+      final report = AiCoachReport.tryParse(raw);
+      if (report == null) {
+        debugPrint('AI report rejected: response did not match schema');
+      }
+      return report;
+    } on VisionModelException catch (error) {
+      debugPrint('Advanced AI unavailable: ${error.message}');
+      return null;
+    } on Object catch (error) {
+      debugPrint('Advanced AI failed: $error');
       return null;
     }
   }

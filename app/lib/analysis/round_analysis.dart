@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'ai_coach_report.dart';
 import 'combination.dart';
 import 'combination_analysis.dart';
 import 'landmarks.dart';
@@ -236,10 +239,21 @@ class RoundAnalysis {
     this.flaggedMoments = const <FlaggedMoment>[],
     this.combinations = const <Combination>[],
     this.combinationAnalyses = const <CombinationAnalysis>[],
+    this.lowConfidenceObservations = const <Observation>[],
     this.modelCoaching,
+    this.aiReport,
     this.analysisVersion = currentAnalysisVersion,
     this.sessionType = SessionType.freeTraining,
   });
+
+  /// Observations the analyzers weren't confident enough to show the user
+  /// directly (below the report threshold). Kept so the AI reasoning layer can
+  /// weigh them in context rather than losing them (brief §12).
+  final List<Observation> lowConfidenceObservations;
+
+  /// The advanced AI coach's structured report (brief §18). Null unless the
+  /// advanced path ran and returned a schema-valid response.
+  final AiCoachReport? aiReport;
 
   /// Punch combinations detected in the round (brief §9). Empty when combination
   /// detection is off or the round had no runs of punches.
@@ -282,7 +296,26 @@ class RoundAnalysis {
     flaggedMoments: flaggedMoments,
     combinations: combinations,
     combinationAnalyses: combinationAnalyses,
+    lowConfidenceObservations: lowConfidenceObservations,
     modelCoaching: coaching,
+    aiReport: aiReport,
+    analysisVersion: analysisVersion,
+    sessionType: sessionType,
+  );
+
+  /// Same round with a structured AI report attached (advanced path, §18).
+  RoundAnalysis withAiReport(AiCoachReport? report) => RoundAnalysis(
+    overallSummary: overallSummary,
+    specificObservations: specificObservations,
+    positiveNotes: positiveNotes,
+    correctionPriorities: correctionPriorities,
+    metrics: metrics,
+    flaggedMoments: flaggedMoments,
+    combinations: combinations,
+    combinationAnalyses: combinationAnalyses,
+    lowConfidenceObservations: lowConfidenceObservations,
+    modelCoaching: modelCoaching,
+    aiReport: report,
     analysisVersion: analysisVersion,
     sessionType: sessionType,
   );
@@ -294,6 +327,9 @@ class RoundAnalysis {
     'combinations': combinations.map((c) => c.toJson()).toList(),
     'combinationAnalyses':
         combinationAnalyses.map((c) => c.toJson()).toList(),
+    'lowConfidenceObservations':
+        lowConfidenceObservations.map((o) => o.toJson()).toList(),
+    'aiReport': aiReport?.toJson(),
     'specificObservations':
         specificObservations.map((o) => o.toJson()).toList(),
     'positiveNotes': positiveNotes,
@@ -316,6 +352,14 @@ class RoundAnalysis {
           in (json['combinationAnalyses'] as List<Object?>? ?? const []))
         CombinationAnalysis.fromJson((c as Map).cast<String, Object?>()),
     ],
+    lowConfidenceObservations: <Observation>[
+      for (final o
+          in (json['lowConfidenceObservations'] as List<Object?>? ?? const []))
+        Observation.fromJson((o as Map).cast<String, Object?>()),
+    ],
+    aiReport: json['aiReport'] == null
+        ? null
+        : AiCoachReport.tryParse(jsonEncode(json['aiReport'])),
     modelCoaching: json['modelCoaching'] as String?,
     overallSummary: json['overallSummary'] as String,
     specificObservations: <Observation>[

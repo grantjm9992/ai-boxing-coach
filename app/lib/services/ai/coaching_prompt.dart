@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import '../../analysis/drill.dart';
@@ -186,6 +187,126 @@ class CoachingPrompt {
     return VisionRequest(
       systemPrompt: _system,
       userPrompt: prompt.toString().trim(),
+      images: images,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Advanced structured path (brief §17 input, §18 output).
+  // ---------------------------------------------------------------------------
+
+  static const String _structuredSystem =
+      'You are an expert boxing coach. You are given structured measurements '
+      'from an on-device pose/CV analysis of one boxing round, and optionally '
+      'frames from it. Ground every judgement in the measurements provided — do '
+      'not invent faults the data does not support. Respond with ONLY a single '
+      'JSON object, no prose or markdown, matching exactly this schema:\n'
+      '{"summary": string, "strengths": [string], "priority_issues": '
+      '[{"code": string, "severity": "HIGH"|"MEDIUM"|"LOW", "confidence": '
+      'number, "timestamps": [number], "observation": string, '
+      '"why_it_matters": string, "correction": string, "suggested_drill": '
+      'string}], "combination_feedback": [{"sequence": [number], '
+      '"sequence_match": boolean, "score": number, "comment": string}], '
+      '"next_session_focus": [string]}\n'
+      'Reuse the codes from detected_issues where they apply. At most three '
+      'priority_issues, worst first.';
+
+  /// The structured input payload (brief §17): the CV measurements the model
+  /// reasons over. Pure JSON-able map, so it's testable without a model.
+  static Map<String, Object?> structuredInput(
+    RoundAnalysis analysis,
+    DrillContext drill, {
+    double? durationSeconds,
+  }) {
+    Map<String, Object?> issue(Observation o) => <String, Object?>{
+      'code': o.code,
+      'category': o.category.value,
+      'severity': o.severity.value,
+      'confidence': o.confidence,
+      if (o.timestampMs != null) 'timestamp_s': o.timestampMs! / 1000.0,
+      'observation': o.coachingText,
+      'metrics': o.metrics,
+    };
+
+    return <String, Object?>{
+      'session': <String, Object?>{
+        'type': analysis.sessionType.value,
+        'duration_seconds': ?durationSeconds,
+      },
+      'fighter': <String, Object?>{
+        'stance': drill.stance.name,
+        'style': drill.style.value,
+        if (drill.school != null) 'school': drill.school!.value,
+      },
+      'capture_quality': const <String, Object?>{},
+      'punches': <String, Object?>{
+        'count': analysis.metrics.punchesThrown,
+        'mix': analysis.metrics.punchMix,
+      },
+      'combinations': <Object?>[
+        for (final c in analysis.combinations)
+          <String, Object?>{
+            'sequence': c.sequence,
+            'label': c.label,
+            'confidence': c.confidence,
+          },
+      ],
+      'combination_execution': <Object?>[
+        for (final a in analysis.combinationAnalyses)
+          <String, Object?>{
+            'sequence': a.combination.sequence,
+            'score': a.score,
+            'issues': <Object?>[
+              for (final i in a.issues)
+                <String, Object?>{
+                  'code': i.code,
+                  'severity': i.severity.value,
+                  'confidence': i.confidence,
+                },
+            ],
+          },
+      ],
+      'metrics': <String, Object?>{
+        if (analysis.metrics.guardReturnRate != null)
+          'guard_return_rate': analysis.metrics.guardReturnRate,
+        ...analysis.metrics.values,
+      },
+      'detected_issues': <Object?>[
+        for (final o in analysis.specificObservations)
+          if (o.severity.isFault) issue(o),
+      ],
+      // Below the report threshold — for the model to weigh, not stated as fact
+      // to the user (brief §12).
+      'low_confidence_observations': <Object?>[
+        for (final o in analysis.lowConfidenceObservations) issue(o),
+      ],
+    };
+  }
+
+  /// The advanced request: structured measurements (+ optional frames) in,
+  /// strict JSON out. Parse the response with `AiCoachReport.tryParse`.
+  static VisionRequest structuredRequest(
+    RoundAnalysis analysis,
+    DrillContext drill, {
+    List<VisionImage> images = const <VisionImage>[],
+    double? durationSeconds,
+  }) {
+    final input = structuredInput(analysis, drill,
+        durationSeconds: durationSeconds);
+    final buffer = StringBuffer()
+      ..writeln(_context(drill))
+      ..writeln('On-device analysis of the round (JSON):')
+      ..writeln(const JsonEncoder.withIndent('  ').convert(input));
+    if (images.isNotEmpty) {
+      buffer.writeln(
+        '\nThe attached ${images.length} frames are sampled across the round '
+        'in time order, for context.',
+      );
+    }
+    buffer.writeln('\nReturn only the JSON report.');
+    return VisionRequest(
+      systemPrompt: _structuredSystem,
+      userPrompt: buffer.toString().trim(),
       images: images,
     );
   }
