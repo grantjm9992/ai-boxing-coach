@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/session_templates.dart';
+import '../../domain/feature_flags.dart';
 import '../../domain/session_phase.dart';
 import '../../domain/session_settings.dart';
 import '../../domain/session_template.dart';
@@ -8,6 +9,7 @@ import '../format.dart';
 import '../theme.dart';
 import '../widgets/category_widgets.dart';
 import '../widgets/phase_bar.dart';
+import 'combination_library_screen.dart';
 import 'exercise_library_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
@@ -66,6 +68,16 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
+          if (FeatureFlags.combinationDrills)
+            IconButton(
+              icon: const Icon(Icons.sports_mma_outlined),
+              tooltip: 'Combinations',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const CombinationLibraryScreen(),
+                ),
+              ),
+            ),
         ],
       ),
       body: ListView(

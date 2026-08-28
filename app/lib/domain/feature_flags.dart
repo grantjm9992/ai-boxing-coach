@@ -15,8 +15,8 @@ class FeatureFlags {
   /// Combination detection (Phase 3).
   static const combinationDetection = true;
 
-  /// Combination drills UI + library (Phase 5). Off until that phase lands.
-  static const combinationDrills = false;
+  /// Combination drills UI + library (Phase 5).
+  static const combinationDrills = true;
 
   /// Full-round advanced AI analysis (Phase 6) — also gated by a configured
   /// vision endpoint at runtime.
