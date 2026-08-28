@@ -12,8 +12,8 @@ class FeatureFlags {
   static const footworkAnalysis = true;
   static const rotationAnalysis = true;
 
-  /// Combination detection (Phase 3). Off until that phase lands.
-  static const combinationDetection = false;
+  /// Combination detection (Phase 3).
+  static const combinationDetection = true;
 
   /// Combination drills UI + library (Phase 5). Off until that phase lands.
   static const combinationDrills = false;

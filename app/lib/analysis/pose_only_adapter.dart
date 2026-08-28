@@ -1,3 +1,4 @@
+import '../domain/feature_flags.dart';
 import 'context.dart';
 import 'drill.dart';
 import 'engine.dart';
@@ -69,6 +70,8 @@ class PoseOnlyAdapter {
       correctionPriorities: _corrections(faults),
       metrics: _metrics(context, faults),
       flaggedMoments: _flagged(faults),
+      combinations:
+          FeatureFlags.combinationDetection ? context.combinations : const [],
       sessionType: drill.sessionType,
     );
   }
@@ -137,6 +140,8 @@ class PoseOnlyAdapter {
       punchMix: _punchMix(context),
       values: <String, double>{
         'body_scale': _round(context.bodyScale, 4),
+        if (FeatureFlags.combinationDetection)
+          'combinations_detected': context.combinations.length.toDouble(),
         for (final e in features.entries) e.key: _round(e.value, 3),
       },
     );
