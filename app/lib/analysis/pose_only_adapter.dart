@@ -41,13 +41,21 @@ class PoseOnlyAdapter {
     'head_movement': 'Slip-line drill: slip left/right after every jab.',
   };
 
+  /// Observations the analyzers are less sure of than this are dropped from the
+  /// user-facing report rather than shown as confident coaching (brief §12).
+  /// The AI reasoning layer may still be handed them to weigh in context.
+  static const double minReportedConfidence = 0.5;
+
   RoundAnalysis analyse(PoseSequence sequence, DrillContext drill) {
     final context = AnalysisContext(
       sequence: sequence,
       drill: drill,
       styleProfile: resolveProfile(drill.style, drill.school),
     );
-    final observations = _engine.run(context);
+    final observations = _engine
+        .run(context)
+        .where((o) => o.confidence >= minReportedConfidence)
+        .toList();
 
     final faults =
         observations.where((o) => o.severity.isFault).toList();
