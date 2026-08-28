@@ -1,3 +1,4 @@
+import 'combination.dart';
 import 'drill.dart';
 import 'features.dart';
 import 'landmarks.dart';
@@ -30,6 +31,7 @@ class AnalysisContext {
 
   double? _bodyScale;
   List<PunchEvent>? _punches;
+  List<Combination>? _combinations;
   List<double>? _stanceSpeed;
   RoundProfile? _roundProfile;
 
@@ -37,6 +39,11 @@ class AnalysisContext {
 
   List<PunchEvent> get punches =>
       _punches ??= PunchDetector(config: punchConfig).detect(sequence, bodyScale);
+
+  /// Detected punch combinations — the punch stream grouped by timing into
+  /// numbered sequences (brief §9). Computed once, lazily.
+  List<Combination> get combinations => _combinations ??=
+      detectCombinations(sequence, punches, drill.stance);
 
   /// Round-level descriptive features (work rate, mobility, posture, …) — the
   /// raw material for national-school classification.

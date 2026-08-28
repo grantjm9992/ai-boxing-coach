@@ -1,3 +1,4 @@
+import 'combination.dart';
 import 'landmarks.dart';
 import 'session_type.dart';
 
@@ -232,10 +233,15 @@ class RoundAnalysis {
     this.correctionPriorities = const <Correction>[],
     this.metrics = const RoundMetrics(),
     this.flaggedMoments = const <FlaggedMoment>[],
+    this.combinations = const <Combination>[],
     this.modelCoaching,
     this.analysisVersion = currentAnalysisVersion,
     this.sessionType = SessionType.freeTraining,
   });
+
+  /// Punch combinations detected in the round (brief §9). Empty when combination
+  /// detection is off or the round had no runs of punches.
+  final List<Combination> combinations;
 
   /// What kind of training this round was — carried from the [DrillContext] onto
   /// the persisted result so history and analytics know the intent the round was
@@ -268,6 +274,7 @@ class RoundAnalysis {
     correctionPriorities: correctionPriorities,
     metrics: metrics,
     flaggedMoments: flaggedMoments,
+    combinations: combinations,
     modelCoaching: coaching,
     analysisVersion: analysisVersion,
     sessionType: sessionType,
@@ -277,6 +284,7 @@ class RoundAnalysis {
     'analysisVersion': analysisVersion,
     'sessionType': sessionType.value,
     'overallSummary': overallSummary,
+    'combinations': combinations.map((c) => c.toJson()).toList(),
     'specificObservations':
         specificObservations.map((o) => o.toJson()).toList(),
     'positiveNotes': positiveNotes,
@@ -290,6 +298,10 @@ class RoundAnalysis {
   factory RoundAnalysis.fromJson(Map<String, Object?> json) => RoundAnalysis(
     analysisVersion: json['analysisVersion'] as String? ?? '1.0.0',
     sessionType: SessionType.fromValue(json['sessionType'] as String?),
+    combinations: <Combination>[
+      for (final c in (json['combinations'] as List<Object?>? ?? const []))
+        Combination.fromJson((c as Map).cast<String, Object?>()),
+    ],
     modelCoaching: json['modelCoaching'] as String?,
     overallSummary: json['overallSummary'] as String,
     specificObservations: <Observation>[

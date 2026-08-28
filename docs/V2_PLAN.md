@@ -99,16 +99,18 @@ Pure additive rules; immediately visible in reports; no UI change.
   fire/silent cases; both appear in reports with stable codes. Session-type
   threshold tuning lands with the analyzers that need it in later phases.
 
-### Phase 3 — Combination detection
-The biggest differentiator and self-contained: a pure function over the
-`List<PunchEvent>` the `PunchDetector` already produces.
-- `analysis/combination.dart`: `Combination` model + `detectCombinations(punches,
-  stance, {maxGapMs = 1200})` grouping classified punches into numbered sequences.
-- Numbering map (§7), configurable; `1-2`, `1-2-3`, `1-3-4`, unknown-sequence
-  handling.
-- Surface combos in `RoundMetrics` / the review screen.
-- **Done when:** fixtures distinguish `1-2-3` from `1-3-4` from an incorrect
-  sequence (acceptance criterion §34).
+### Phase 3 — Combination detection — DONE
+A pure function over the `List<PunchEvent>` the `PunchDetector` already produces.
+- `analysis/combination.dart`: `Combination` model + `PunchNumbering` (§7,
+  configurable, southpaw-aware) + `detectCombinations(sequence, punches, stance,
+  {maxGapMs = 1200})` grouping punches into numbered sequences; unknown punches
+  become `0` and lower the combo confidence.
+- Cached `AnalysisContext.combinations` getter (mirrors `punches`); surfaced on
+  `RoundAnalysis.combinations` (persisted) + a `combinations_detected` metric,
+  gated by `FeatureFlags.combinationDetection` (now on).
+- **Done:** `test/combination_test.dart` distinguishes `1-2-3` from `1-3-4` from
+  an unknown sequence, plus gap-splitting, southpaw, single-punch and JSON cases
+  (acceptance criterion §34).
 
 ### Phase 4 — Combination-execution analysis
 Turns "matched = true" into coached feedback (§10). Depends on Phase 2 rules +
