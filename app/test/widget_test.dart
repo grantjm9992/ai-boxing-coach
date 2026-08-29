@@ -18,6 +18,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Templates live inside the (collapsed) "Workouts & sessions" accordion.
+    await tester.tap(find.text('Workouts & sessions'));
+    await tester.pumpAndSettle();
+
     for (final template in SessionTemplates.all) {
       // The picker scrolls; the test viewport is shorter than a phone.
       await tester.scrollUntilVisible(
