@@ -18,9 +18,21 @@ import '../theme.dart';
 /// or `false` if there is no usable camera or they choose to train without
 /// recording. The session never blocks on it — recording is additive.
 class CameraCheckScreen extends StatefulWidget {
-  const CameraCheckScreen({required this.recorder, super.key});
+  const CameraCheckScreen({
+    required this.recorder,
+    this.title = 'Camera check',
+    this.subtitle =
+        'Technical rounds coming up. Get yourself in frame so the coach '
+        'can see your work.',
+    super.key,
+  });
 
   final CameraRoundRecorder recorder;
+
+  /// App-bar-less heading + guidance line, so drills and shadow rounds can
+  /// say what's coming up rather than "technical rounds".
+  final String title;
+  final String subtitle;
 
   @override
   State<CameraCheckScreen> createState() => _CameraCheckScreenState();
@@ -88,15 +100,14 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Text(
-                'Camera check',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+              Text(
+                widget.title,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Technical rounds coming up. Get yourself in frame so the '
-                'coach can see your work.',
-                style: TextStyle(color: AppTheme.textSecondary),
+              Text(
+                widget.subtitle,
+                style: const TextStyle(color: AppTheme.textSecondary),
               ),
               const SizedBox(height: 16),
               Expanded(child: _preview()),

@@ -14,6 +14,7 @@ import 'exercise_library_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
 import 'progress_screen.dart';
+import 'shadow_result_screen.dart';
 import 'template_detail_screen.dart';
 
 /// Template picker — the entry point of the app.
@@ -32,52 +33,7 @@ class HomeScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            tooltip: 'Your profile',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const ProfileScreen(),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.insights_outlined),
-            tooltip: 'Progress & trends',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const ProgressScreen(),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: 'History & weekly balance',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const HistoryScreen(),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.fitness_center),
-            tooltip: 'Exercise library',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const ExerciseLibraryScreen(),
-              ),
-            ),
-          ),
-          if (FeatureFlags.combinationDrills)
-            IconButton(
-              icon: const Icon(Icons.sports_mma_outlined),
-              tooltip: 'Combinations',
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const CombinationLibraryScreen(),
-                ),
-              ),
-            ),
+          _HomeMenu(),
         ],
       ),
       body: ListView(
@@ -91,6 +47,73 @@ class HomeScreen extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// The single home menu — replaces the row of app-bar icons, which had grown
+/// cramped. Add destinations here, not more buttons.
+enum _MenuItem {
+  shadow('Shadow boxing', Icons.sports_mma),
+  combinations('Combinations', Icons.repeat),
+  exercises('Exercise library', Icons.fitness_center),
+  progress('Progress & trends', Icons.insights_outlined),
+  history('History', Icons.history),
+  profile('Your profile', Icons.person_outline);
+
+  const _MenuItem(this.label, this.icon);
+  final String label;
+  final IconData icon;
+}
+
+class _HomeMenu extends StatelessWidget {
+  Route<void> _route(Widget screen) =>
+      MaterialPageRoute<void>(builder: (_) => screen);
+
+  void _onSelected(BuildContext context, _MenuItem item) {
+    switch (item) {
+      case _MenuItem.shadow:
+        startShadowRound(context);
+      case _MenuItem.combinations:
+        Navigator.of(context).push(_route(const CombinationLibraryScreen()));
+      case _MenuItem.exercises:
+        Navigator.of(context).push(_route(const ExerciseLibraryScreen()));
+      case _MenuItem.progress:
+        Navigator.of(context).push(_route(const ProgressScreen()));
+      case _MenuItem.history:
+        Navigator.of(context).push(_route(const HistoryScreen()));
+      case _MenuItem.profile:
+        Navigator.of(context).push(_route(const ProfileScreen()));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <_MenuItem>[
+      if (FeatureFlags.shadowBoxingV2) _MenuItem.shadow,
+      if (FeatureFlags.combinationDrills) _MenuItem.combinations,
+      _MenuItem.exercises,
+      _MenuItem.progress,
+      _MenuItem.history,
+      _MenuItem.profile,
+    ];
+    return PopupMenuButton<_MenuItem>(
+      icon: const Icon(Icons.menu),
+      tooltip: 'Menu',
+      onSelected: (item) => _onSelected(context, item),
+      itemBuilder: (context) => <PopupMenuEntry<_MenuItem>>[
+        for (final item in items)
+          PopupMenuItem<_MenuItem>(
+            value: item,
+            child: Row(
+              children: <Widget>[
+                Icon(item.icon, size: 20, color: AppTheme.textSecondary),
+                const SizedBox(width: 12),
+                Text(item.label),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

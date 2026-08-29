@@ -11,6 +11,16 @@ Feature areas referenced below have their own deep-dive docs — see
 ## [Unreleased]
 
 ### Added
+- **Home menu + standalone rounds.**
+  - The home app bar's row of icons is now a single **menu** (Shadow boxing,
+    Combinations, Exercise library, Progress, History, Profile) — add
+    destinations there, not more buttons.
+  - **Shadow boxing** as a first-class standalone mode: record a full shadow
+    round on its own (menu → Shadow boxing), get the feedback, and it's saved to
+    History + the weekly balance like a guided session.
+  - Combination drills and shadow rounds now share `RoundCaptureScreen`, so a
+    standalone round gets the **same pre-flight as a routine** — the framing
+    check, "I'm in frame", and the 5-second count-in — before recording.
 - **V2 hybrid analysis (phases 1–7).** A deterministic CV layer measures what can
   be measured; the AI layer reasons over the evidence. See
   [`V2_PLAN.md`](V2_PLAN.md) for the phase-by-phase record and the brief it

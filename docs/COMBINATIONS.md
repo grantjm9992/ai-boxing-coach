@@ -65,12 +65,19 @@ detected combination against the target, producing a `DrillResult`: per-attempt
 over matched attempts only — a mis-thrown combination doesn't move the technique
 score).
 
-The **live loop**: the detail screen's "Start drill" opens
-`CombinationDrillScreen`, which records a round (`CameraRoundRecorder`), runs pose
-→ rules → combination detection + scoring under `SessionType.combinationDrill`,
-evaluates it against the target, and returns a `DrillResult` the detail screen
-renders. Recorder, estimator and the analysis step are injectable, so the whole
-loop is testable without a camera or MediaPipe.
+The **live loop**: the detail screen's "Start drill" opens the shared
+`RoundCaptureScreen`, which runs the same pre-flight as a routine — the
+`CameraCheckScreen` framing check + "I'm in frame" + 5-second count-in — then
+records the round, runs pose → rules → combination detection + scoring under
+`SessionType.combinationDrill`, and returns the analysis. The detail screen then
+`evaluateDrill`s it against the target and renders the `DrillResult`. Recorder,
+estimator and the analysis step are injectable, so the whole loop is testable
+without a camera or MediaPipe.
+
+`RoundCaptureScreen` is shared with the standalone **shadow-boxing** round (home
+menu → Shadow boxing), which captures the same way under
+`SessionType.shadowBoxing`, shows the round feedback, and saves a one-round
+`SessionRecord` (`domain/shadow_round.dart`) to History + the weekly balance.
 
 ## Feature flags
 
