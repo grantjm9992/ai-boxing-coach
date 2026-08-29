@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../analysis/session_type.dart';
 import '../../analysis/drill_matching.dart';
 import '../../data/combination_library.dart';
 import '../../services/analytics.dart';
 import '../theme.dart';
-import 'combination_drill_screen.dart';
+import 'round_capture_screen.dart';
 
 /// A combination's detail + drill view (brief §15). Shows the sequence, the
 /// coaching points and — once a drill round has been analysed — the per-attempt
@@ -50,14 +51,36 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
       widget.onStartDrill!();
       return;
     }
-    final result = await Navigator.of(context).push<DrillResult>(
-      MaterialPageRoute<DrillResult>(
-        builder: (_) => CombinationDrillScreen(combo: widget.combo),
+    final combo = widget.combo;
+    final capture = await Navigator.of(context).push<RoundCaptureResult>(
+      MaterialPageRoute<RoundCaptureResult>(
+        builder: (_) => RoundCaptureScreen(
+          title: 'Drill · ${combo.numberLabel}',
+          framingSubtitle:
+              'Get your whole body in frame, then throw ${combo.numberLabel} '
+              'on repeat.',
+          sessionType: SessionType.combinationDrill,
+          focus: const <String>{'combinations'},
+          notes: combo.numberLabel,
+        ),
       ),
     );
-    if (result != null && mounted) {
-      setState(() => _result = result);
+    if (capture == null || !mounted) return;
+    final result = evaluateDrill(
+      combo.numbers,
+      capture.analysis?.combinationAnalyses ?? const [],
+    );
+    for (final attempt in result.attempts) {
+      AnalyticsScope.instance.log(AnalyticsEvent.combinationAttemptDetected,
+          <String, Object?>{'detected': attempt.detected.join('-')});
+      AnalyticsScope.instance.log(
+        attempt.sequenceMatch
+            ? AnalyticsEvent.combinationMatchSuccess
+            : AnalyticsEvent.combinationMatchFailure,
+        <String, Object?>{'combo': combo.id},
+      );
     }
+    setState(() => _result = result);
   }
 
   @override

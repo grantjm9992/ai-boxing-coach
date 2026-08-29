@@ -2,60 +2,74 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 import '../../analysis/drill.dart';
-import '../../analysis/drill_matching.dart';
 import '../../analysis/pose_only_adapter.dart';
 import '../../analysis/round_analysis.dart';
 import '../../analysis/session_type.dart';
-import '../../data/combination_library.dart';
 import '../../services/analytics.dart';
 import '../../services/camera_round_recorder.dart';
 import '../../services/pose_estimator.dart';
 import '../../services/profile_store.dart';
 import '../../services/round_recorder.dart';
 import '../theme.dart';
+import 'camera_check_screen.dart';
 
-/// Records a drill round for one target combination and evaluates it (brief §15).
+/// What a capture produced: the analysis (null if it couldn't be produced) and
+/// the round's duration.
+class RoundCaptureResult {
+  const RoundCaptureResult({required this.analysis, required this.durationMs});
+
+  final RoundAnalysis? analysis;
+  final double durationMs;
+}
+
+/// Records one round with the same pre-flight as a routine — the [CameraCheckScreen]
+/// framing check + "I'm in frame" + 5-second count-in — then analyses it and
+/// pops a [RoundCaptureResult]. Shared by the combination drill and the
+/// standalone shadow-boxing round.
 ///
-/// This is the live half of the combination-drill loop: record → pose + rules →
-/// combination detection + execution scoring → compare against the target. It
-/// pops with a [DrillResult] the caller (the detail screen) then renders, so the
-/// screen itself stays a thin recorder + progress view.
-///
-/// The recorder, estimator and analysis step are injectable so the loop can be
-/// driven in a widget test without a camera or MediaPipe.
-class CombinationDrillScreen extends StatefulWidget {
-  const CombinationDrillScreen({
+/// Recorder, estimator and the analysis step are injectable so the flow is
+/// testable without a camera or MediaPipe; [skipFramingCheck] lets a test drive
+/// it straight to recording.
+class RoundCaptureScreen extends StatefulWidget {
+  const RoundCaptureScreen({
     super.key,
-    required this.combo,
+    required this.title,
+    required this.sessionType,
+    this.framingSubtitle =
+        'Get yourself in frame so the coach can see your work.',
+    this.focus = const <String>{},
+    this.notes = '',
     this.recorder,
     this.estimator,
     this.analyseOverride,
     this.profileLoader,
     this.analytics,
+    this.skipFramingCheck = false,
   });
 
-  final CombinationDef combo;
+  final String title;
+  final SessionType sessionType;
+  final String framingSubtitle;
+  final Set<String> focus;
+  final String notes;
+
   final RoundRecorder? recorder;
   final PoseEstimator? estimator;
 
-  /// Analytics sink; defaults to the app-wide one.
-  final Analytics? analytics;
-
-  /// Test seam: given the recorded clip path + the drill, return the analysis.
-  /// When null the real pose + rules pipeline runs.
-  final Future<RoundAnalysis?> Function(String path, DrillContext drill)?
+  /// Test seam: given the clip path + drill, return the analysis and duration.
+  final Future<RoundCaptureResult> Function(String path, DrillContext drill)?
       analyseOverride;
-
-  /// Test seam for the drill context (stance drives punch numbering).
   final Future<DrillContext> Function()? profileLoader;
+  final Analytics? analytics;
+  final bool skipFramingCheck;
 
   @override
-  State<CombinationDrillScreen> createState() => _CombinationDrillScreenState();
+  State<RoundCaptureScreen> createState() => _RoundCaptureScreenState();
 }
 
 enum _Stage { initializing, ready, recording, analysing, error }
 
-class _CombinationDrillScreenState extends State<CombinationDrillScreen> {
+class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
   late final RoundRecorder _recorder =
       widget.recorder ?? CameraRoundRecorder();
   late final PoseEstimator _estimator =
@@ -82,6 +96,11 @@ class _CombinationDrillScreenState extends State<CombinationDrillScreen> {
       await _recorder.initialize();
       if (!mounted) return;
       setState(() => _stage = _Stage.ready);
+      // With a real camera, go straight into the framing check + count-in.
+      final recorder = _recorder;
+      if (!widget.skipFramingCheck && recorder is CameraRoundRecorder) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _framingThenRecord());
+      }
     } on RecorderUnavailable catch (error) {
       _fail('Camera unavailable: ${error.message}');
     } on Object catch (error) {
@@ -97,11 +116,38 @@ class _CombinationDrillScreenState extends State<CombinationDrillScreen> {
     });
   }
 
+  /// Framing check (with the 5s count-in) → start recording when confirmed.
+  Future<void> _framingThenRecord() async {
+    final recorder = _recorder;
+    if (recorder is! CameraRoundRecorder) return _startRecording();
+    final confirmed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        fullscreenDialog: true,
+        builder: (_) => CameraCheckScreen(
+          recorder: recorder,
+          title: widget.title,
+          subtitle: widget.framingSubtitle,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (confirmed == true) {
+      await _startRecording();
+    } else {
+      // No framing, no round — back out.
+      Navigator.of(context).pop();
+    }
+  }
+
   Future<void> _startRecording() async {
     try {
       await _recorder.startRecording();
-      _analytics.log(AnalyticsEvent.technicalRoundStarted,
-          <String, Object?>{'combo': widget.combo.id});
+      _analytics.log(
+        widget.sessionType == SessionType.shadowBoxing
+            ? AnalyticsEvent.shadowBoxingStarted
+            : AnalyticsEvent.technicalRoundStarted,
+        <String, Object?>{'type': widget.sessionType.value},
+      );
       if (!mounted) return;
       setState(() => _stage = _Stage.recording);
     } on Object catch (error) {
@@ -109,35 +155,21 @@ class _CombinationDrillScreenState extends State<CombinationDrillScreen> {
     }
   }
 
-  Future<void> _stopAndEvaluate() async {
+  Future<void> _stopAndAnalyse() async {
     setState(() {
       _stage = _Stage.analysing;
-      _message = 'Analysing your combination…';
+      _message = 'Analysing your round…';
     });
     try {
       final path = await _recorder.stopRecording();
       if (path == null) {
-        _fail('That recording was too short — throw the combination a few '
-            'times and try again.');
+        _fail('That recording was too short — give it a proper round and try '
+            'again.');
         return;
       }
       final drill = await _loadDrill();
-      final analysis = await _analyse(path, drill);
+      final result = await _analyse(path, drill);
       if (!mounted) return;
-      final result = evaluateDrill(
-        widget.combo.numbers,
-        analysis?.combinationAnalyses ?? const [],
-      );
-      for (final attempt in result.attempts) {
-        _analytics.log(AnalyticsEvent.combinationAttemptDetected,
-            <String, Object?>{'detected': attempt.detected.join('-')});
-        _analytics.log(
-          attempt.sequenceMatch
-              ? AnalyticsEvent.combinationMatchSuccess
-              : AnalyticsEvent.combinationMatchFailure,
-          <String, Object?>{'combo': widget.combo.id},
-        );
-      }
       Navigator.of(context).pop(result);
     } on Object catch (error) {
       _fail('Analysis failed: $error');
@@ -148,30 +180,32 @@ class _CombinationDrillScreenState extends State<CombinationDrillScreen> {
     if (widget.profileLoader != null) return widget.profileLoader!();
     final profile = await const ProfileStore().load();
     return profile.toDrill(
-      sessionType: SessionType.combinationDrill,
-      focus: const <String>{'combinations'},
-      notes: widget.combo.numberLabel,
+      sessionType: widget.sessionType,
+      focus: widget.focus,
+      notes: widget.notes,
     );
   }
 
-  Future<RoundAnalysis?> _analyse(String path, DrillContext drill) async {
+  Future<RoundCaptureResult> _analyse(String path, DrillContext drill) async {
     if (widget.analyseOverride != null) {
       return widget.analyseOverride!(path, drill);
     }
     RoundAnalysis? analysis;
+    double durationMs = 0;
     await for (final progress in _estimator.analyse(path)) {
       final result = progress.result;
       if (result != null) {
         analysis = PoseOnlyAdapter().analyse(result.sequence, drill);
+        durationMs = result.sequence.durationMs;
       }
     }
-    return analysis;
+    return RoundCaptureResult(analysis: analysis, durationMs: durationMs);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Drill · ${widget.combo.numberLabel}')),
+      appBar: AppBar(title: Text(widget.title)),
       body: Column(
         children: <Widget>[
           Expanded(child: _preview()),
@@ -185,7 +219,9 @@ class _CombinationDrillScreenState extends State<CombinationDrillScreen> {
     final recorder = _recorder;
     final controller =
         recorder is CameraRoundRecorder ? recorder.controller : null;
-    if (controller != null && controller.value.isInitialized) {
+    if (controller != null &&
+        controller.value.isInitialized &&
+        _stage == _Stage.recording) {
       return ClipRect(
         child: FittedBox(
           fit: BoxFit.cover,
@@ -204,11 +240,10 @@ class _CombinationDrillScreenState extends State<CombinationDrillScreen> {
         padding: const EdgeInsets.all(24),
         child: Text(
           switch (_stage) {
-            _Stage.initializing => 'Starting the camera…',
+            _Stage.recording => 'Recording — throw your round.',
             _Stage.analysing => _message,
             _Stage.error => _message,
-            _ => 'Stand back so your whole body is in frame,\n'
-                'then throw ${widget.combo.numberLabel} on repeat.',
+            _ => 'Setting up…',
           },
           textAlign: TextAlign.center,
           style: const TextStyle(color: AppTheme.textSecondary, fontSize: 15),
@@ -230,15 +265,15 @@ class _CombinationDrillScreenState extends State<CombinationDrillScreen> {
               child: const Text('Back'),
             ),
           _Stage.ready => FilledButton.icon(
-              onPressed: _startRecording,
+              onPressed: _framingThenRecord,
               icon: const Icon(Icons.fiber_manual_record),
               label: const Text('Start recording'),
             ),
           _Stage.recording => FilledButton.icon(
               style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
-              onPressed: _stopAndEvaluate,
+              onPressed: _stopAndAnalyse,
               icon: const Icon(Icons.stop),
-              label: const Text('Stop & score'),
+              label: const Text('Stop & analyse'),
             ),
         },
       ),
