@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
@@ -10,6 +12,7 @@ import '../../services/camera_round_recorder.dart';
 import '../../services/pose_estimator.dart';
 import '../../services/profile_store.dart';
 import '../../services/round_recorder.dart';
+import '../format.dart';
 import '../theme.dart';
 import 'camera_check_screen.dart';
 
@@ -37,6 +40,7 @@ class RoundCaptureScreen extends StatefulWidget {
     required this.sessionType,
     this.framingSubtitle =
         'Get yourself in frame so the coach can see your work.',
+    this.maxDuration,
     this.focus = const <String>{},
     this.notes = '',
     this.recorder,
@@ -50,6 +54,11 @@ class RoundCaptureScreen extends StatefulWidget {
   final String title;
   final SessionType sessionType;
   final String framingSubtitle;
+
+  /// When set, the round auto-stops and analyses after this long. The user can
+  /// still stop early. Null = record until the user stops.
+  final Duration? maxDuration;
+
   final Set<String> focus;
   final String notes;
 
@@ -79,6 +88,9 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
   _Stage _stage = _Stage.initializing;
   String _message = '';
 
+  Timer? _countdown;
+  Duration? _remaining;
+
   @override
   void initState() {
     super.initState();
@@ -87,8 +99,26 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
 
   @override
   void dispose() {
+    _countdown?.cancel();
     _recorder.dispose();
     super.dispose();
+  }
+
+  /// Counts the timed round down and auto-stops at zero.
+  void _startCountdown(Duration total) {
+    setState(() => _remaining = total);
+    _countdown = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final left = (_remaining ?? Duration.zero) - const Duration(seconds: 1);
+      if (left <= Duration.zero) {
+        timer.cancel();
+        if (mounted) {
+          setState(() => _remaining = Duration.zero);
+          _stopAndAnalyse();
+        }
+        return;
+      }
+      if (mounted) setState(() => _remaining = left);
+    });
   }
 
   Future<void> _initialise() async {
@@ -150,12 +180,16 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
       );
       if (!mounted) return;
       setState(() => _stage = _Stage.recording);
+      final limit = widget.maxDuration;
+      if (limit != null) _startCountdown(limit);
     } on Object catch (error) {
       _fail('Could not start recording: $error');
     }
   }
 
   Future<void> _stopAndAnalyse() async {
+    if (_stage != _Stage.recording) return; // guard double-stop (timer + tap)
+    _countdown?.cancel();
     setState(() {
       _stage = _Stage.analysing;
       _message = 'Analysing your round…';
@@ -269,11 +303,31 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
               icon: const Icon(Icons.fiber_manual_record),
               label: const Text('Start recording'),
             ),
-          _Stage.recording => FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
-              onPressed: _stopAndAnalyse,
-              icon: const Icon(Icons.stop),
-              label: const Text('Stop & analyse'),
+          _Stage.recording => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (_remaining != null) ...<Widget>[
+                  Text(
+                    TimeFormat.clock(_remaining!),
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 40,
+                      fontWeight: FontWeight.w800,
+                      fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                FilledButton.icon(
+                  style:
+                      FilledButton.styleFrom(backgroundColor: AppTheme.accent),
+                  onPressed: _stopAndAnalyse,
+                  icon: const Icon(Icons.stop),
+                  label: Text(
+                    _remaining != null ? 'Stop early' : 'Stop & analyse',
+                  ),
+                ),
+              ],
             ),
         },
       ),

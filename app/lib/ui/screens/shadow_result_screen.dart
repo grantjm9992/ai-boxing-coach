@@ -14,17 +14,19 @@ import 'round_capture_screen.dart';
 /// [store] is injectable for tests; production uses the default local store.
 Future<void> startShadowRound(
   BuildContext context, {
+  Duration duration = const Duration(minutes: 2),
   SessionHistoryStore? store,
   DateTime Function()? now,
 }) async {
   final capture = await Navigator.of(context).push<RoundCaptureResult>(
     MaterialPageRoute<RoundCaptureResult>(
-      builder: (_) => const RoundCaptureScreen(
+      builder: (_) => RoundCaptureScreen(
         title: 'Shadow boxing',
         framingSubtitle:
             'A shadow round coming up. Get your whole body in frame — head to '
             'feet — so the coach can read your work.',
         sessionType: SessionType.shadowBoxing,
+        maxDuration: duration,
       ),
     ),
   );

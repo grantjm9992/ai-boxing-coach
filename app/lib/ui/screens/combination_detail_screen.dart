@@ -5,6 +5,7 @@ import '../../analysis/drill_matching.dart';
 import '../../data/combination_library.dart';
 import '../../services/analytics.dart';
 import '../theme.dart';
+import '../widgets/duration_selector.dart';
 import 'round_capture_screen.dart';
 
 /// A combination's detail + drill view (brief §15). Shows the sequence, the
@@ -35,6 +36,7 @@ class CombinationDetailScreen extends StatefulWidget {
 
 class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
   DrillResult? _result;
+  Duration _duration = const Duration(minutes: 2);
 
   @override
   void initState() {
@@ -60,6 +62,7 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
               'Get your whole body in frame, then throw ${combo.numberLabel} '
               'on repeat.',
           sessionType: SessionType.combinationDrill,
+          maxDuration: _duration,
           focus: const <String>{'combinations'},
           notes: combo.numberLabel,
         ),
@@ -131,6 +134,11 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
             _DrillResultView(result: result),
           ],
           const SizedBox(height: 28),
+          DurationSelector(
+            value: _duration,
+            onChanged: (d) => setState(() => _duration = d),
+          ),
+          const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: _startDrill,
             icon: const Icon(Icons.play_arrow),
