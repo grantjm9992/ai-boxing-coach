@@ -9,7 +9,9 @@ import '../format.dart';
 import '../theme.dart';
 import '../widgets/category_widgets.dart';
 import '../widgets/phase_bar.dart';
-import 'combination_library_screen.dart';
+import '../../data/combination_library.dart';
+import '../widgets/duration_selector.dart';
+import 'combination_detail_screen.dart';
 import 'exercise_library_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
@@ -37,14 +39,36 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 32),
         children: <Widget>[
           const _Preamble(),
-          const SizedBox(height: 20),
-          for (final template in SessionTemplates.all) ...<Widget>[
-            _TemplateCard(template: template),
-            const SizedBox(height: 12),
-          ],
+          const SizedBox(height: 12),
+          _HomeSection(
+            title: 'Workouts & sessions',
+            icon: Icons.schedule,
+            initiallyExpanded: true,
+            children: <Widget>[
+              for (final template in SessionTemplates.all) ...<Widget>[
+                _TemplateCard(template: template),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ),
+          if (FeatureFlags.shadowBoxingV2)
+            const _HomeSection(
+              title: 'Shadow boxing',
+              icon: Icons.sports_mma,
+              children: <Widget>[_ShadowSection()],
+            ),
+          if (FeatureFlags.combinationDrills)
+            _HomeSection(
+              title: 'Combination drills',
+              icon: Icons.repeat,
+              children: <Widget>[
+                for (final combo in CombinationLibrary.all)
+                  _ComboTile(combo: combo),
+              ],
+            ),
         ],
       ),
     );
@@ -54,8 +78,6 @@ class HomeScreen extends StatelessWidget {
 /// The single home menu — replaces the row of app-bar icons, which had grown
 /// cramped. Add destinations here, not more buttons.
 enum _MenuItem {
-  shadow('Shadow boxing', Icons.sports_mma),
-  combinations('Combinations', Icons.repeat),
   exercises('Exercise library', Icons.fitness_center),
   progress('Progress & trends', Icons.insights_outlined),
   history('History', Icons.history),
@@ -72,10 +94,6 @@ class _HomeMenu extends StatelessWidget {
 
   void _onSelected(BuildContext context, _MenuItem item) {
     switch (item) {
-      case _MenuItem.shadow:
-        startShadowRound(context);
-      case _MenuItem.combinations:
-        Navigator.of(context).push(_route(const CombinationLibraryScreen()));
       case _MenuItem.exercises:
         Navigator.of(context).push(_route(const ExerciseLibraryScreen()));
       case _MenuItem.progress:
@@ -89,20 +107,12 @@ class _HomeMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = <_MenuItem>[
-      if (FeatureFlags.shadowBoxingV2) _MenuItem.shadow,
-      if (FeatureFlags.combinationDrills) _MenuItem.combinations,
-      _MenuItem.exercises,
-      _MenuItem.progress,
-      _MenuItem.history,
-      _MenuItem.profile,
-    ];
     return PopupMenuButton<_MenuItem>(
       icon: const Icon(Icons.menu),
       tooltip: 'Menu',
       onSelected: (item) => _onSelected(context, item),
       itemBuilder: (context) => <PopupMenuEntry<_MenuItem>>[
-        for (final item in items)
+        for (final item in _MenuItem.values)
           PopupMenuItem<_MenuItem>(
             value: item,
             child: Row(
@@ -114,6 +124,110 @@ class _HomeMenu extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// One home accordion.
+class _HomeSection extends StatelessWidget {
+  const _HomeSection({
+    required this.title,
+    required this.icon,
+    required this.children,
+    this.initiallyExpanded = false,
+  });
+
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+  final bool initiallyExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        // Drop the default divider lines the ExpansionTile draws.
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: initiallyExpanded,
+          leading: Icon(icon, color: AppTheme.accent),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+          ),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
+      ),
+    );
+  }
+}
+
+/// Shadow boxing: pick a length and go straight to the camera set-up.
+class _ShadowSection extends StatefulWidget {
+  const _ShadowSection();
+
+  @override
+  State<_ShadowSection> createState() => _ShadowSectionState();
+}
+
+class _ShadowSectionState extends State<_ShadowSection> {
+  Duration _duration = const Duration(minutes: 2);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const Text(
+          'Record a full shadow round. Guard, stance, footwork and mechanics '
+          'all get read.',
+          style: TextStyle(color: AppTheme.textSecondary, height: 1.35),
+        ),
+        const SizedBox(height: 12),
+        DurationSelector(
+          value: _duration,
+          onChanged: (d) => setState(() => _duration = d),
+        ),
+        const SizedBox(height: 8),
+        FilledButton.icon(
+          onPressed: () => startShadowRound(context, duration: _duration),
+          icon: const Icon(Icons.play_arrow),
+          label: const Text('Start'),
+        ),
+      ],
+    );
+  }
+}
+
+/// One combination row inside the drills accordion → the config/detail screen.
+class _ComboTile extends StatelessWidget {
+  const _ComboTile({required this.combo});
+
+  final CombinationDef combo;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Text(
+        combo.numberLabel,
+        style: const TextStyle(
+          color: AppTheme.accent,
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
+        ),
+      ),
+      title: Text(combo.name),
+      subtitle: Text(combo.difficulty.label),
+      trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => CombinationDetailScreen(combo: combo),
+        ),
+      ),
     );
   }
 }

@@ -74,10 +74,13 @@ records the round, runs pose → rules → combination detection + scoring under
 estimator and the analysis step are injectable, so the whole loop is testable
 without a camera or MediaPipe.
 
-`RoundCaptureScreen` is shared with the standalone **shadow-boxing** round (home
-menu → Shadow boxing), which captures the same way under
-`SessionType.shadowBoxing`, shows the round feedback, and saves a one-round
+Both the drill and the standalone **shadow-boxing** round (home → Shadow boxing)
+run through `RoundCaptureScreen` with a chosen **length** (1–3 min via
+`DurationSelector`): `maxDuration` drives a live countdown and auto-stops the
+round (you can still stop early). The shadow round captures under
+`SessionType.shadowBoxing`, shows the feedback, and saves a one-round
 `SessionRecord` (`domain/shadow_round.dart`) to History + the weekly balance.
+The home page lists both modes as accordions.
 
 ## Feature flags
 

@@ -63,4 +63,60 @@ void main() {
     expect(popped!.durationMs, 60000);
     expect(analytics.count(AnalyticsEvent.shadowBoxingStarted), 1);
   });
+
+  testWidgets('a timed round auto-stops and analyses at zero', (tester) async {
+    RoundCaptureResult? popped;
+    var analysed = false;
+
+    Future<RoundCaptureResult> analyse(String path, DrillContext drill) async {
+      analysed = true;
+      return RoundCaptureResult(
+        analysis: RoundAnalysis(overallSummary: 'timed'),
+        durationMs: 3000,
+      );
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              popped = await Navigator.of(context).push<RoundCaptureResult>(
+                MaterialPageRoute<RoundCaptureResult>(
+                  builder: (_) => RoundCaptureScreen(
+                    title: 'Shadow boxing',
+                    sessionType: SessionType.shadowBoxing,
+                    maxDuration: const Duration(seconds: 3),
+                    recorder: FakeRoundRecorder(),
+                    analyseOverride: analyse,
+                    profileLoader: () async => const DrillContext(),
+                    skipFramingCheck: true,
+                  ),
+                ),
+              );
+            },
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start recording'));
+    await tester.pump(); // enter recording, start countdown
+
+    // The countdown shows and the manual button reads "Stop early".
+    expect(find.text('Stop early'), findsOneWidget);
+    expect(analysed, isFalse);
+
+    // Advance past the 3-second limit; it should auto-stop.
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    expect(analysed, isTrue);
+    expect(popped?.analysis?.overallSummary, 'timed');
+  });
 }
