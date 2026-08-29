@@ -39,15 +39,18 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 32),
+        padding: const EdgeInsets.fromLTRB(12, 16, 12, 32),
         children: <Widget>[
-          const _Preamble(),
-          const SizedBox(height: 12),
           _HomeSection(
             title: 'Workouts & sessions',
             icon: Icons.schedule,
-            initiallyExpanded: true,
             children: <Widget>[
+              const Text(
+                'Every session runs the full arc: warm-up, conditioning, '
+                'shadow, technical, cool-down. Durations are yours to set.',
+                style: TextStyle(color: AppTheme.textSecondary, height: 1.4),
+              ),
+              const SizedBox(height: 16),
               for (final template in SessionTemplates.all) ...<Widget>[
                 _TemplateCard(template: template),
                 const SizedBox(height: 12),
@@ -134,23 +137,21 @@ class _HomeSection extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.children,
-    this.initiallyExpanded = false,
   });
 
   final String title;
   final IconData icon;
   final List<Widget> children;
-  final bool initiallyExpanded;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.only(bottom: 12),
       child: Theme(
         // Drop the default divider lines the ExpansionTile draws.
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          initiallyExpanded: initiallyExpanded,
           leading: Icon(icon, color: AppTheme.accent),
           title: Text(
             title,
@@ -232,30 +233,6 @@ class _ComboTile extends StatelessWidget {
   }
 }
 
-class _Preamble extends StatelessWidget {
-  const _Preamble();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          'Pick a session',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          'Every session runs the full arc: warm-up, conditioning, shadow, '
-          'technical, cool-down. Durations are yours to set.',
-          style: TextStyle(color: AppTheme.textSecondary, height: 1.4),
-        ),
-      ],
-    );
-  }
-}
 
 class _TemplateCard extends StatelessWidget {
   const _TemplateCard({required this.template});
