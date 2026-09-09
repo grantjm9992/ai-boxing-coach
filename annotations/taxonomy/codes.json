@@ -1,0 +1,80 @@
+{
+  "_doc": "Canonical boxing-fault taxonomy — the single source of truth for evaluation. See README.md in this directory for why it exists and how the two engines are reconciled. Codes are identity, not display text: once shipped, a code's meaning must not drift. Add codes; never renumber or repurpose. Keep in sync with app/lib/analysis/error_codes.dart (Dart) and the rule `id`s in src/boxing_coach/analysis/rules/ (Python).",
+  "version": 1,
+
+  "severities": {
+    "major": {"weight": 5},
+    "moderate": {"weight": 3},
+    "minor": {"weight": 1},
+    "positive": {"weight": 0}
+  },
+
+  "categories": {
+    "guard": "Hand/chin position and guard integrity",
+    "rotation": "Shoulder/hip/heel rotation on punches",
+    "balance": "Balance and weight distribution, esp. after punches",
+    "footwork": "Stance geometry, foot placement, mobility",
+    "lean": "Torso lean off the vertical",
+    "body_position": "Head position, uprightness, centre of mass",
+    "recovery": "Punch retraction / hand return",
+    "head_movement": "Slipping and off-line head movement",
+    "defence": "Defensive posture during/after exchanges"
+  },
+
+  "codes": {
+    "GUARD_001": {"category": "guard", "label": "Lead hand low", "default_severity": "moderate", "dart": "guardLeadHandLow", "python": ["hands_up"]},
+    "GUARD_002": {"category": "guard", "label": "Rear hand low", "default_severity": "moderate", "dart": "guardRearHandLow", "python": ["hands_up"]},
+    "GUARD_003": {"category": "guard", "label": "Lead drops during rear punch", "default_severity": "moderate", "dart": "guardLeadDropsDuringRear", "python": ["guard_return"]},
+    "GUARD_004": {"category": "guard", "label": "Rear drops during lead punch", "default_severity": "moderate", "dart": "guardRearDropsDuringLead", "python": ["guard_return"]},
+    "GUARD_005": {"category": "guard", "label": "Slow guard recovery after punch", "default_severity": "moderate", "dart": "guardSlowRecovery", "python": ["guard_return"]},
+    "GUARD_006": {"category": "guard", "label": "Both hands low", "default_severity": "major", "dart": "guardBothHandsLow", "python": ["hands_up"]},
+
+    "ROT_001": {"category": "rotation", "label": "Insufficient rotation", "default_severity": "moderate", "dart": "rotInsufficient", "python": ["hip_rotation"]},
+    "ROT_002": {"category": "rotation", "label": "Over-rotation", "default_severity": "moderate", "dart": "rotOver", "python": ["hip_rotation"]},
+    "ROT_003": {"category": "rotation", "label": "Rotation too early", "default_severity": "minor", "dart": "rotTooEarly", "python": ["hip_rotation"]},
+    "ROT_004": {"category": "rotation", "label": "Rotation too late", "default_severity": "minor", "dart": "rotTooLate", "python": ["hip_rotation"]},
+    "ROT_005": {"category": "rotation", "label": "Rotation not recovered", "default_severity": "moderate", "dart": "rotNotRecovered", "python": ["hip_rotation"]},
+
+    "BAL_001": {"category": "balance", "label": "Off balance after punch", "default_severity": "moderate", "dart": "balOffAfterPunch", "python": []},
+    "BAL_002": {"category": "balance", "label": "Off balance after combination", "default_severity": "moderate", "dart": "balOffAfterCombination", "python": []},
+    "BAL_003": {"category": "balance", "label": "Weight too far forward", "default_severity": "minor", "dart": "balWeightForward", "python": []},
+    "BAL_004": {"category": "balance", "label": "Weight too far backward", "default_severity": "minor", "dart": "balWeightBackward", "python": []},
+    "BAL_005": {"category": "balance", "label": "Corrective step needed", "default_severity": "minor", "dart": "balCorrectiveStep", "python": []},
+
+    "FOOT_001": {"category": "footwork", "label": "Feet crossing", "default_severity": "major", "dart": "footFeetCrossing", "python": ["footwork"]},
+    "FOOT_002": {"category": "footwork", "label": "Stance too narrow", "default_severity": "minor", "dart": "footStanceTooNarrow", "python": ["footwork"]},
+    "FOOT_003": {"category": "footwork", "label": "Stance too wide", "default_severity": "minor", "dart": "footStanceTooWide", "python": ["footwork"]},
+    "FOOT_004": {"category": "footwork", "label": "Feet too square", "default_severity": "moderate", "dart": "footFeetTooSquare", "python": ["footwork"]},
+    "FOOT_005": {"category": "footwork", "label": "Rear foot lagging", "default_severity": "minor", "dart": "footRearFootLagging", "python": ["footwork"]},
+    "FOOT_006": {"category": "footwork", "label": "Lead foot lagging", "default_severity": "minor", "dart": "footLeadFootLagging", "python": ["footwork"]},
+    "FOOT_007": {"category": "footwork", "label": "Stance not recovered", "default_severity": "moderate", "dart": "footStanceNotRecovered", "python": ["footwork"]},
+    "FOOT_008": {"category": "footwork", "label": "Balance lost after step", "default_severity": "moderate", "dart": "footBalanceLostAfterStep", "python": ["footwork"]},
+    "FOOT_009": {"category": "footwork", "label": "Flat-footed / not moving", "default_severity": "moderate", "dart": "footFlatFooted", "python": ["footwork"]},
+
+    "LEAN_001": {"category": "lean", "label": "Leaning forward", "default_severity": "minor", "dart": "leanForward", "python": []},
+    "LEAN_002": {"category": "lean", "label": "Leaning backward", "default_severity": "minor", "dart": "leanBackward", "python": []},
+    "LEAN_003": {"category": "lean", "label": "Leaning left", "default_severity": "minor", "dart": "leanLeft", "python": []},
+    "LEAN_004": {"category": "lean", "label": "Leaning right", "default_severity": "minor", "dart": "leanRight", "python": []},
+
+    "POS_001": {"category": "body_position", "label": "Head too far forward", "default_severity": "moderate", "dart": "posHeadTooFarForward", "python": []},
+    "POS_002": {"category": "body_position", "label": "Head over front knee", "default_severity": "minor", "dart": "posHeadOverFrontKnee", "python": []},
+    "POS_003": {"category": "body_position", "label": "Too upright", "default_severity": "minor", "dart": "posTooUpright", "python": []},
+    "POS_004": {"category": "body_position", "label": "Position not recovered", "default_severity": "moderate", "dart": "posNotRecovered", "python": []},
+    "POS_005": {"category": "body_position", "label": "Off centre after punch", "default_severity": "moderate", "dart": "posOffCentreAfterPunch", "python": []},
+
+    "REC_001": {"category": "recovery", "label": "Slow retraction", "default_severity": "moderate", "dart": "recSlow", "python": ["guard_return"]},
+    "REC_002": {"category": "recovery", "label": "Hand not returned", "default_severity": "major", "dart": "recHandNotReturned", "python": ["guard_return"]},
+    "REC_003": {"category": "recovery", "label": "Overextended", "default_severity": "moderate", "dart": "recOverextended", "python": []},
+
+    "HEAD_001": {"category": "head_movement", "label": "Head static / on centre line", "default_severity": "minor", "dart": "headStatic", "python": ["head_movement"]}
+  },
+
+  "python_rules": {
+    "hands_up": {"category": "guard", "emits_codes": ["GUARD_001", "GUARD_002", "GUARD_006"]},
+    "guard_return": {"category": "recovery", "emits_codes": ["GUARD_003", "GUARD_004", "GUARD_005", "REC_001", "REC_002"]},
+    "hip_rotation": {"category": "rotation", "emits_codes": ["ROT_001", "ROT_002", "ROT_003", "ROT_004", "ROT_005"]},
+    "footwork": {"category": "footwork", "emits_codes": ["FOOT_001", "FOOT_002", "FOOT_003", "FOOT_004", "FOOT_005", "FOOT_006", "FOOT_007", "FOOT_008", "FOOT_009"]},
+    "head_movement": {"category": "head_movement", "emits_codes": ["HEAD_001"]},
+    "school_adherence": {"category": null, "emits_codes": [], "note": "style adherence, not a fault; excluded from fault precision/recall"}
+  }
+}
