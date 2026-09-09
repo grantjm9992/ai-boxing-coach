@@ -66,15 +66,20 @@ def normalise_detection(analysis: dict, taxonomy: dict) -> list[Prediction]:
     """
     rules = taxonomy["python_rules"]
     out: list[Prediction] = []
-    for obs in analysis.get("observations", []):
-        rule = obs.get("ruleId") or obs.get("rule_id")
+    # The live engine emits `specific_observations` with snake_case keys; older
+    # fixtures use `observations`/`ruleId`/`timestampMs`. Accept both spellings.
+    obs_list = analysis.get("specific_observations")
+    if obs_list is None:
+        obs_list = analysis.get("observations", [])
+    for obs in obs_list:
+        rule = obs.get("rule_id") or obs.get("ruleId")
         severity = normalise_severity(obs.get("severity"))
         if severity is None or severity == "positive":
             continue
         spec = rules.get(rule)
         if not spec or not spec.get("emits_codes"):
             continue  # not a scorable fault family
-        ts_ms = obs.get("timestampMs")
+        ts_ms = obs.get("timestamp_ms", obs.get("timestampMs"))
         out.append(Prediction(
             source=rule,
             candidate_codes=frozenset(spec["emits_codes"]),
