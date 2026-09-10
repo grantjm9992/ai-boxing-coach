@@ -1,0 +1,98 @@
+{
+  "overall_summary": "1 punches thrown. Main thing to fix: Your rear hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter. plus 1 other point(s)",
+  "specific_observations": [
+    {
+      "rule_id": "hands_up",
+      "category": "defence",
+      "severity": "moderate",
+      "coaching_text": "Your rear hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "timestamp_ms": 140.0,
+      "metrics": {
+        "down_fraction": 0.692
+      },
+      "highlight_landmarks": [
+        16
+      ]
+    },
+    {
+      "rule_id": "hip_rotation",
+      "category": "offence_straight",
+      "severity": "moderate",
+      "coaching_text": "You're squared up on the rear straight \u2014 punching with the arm. Turn the hip and shoulder over; let the rotation drive the shot.",
+      "timestamp_ms": 580.0,
+      "metrics": {
+        "shoulder_drive": 0.059
+      },
+      "highlight_landmarks": [
+        12
+      ]
+    },
+    {
+      "rule_id": "guard_return",
+      "category": "defence",
+      "severity": "positive",
+      "coaching_text": "Clean guard return all round \u2014 hands came straight back to guard.",
+      "timestamp_ms": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight_landmarks": []
+    }
+  ],
+  "positive_notes": [
+    "Clean guard return all round \u2014 hands came straight back to guard."
+  ],
+  "correction_priorities": [
+    {
+      "priority": 1,
+      "category": "defence",
+      "description": "Your rear hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "suggested_drill": "Jab\u2013return shadow drill: throw the jab, snap the hand back to your cheek before resetting.",
+      "example_timestamp_ms": 140.0,
+      "highlight_landmarks": [
+        16
+      ],
+      "still_path": null
+    },
+    {
+      "priority": 2,
+      "category": "offence_straight",
+      "description": "You're squared up on the rear straight \u2014 punching with the arm. Turn the hip and shoulder over; let the rotation drive the shot.",
+      "suggested_drill": "Rear-hand rotation drill: throw the cross slow, exaggerating the hip/shoulder turn.",
+      "example_timestamp_ms": 580.0,
+      "highlight_landmarks": [
+        12
+      ],
+      "still_path": null
+    }
+  ],
+  "metrics": {
+    "punches_thrown": 1,
+    "guard_return_rate": 1.0,
+    "punch_mix": {
+      "cross": 1
+    },
+    "values": {
+      "body_scale": 0.2012,
+      "output_per_min": 48.387,
+      "mobility": 1.148,
+      "ground_coverage": 0.018,
+      "torso_lean_deg": 2.422,
+      "body_shot_ratio": 0.0,
+      "jab_ratio": 0.0,
+      "punch_variety": 1.0
+    }
+  },
+  "flagged_moments": [
+    {
+      "timestamp_ms": 140.0,
+      "reason": "Your rear hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "severity": "moderate"
+    },
+    {
+      "timestamp_ms": 580.0,
+      "reason": "You're squared up on the rear straight \u2014 punching with the arm. Turn the hip and shoulder over; let the rotation drive the shot.",
+      "severity": "moderate"
+    }
+  ]
+}

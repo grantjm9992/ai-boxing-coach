@@ -1,0 +1,69 @@
+{
+  "overall_summary": "1 punches thrown. Main thing to fix: Your rear hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+  "specific_observations": [
+    {
+      "rule_id": "hands_up",
+      "category": "defence",
+      "severity": "minor",
+      "coaching_text": "Your rear hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "timestamp_ms": 140.0,
+      "metrics": {
+        "down_fraction": 0.276
+      },
+      "highlight_landmarks": [
+        16
+      ]
+    },
+    {
+      "rule_id": "guard_return",
+      "category": "defence",
+      "severity": "positive",
+      "coaching_text": "Clean guard return all round \u2014 hands came straight back to guard.",
+      "timestamp_ms": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight_landmarks": []
+    }
+  ],
+  "positive_notes": [
+    "Clean guard return all round \u2014 hands came straight back to guard."
+  ],
+  "correction_priorities": [
+    {
+      "priority": 1,
+      "category": "defence",
+      "description": "Your rear hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "suggested_drill": "Jab\u2013return shadow drill: throw the jab, snap the hand back to your cheek before resetting.",
+      "example_timestamp_ms": 140.0,
+      "highlight_landmarks": [
+        16
+      ],
+      "still_path": null
+    }
+  ],
+  "metrics": {
+    "punches_thrown": 1,
+    "guard_return_rate": 1.0,
+    "punch_mix": {
+      "cross": 1
+    },
+    "values": {
+      "body_scale": 0.222,
+      "output_per_min": 44.118,
+      "mobility": 0.867,
+      "ground_coverage": 0.014,
+      "torso_lean_deg": 8.396,
+      "body_shot_ratio": 0.0,
+      "jab_ratio": 0.0,
+      "punch_variety": 1.0
+    }
+  },
+  "flagged_moments": [
+    {
+      "timestamp_ms": 140.0,
+      "reason": "Your rear hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "severity": "minor"
+    }
+  ]
+}

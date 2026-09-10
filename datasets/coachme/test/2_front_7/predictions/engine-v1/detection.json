@@ -1,0 +1,22 @@
+{
+  "overall_summary": "0 punches thrown. Nothing flagged, but not much to work with either.",
+  "specific_observations": [],
+  "positive_notes": [],
+  "correction_priorities": [],
+  "metrics": {
+    "punches_thrown": 0,
+    "guard_return_rate": null,
+    "punch_mix": {},
+    "values": {
+      "body_scale": 0.215,
+      "output_per_min": 0.0,
+      "mobility": 0.81,
+      "ground_coverage": 0.019,
+      "torso_lean_deg": 7.929,
+      "body_shot_ratio": 0.0,
+      "jab_ratio": 0.0,
+      "punch_variety": 0.0
+    }
+  },
+  "flagged_moments": []
+}
