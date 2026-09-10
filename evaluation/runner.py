@@ -28,13 +28,18 @@ import sys
 from pathlib import Path
 
 from normalise import (
-    load_taxonomy, normalise_coaching, normalise_detection, parse_ground_truth,
+    load_taxonomy, normalise_coaching, normalise_dart_detection,
+    normalise_detection, parse_ground_truth,
 )
 from scorer import CategoryScore, score
 
 ROOT = Path(__file__).resolve().parent.parent
 EXPERIMENTS = ROOT / "experiments"
-_NORMALISERS = {"detection": normalise_detection, "coaching": normalise_coaching}
+_NORMALISERS = {
+    "detection": normalise_detection,        # Python reference engine (coarse rules)
+    "dart_detection": normalise_dart_detection,  # Dart app engine (fine codes)
+    "coaching": normalise_coaching,          # Dart AiCoachReport
+}
 
 
 def _rel(path: Path) -> str:
