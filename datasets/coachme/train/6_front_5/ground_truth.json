@@ -1,0 +1,81 @@
+{
+  "video_id": "6_front_5",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Jab"
+  },
+  "coach_labels": [
+    "Your arms are too stiff, and your back foot isn't lifted. Your body's also too rigid, and your knees aren't slightly bent. Your center of gravity is too high.",
+    "Keep your feet shoulder-width apart.",
+    "Your arms are too stiff, and you're only using your hands for power. Make sure to get into the proper basic stance."
+  ],
+  "observations": [
+    {
+      "code": "BAL_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your center of gravity is too high."
+        }
+      ],
+      "map_note": "centre of gravity"
+    },
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, and your back foot isn't lifted."
+        }
+      ],
+      "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, and your back foot isn't lifted."
+        },
+        {
+          "coach": 0,
+          "text": "Your body's also too rigid, and your knees aren't slightly bent."
+        },
+        {
+          "coach": 2,
+          "text": "Your arms are too stiff, and you're only using your hands for power."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
+  "unmapped_sentences": [
+    "Keep your feet shoulder-width apart.",
+    "Make sure to get into the proper basic stance."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

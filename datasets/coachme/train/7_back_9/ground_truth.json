@@ -1,0 +1,64 @@
+{
+  "video_id": "7_back_9",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "You haven't raised your back heel, your hips aren't rotating, your arms are too stiff, and your body isn't relaxed, which is preventing your shoulders from moving and swinging properly. Also, you're not paying attention to defense when throwing punches.",
+    "Keep your balance steady on both feet.",
+    "Your punches lack accuracy, and your right hand isn't in a defensive position. Additionally, you're not rotating your hips."
+  ],
+  "observations": [
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "You haven't raised your back heel, your hips aren't rotating, your arms are too stiff, and your body isn't relaxed, which is preventing your shoulders from moving and swinging properly."
+        },
+        {
+          "coach": 2,
+          "text": "Additionally, you're not rotating your hips."
+        }
+      ],
+      "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "You haven't raised your back heel, your hips aren't rotating, your arms are too stiff, and your body isn't relaxed, which is preventing your shoulders from moving and swinging properly."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
+  "unmapped_sentences": [
+    "Also, you're not paying attention to defense when throwing punches.",
+    "Keep your balance steady on both feet.",
+    "Your punches lack accuracy, and your right hand isn't in a defensive position."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

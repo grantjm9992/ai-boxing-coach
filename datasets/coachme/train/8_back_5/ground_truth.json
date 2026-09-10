@@ -1,0 +1,106 @@
+{
+  "video_id": "8_back_5",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "Your back foot isn't on the ball, your hips aren't rotating, your arms are too stiff, and you're leaning too far forward with your punches, causing your front knee to lock straight.",
+    "Keep your weight balanced and lower your stance.",
+    "You're leaning too far forward, causing your hips to rise. Don't forget to rotate your hips."
+  ],
+  "observations": [
+    {
+      "code": "BAL_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Keep your weight balanced and lower your stance."
+        }
+      ],
+      "map_note": "weight not even"
+    },
+    {
+      "code": "LEAN_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't on the ball, your hips aren't rotating, your arms are too stiff, and you're leaning too far forward with your punches, causing your front knee to lock straight."
+        },
+        {
+          "coach": 2,
+          "text": "You're leaning too far forward, causing your hips to rise."
+        }
+      ],
+      "map_note": "leaning forward"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't on the ball, your hips aren't rotating, your arms are too stiff, and you're leaning too far forward with your punches, causing your front knee to lock straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't on the ball, your hips aren't rotating, your arms are too stiff, and you're leaning too far forward with your punches, causing your front knee to lock straight."
+        },
+        {
+          "coach": 2,
+          "text": "Don't forget to rotate your hips."
+        }
+      ],
+      "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't on the ball, your hips aren't rotating, your arms are too stiff, and you're leaning too far forward with your punches, causing your front knee to lock straight."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
+  "unmapped_sentences": [],
+  "positive_observations": [],
+  "priority_feedback": []
+}

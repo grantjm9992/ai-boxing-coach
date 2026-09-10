@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../domain/feature_flags.dart';
 import 'combination.dart';
 import 'combination_analysis.dart';
@@ -206,7 +208,7 @@ class PoseOnlyAdapter {
   }
 
   static double _round(double value, int places) {
-    final factor = <int, double>{3: 1000.0, 4: 10000.0}[places]!;
+    final factor = math.pow(10, places).toDouble();
     return (value * factor).round() / factor;
   }
 }

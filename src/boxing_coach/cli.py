@@ -124,6 +124,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--notes", default="")
     parser.add_argument("--json", action="store_true", help="emit JSON instead of a report")
     parser.add_argument(
+        "--dump-pose", metavar="PATH",
+        help="write the estimated pose sequence (golden-fixture wire format) to "
+             "PATH ('-' for stdout) and exit — feeds the Dart engine headlessly",
+    )
+    parser.add_argument(
         "--sample-every-ms", type=float, default=40.0,
         help="min spacing between analysed frames",
     )
@@ -141,6 +146,18 @@ def main(argv: list[str] | None = None) -> int:
 
     drill = _build_drill(args)
     sequence = pipeline.estimate(args.video)
+
+    if args.dump_pose:
+        from .golden_fixtures import sequence_to_json
+
+        payload = json.dumps(sequence_to_json(sequence), indent=2) + "\n"
+        if args.dump_pose == "-":
+            sys.stdout.write(payload)
+        else:
+            with open(args.dump_pose, "w") as fh:
+                fh.write(payload)
+        return 0
+
     analysis = pipeline.analyse_sequence(sequence, drill)
 
     if args.stills:

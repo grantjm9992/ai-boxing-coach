@@ -1,0 +1,73 @@
+{
+  "video_id": "7_front_3",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Jab"
+  },
+  "coach_labels": [
+    "Your back foot isn't lifted. Your rear hand isn't protecting your chin. You're relying only on your arms instead of using your body strength.",
+    "Keep your chin down a bit.",
+    "Your rear hand lacks defense, and your punches aren't landing effectively."
+  ],
+  "observations": [
+    {
+      "code": "GUARD_002",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your rear hand isn't protecting your chin."
+        }
+      ],
+      "map_note": "protect the chin"
+    },
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Keep your chin down a bit."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't lifted."
+        }
+      ],
+      "map_note": "rear heel not pivoting (kinetic chain)"
+    }
+  ],
+  "unmapped_sentences": [
+    "You're relying only on your arms instead of using your body strength.",
+    "Your rear hand lacks defense, and your punches aren't landing effectively."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

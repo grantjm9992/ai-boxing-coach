@@ -1,0 +1,45 @@
+{
+  "video_id": "0_back_7",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "When you throw a punch, slightly shrug your shoulder.",
+    "When throwing a punch, keep your lead foot stable.",
+    "Your chin isn't tucked properly."
+  ],
+  "observations": [
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your chin isn't tucked properly."
+        }
+      ],
+      "map_note": "chin not tucked"
+    }
+  ],
+  "unmapped_sentences": [
+    "When throwing a punch, keep your lead foot stable.",
+    "When you throw a punch, slightly shrug your shoulder."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

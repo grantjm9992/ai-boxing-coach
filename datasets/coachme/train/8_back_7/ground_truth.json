@@ -1,0 +1,82 @@
+{
+  "video_id": "8_back_7",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "Your back foot isn't elevated, your hips aren't rotating, your arm is too stiff, and when punching, you're leaning too far forward and your front knee is locking.",
+    "You need to rotate your hips a bit more.",
+    "Leaning too far forward causes your hips to stick out; don't forget to rotate your hips."
+  ],
+  "observations": [
+    {
+      "code": "LEAN_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't elevated, your hips aren't rotating, your arm is too stiff, and when punching, you're leaning too far forward and your front knee is locking."
+        },
+        {
+          "coach": 2,
+          "text": "Leaning too far forward causes your hips to stick out; don't forget to rotate your hips."
+        }
+      ],
+      "map_note": "leaning forward"
+    },
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 3,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't elevated, your hips aren't rotating, your arm is too stiff, and when punching, you're leaning too far forward and your front knee is locking."
+        },
+        {
+          "coach": 1,
+          "text": "You need to rotate your hips a bit more."
+        },
+        {
+          "coach": 2,
+          "text": "Leaning too far forward causes your hips to stick out; don't forget to rotate your hips."
+        }
+      ],
+      "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't elevated, your hips aren't rotating, your arm is too stiff, and when punching, you're leaning too far forward and your front knee is locking."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
+  "unmapped_sentences": [],
+  "positive_observations": [],
+  "priority_feedback": []
+}

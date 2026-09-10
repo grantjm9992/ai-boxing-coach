@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-boxing-coach/annotations/schemas/ground_truth.schema.json",
+  "title": "Boxing clip ground truth",
+  "description": "Coach-judged truth for one benchmark clip. Independent of what any engine outputs. `code` values must exist in annotations/taxonomy/codes.json; the validator enforces that. This is the truth the scorer compares detection (Python rules) and coaching (Dart AiCoachReport) predictions against.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["video_id", "source_file", "split", "status", "context", "observations"],
+  "properties": {
+    "video_id": {"type": "string", "pattern": "^[a-z0-9_]+$", "description": "Stable clip id, snake_case."},
+    "source_file": {"type": "string", "description": "Path to the clip (or pose json) this labels, relative to repo root."},
+    "split": {"enum": ["development", "validation", "golden", "regression"], "description": "Which benchmark set this clip belongs to (platform doc §3)."},
+    "status": {"enum": ["unlabelled", "draft", "reviewed"], "description": "unlabelled=scaffold only; draft=one labeller; reviewed=coach-verified (usable as truth)."},
+    "labelled_by": {"type": ["string", "null"], "description": "Who provided these judgements."},
+    "labelled_at": {"type": ["string", "null"], "format": "date", "description": "YYYY-MM-DD."},
+    "reviewers": {"type": "array", "items": {"type": "string"}, "description": "Additional coaches who reviewed (for double-labelling ambiguous clips)."},
+    "notes": {"type": "string"},
+
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stance", "exercise"],
+      "properties": {
+        "stance": {"enum": ["orthodox", "southpaw", "unknown"]},
+        "exercise": {"enum": ["shadow", "bag", "drill", "combination", "unknown"]},
+        "skill_level": {"enum": ["beginner", "intermediate", "advanced", "unknown"], "default": "unknown"},
+        "style": {"type": ["string", "null"], "description": "Fighting style if known (matches app Style values), else null."},
+        "school": {"type": ["string", "null"], "description": "National school if the clip is trained toward one, else null."}
+      }
+    },
+
+    "observations": {
+      "type": "array",
+      "description": "The coach's judgements. Include faults that ARE present (present=true). Optionally record notably-correct technique the model tends to false-positive on (present=false) — these support true-negative / false-positive scoring.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "present", "severity", "confidence"],
+        "properties": {
+          "code": {"type": "string", "description": "Canonical code from taxonomy codes.json."},
+          "present": {"type": "boolean", "description": "true = the fault occurred; false = explicitly asserts this fault did NOT occur (correct technique)."},
+          "severity": {"enum": ["major", "moderate", "minor", "positive"], "description": "Coach-judged severity. Ignored when present=false."},
+          "confidence": {"enum": ["high", "medium", "low"], "description": "Coach's confidence in this judgement — lets the scorer down-weight or exclude ambiguous truth."},
+          "timestamps_s": {"type": "array", "items": {"type": "number", "minimum": 0}, "description": "Seconds where the fault is visible. Optional; enables timing-tolerant matching."},
+          "note": {"type": "string"}
+        }
+      }
+    },
+
+    "positive_observations": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Free-text things done well (platform doc §4). For positive-technique-recognition scoring."
+    },
+
+    "priority_feedback": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Codes from `observations`, ordered most-important-first. Ground truth for priority-ranking accuracy (platform doc §9)."
+    }
+  }
+}

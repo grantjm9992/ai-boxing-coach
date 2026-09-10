@@ -1,0 +1,216 @@
+#!/usr/bin/env python3
+"""Convert the CoachMe BX dataset's coach instructions into our ground_truth.json.
+
+CoachMe (ACL 2025, github.com/MotionXperts/MotionExpert) ships, per clip, THREE
+independent free-text coaching instructions from three boxing coaches, plus a
+22-joint SMPL pose sequence (`.pkl`). The raw videos are withheld for athlete
+privacy, so these clips are pose+label only.
+
+This turns the free text into our taxonomy (`annotations/taxonomy/codes.json`)
+with a transparent, conservative phrase map. It is a LABELLING AID, not an
+oracle: every clip is written `status: draft`, the verbatim coach sentences are
+kept as provenance, unmatched sentences are surfaced under `unmapped_sentences`,
+and a coach must review before promoting to `reviewed`. GPT-4 `augmented_labels`
+are ignored — only the real coach `labels` are used.
+
+Confidence comes from cross-coach agreement: a code named by >=2 of the 3
+coaches is `high`, by one is `medium`. Guard "keep your other hand up" is
+resolved to the NON-PUNCHING hand from motion_type (Cross -> lead=GUARD_001;
+Jab -> rear=GUARD_002).
+
+Usage:
+    python3 import_coachme.py /path/to/BX_train.json --split train  --out ../datasets/coachme
+    python3 import_coachme.py /path/to/BX_test.json  --split test   --out ../datasets/coachme
+    python3 import_coachme.py BX_test.json --split test --out ../datasets/coachme --dry-run
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+TAXONOMY = ROOT / "annotations" / "taxonomy" / "codes.json"
+
+# Each rule: (compiled pattern, code, note). `code` may be the sentinel
+# "GUARD_OTHER" — resolved to the non-punching hand from motion_type. Patterns
+# are deliberately conservative; a miss lands in unmapped_sentences for review,
+# which is safer than a wrong code silently entering ground truth.
+_RULES: list[tuple[re.Pattern[str], str, str]] = [
+    # Rotation / kinetic chain
+    (re.compile(r"body.{0,20}(isn'?t|is not|not|should).{0,20}rotat", re.I), "ROT_001", "body not rotating"),
+    (re.compile(r"\b(only|just).{0,15}arm(\s+strength)?\b", re.I), "ROT_001", "arm-only, no rotation"),
+    (re.compile(r"not.{0,20}(using|drawing).{0,20}(power|force).{0,20}(lower body|legs?|hips?)", re.I), "ROT_001", "no lower-body power"),
+    (re.compile(r"\b(turn|rotate|drive).{0,15}(the|your)?\s*(hip|shoulder|waist|torso|body)\b", re.I), "ROT_001", "cue to rotate"),
+    (re.compile(r"\bhips?\b.{0,20}rotat", re.I), "ROT_001", "hips not rotating"),
+    (re.compile(r"rotat.{0,20}\bhips?\b", re.I), "ROT_001", "cue to rotate hips"),
+    (re.compile(r"(isn'?t|is not|not|aren'?t)\s+rotat", re.I), "ROT_001", "not rotating"),
+    (re.compile(r"squared? up", re.I), "ROT_001", "squared up on the shot"),
+    (re.compile(r"\b(back|rear)\s+(foot|heel)\b.{0,20}(isn'?t|is not|not)\s+lift|lift.{0,15}(the\s+)?heel", re.I), "ROT_001", "rear heel not pivoting (kinetic chain)"),
+    # Guard — non-punching hand up (resolved by motion_type)
+    (re.compile(r"(keep|hold|get|bring|put).{0,20}\bhand\b.{0,12}\bup\b", re.I), "GUARD_OTHER", "keep hand up"),
+    (re.compile(r"other hand.{0,10}up", re.I), "GUARD_OTHER", "other hand up for defence"),
+    (re.compile(r"\bguard\b.{0,10}up", re.I), "GUARD_OTHER", "guard up"),
+    (re.compile(r"protect.{0,10}(your )?(face|chin|jaw)", re.I), "GUARD_OTHER", "protect the chin"),
+    (re.compile(r"\bhands?\b.{0,15}(too )?(low|down|dropping|drops)", re.I), "GUARD_006", "hand(s) low"),
+    (re.compile(r"lead hand.{0,20}(higher|\bhigh\b|\blow\b|up)", re.I), "GUARD_001", "lead hand low / raise lead"),
+    # Recovery / hand return
+    (re.compile(r"(return|bring|snap).{0,20}(hand|it).{0,10}(back|to)", re.I), "REC_002", "return the hand"),
+    (re.compile(r"hand.{0,15}(back to|returns? to).{0,10}(guard|cheek|face)", re.I), "REC_002", "hand back to guard"),
+    # Balance
+    (re.compile(r"(off|not).{0,12}balanc", re.I), "BAL_001", "off balance"),
+    (re.compile(r"cent(er|re) of gravity", re.I), "BAL_001", "centre of gravity"),
+    (re.compile(r"weight.{0,20}(even|balanced|both feet|distribut)", re.I), "BAL_001", "weight not even"),
+    (re.compile(r"weight.{0,15}(too )?(far )?forward", re.I), "BAL_003", "weight forward"),
+    (re.compile(r"weight.{0,15}(too )?(far )?back", re.I), "BAL_004", "weight backward"),
+    # Lean
+    (re.compile(r"lean(ing)?.{0,12}forward", re.I), "LEAN_001", "leaning forward"),
+    (re.compile(r"lean(ing)?.{0,12}back", re.I), "LEAN_002", "leaning backward"),
+    (re.compile(r"lean(ing)?.{0,12}left", re.I), "LEAN_003", "leaning left"),
+    (re.compile(r"lean(ing)?.{0,12}right", re.I), "LEAN_004", "leaning right"),
+    # Footwork / stance
+    (re.compile(r"stance.{0,12}(too )?narrow|feet.{0,12}(too )?close", re.I), "FOOT_002", "stance narrow"),
+    (re.compile(r"stance.{0,12}(too )?wide|feet.{0,12}(too )?wide", re.I), "FOOT_003", "stance wide"),
+    (re.compile(r"feet.{0,12}square|squared?.{0,10}stance|(too|body|standing|you'?re)\s+.{0,6}square|body is.{0,10}square", re.I), "FOOT_004", "feet/body too square"),
+    (re.compile(r"flat.?footed|stay.{0,12}(light|on your toes)|not moving.{0,12}(your )?feet", re.I), "FOOT_009", "flat-footed"),
+    # Body position
+    (re.compile(r"too upright|standing.{0,12}(too )?(tall|straight)", re.I), "POS_003", "too upright"),
+    (re.compile(r"head.{0,15}(too far )?forward", re.I), "POS_001", "head too far forward"),
+    (re.compile(r"(knee|leg)s?.{0,15}(too )?straight|lock.{0,10}(out )?(your )?(front )?(leg|knee)|(not|aren'?t).{0,15}half.?squat|bend.{0,10}(your )?knees", re.I), "POS_006", "knees too straight / no bend"),
+    # Chin
+    (re.compile(r"chin.{0,15}(isn'?t|is not|not).{0,10}tuck|tuck.{0,10}(your |the )?chin|chin.{0,6}(up|out|exposed)|keep.{0,10}chin.{0,10}down", re.I), "GUARD_007", "chin not tucked"),
+    # Muscular tension
+    (re.compile(r"(too )?(stiff|tense|rigid|tight)\b|relax.{0,15}(your )?(body|shoulders|arms)", re.I), "TENSE_001", "upper-body tension"),
+]
+
+_GUARD_BY_MOTION = {"Cross": "GUARD_001", "Jab": "GUARD_002"}  # non-punching = other hand
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
+
+def _sentences(text: str) -> list[str]:
+    return [s.strip() for s in _SENTENCE_SPLIT.split(text.strip()) if s.strip()]
+
+
+def _resolve(code: str, motion_type: str) -> str:
+    if code == "GUARD_OTHER":
+        return _GUARD_BY_MOTION.get(motion_type, "GUARD_006")
+    return code
+
+
+def convert_entry(entry: dict, valid_codes: set[str]) -> dict:
+    video_name = entry.get("video_name", "unknown")
+    motion = entry.get("motion_type", "unknown")
+    coach_labels = [l for l in entry.get("labels", []) if isinstance(l, str)]
+
+    # code -> {coaches: set(coach_idx), phrases: [..], note}
+    hits: dict[str, dict] = {}
+    unmapped: list[str] = []
+    for coach_idx, label in enumerate(coach_labels):
+        for sentence in _sentences(label):
+            matched = False
+            for pattern, raw_code, note in _RULES:
+                if pattern.search(sentence):
+                    code = _resolve(raw_code, motion)
+                    if code not in valid_codes:
+                        continue
+                    rec = hits.setdefault(code, {"coaches": set(), "phrases": [], "note": note})
+                    rec["coaches"].add(coach_idx)
+                    rec["phrases"].append({"coach": coach_idx, "text": sentence})
+                    matched = True
+            if not matched:
+                unmapped.append(sentence)
+
+    observations = []
+    for code, rec in sorted(hits.items()):
+        agree = len(rec["coaches"])
+        # A sentence can trip two patterns for the same code; keep each once.
+        seen: set[tuple[int, str]] = set()
+        phrases = []
+        for p in rec["phrases"]:
+            key = (p["coach"], p["text"])
+            if key not in seen:
+                seen.add(key)
+                phrases.append(p)
+        observations.append({
+            "code": code,
+            "present": True,
+            "severity": "moderate",           # coaches rarely state severity — review
+            "confidence": "high" if agree >= 2 else "medium",
+            "coach_agreement": agree,          # of 3
+            "source_sentences": phrases,
+            "map_note": rec["note"],
+        })
+
+    return {
+        "video_id": video_name,
+        "source_file": None,
+        "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) "
+                       "— raw video withheld for athlete privacy; 22-joint SMPL pose "
+                       "in the accompanying .pkl. Provenance in path + labelled_by.",
+        "split": "development",
+        "status": "draft",
+        "labelled_by": "coachme-phrase-map",
+        "reviewers": [],
+        "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a "
+                 "conservative phrase map, NOT verified. The real judgement is in "
+                 "`coach_labels` (3 independent boxing coaches); `observations` is "
+                 "a best-effort encoding and `unmapped_sentences` lists text no "
+                 "rule caught. A coach must review before status='reviewed'. "
+                 "GPT-4 augmented_labels were intentionally excluded.",
+        "context": {
+            "stance": "unknown",
+            "exercise": "drill",
+            "skill_level": "beginner",         # CoachMe BX = 10 beginner boxers
+            "style": None,
+            "school": None,
+            "motion_type": motion,
+        },
+        "coach_labels": coach_labels,
+        "observations": observations,
+        "unmapped_sentences": sorted(set(unmapped)),
+        "positive_observations": [],
+        "priority_feedback": [],
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("input", type=Path, help="BX_train.json or BX_test.json")
+    ap.add_argument("--split", required=True, help="subsplit dir name, e.g. train / test")
+    ap.add_argument("--out", type=Path, default=ROOT / "datasets" / "coachme",
+                    help="output root (default datasets/coachme)")
+    ap.add_argument("--dry-run", action="store_true", help="report stats, write nothing")
+    args = ap.parse_args(argv)
+
+    valid_codes = set(json.loads(TAXONOMY.read_text())["codes"])
+    entries = json.loads(args.input.read_text())
+
+    out_dir = args.out / args.split
+    n_obs = 0
+    n_unmapped = 0
+    code_freq: dict[str, int] = {}
+    clips_with_obs = 0
+    for entry in entries:
+        gt = convert_entry(entry, valid_codes)
+        n_obs += len(gt["observations"])
+        n_unmapped += len(gt["unmapped_sentences"])
+        clips_with_obs += 1 if gt["observations"] else 0
+        for o in gt["observations"]:
+            code_freq[o["code"]] = code_freq.get(o["code"], 0) + 1
+        if not args.dry_run:
+            clip_dir = out_dir / gt["video_id"]
+            clip_dir.mkdir(parents=True, exist_ok=True)
+            (clip_dir / "ground_truth.json").write_text(json.dumps(gt, indent=2, ensure_ascii=False) + "\n")
+
+    print(f"{len(entries)} clips | {clips_with_obs} with >=1 mapped obs | "
+          f"{n_obs} observations | {n_unmapped} unmapped sentences")
+    print("code frequency:", ", ".join(f"{c}:{n}" for c, n in sorted(code_freq.items(), key=lambda kv: -kv[1])))
+    if not args.dry_run:
+        print(f"wrote -> {out_dir}/<video_id>/ground_truth.json")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

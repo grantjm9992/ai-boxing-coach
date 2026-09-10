@@ -16,6 +16,7 @@ class FaultCode {
   static const guardRearDropsDuringLead = 'GUARD_004';
   static const guardSlowRecovery = 'GUARD_005';
   static const guardBothHandsLow = 'GUARD_006';
+  static const guardChinExposed = 'GUARD_007';
 
   // Rotation (§11.2)
   static const rotInsufficient = 'ROT_001';
@@ -54,6 +55,7 @@ class FaultCode {
   static const posTooUpright = 'POS_003';
   static const posNotRecovered = 'POS_004';
   static const posOffCentreAfterPunch = 'POS_005';
+  static const posInsufficientKneeBend = 'POS_006';
 
   // Punch recovery (§11.6)
   static const recSlow = 'REC_001';
@@ -62,4 +64,8 @@ class FaultCode {
 
   // Head movement (existing rule)
   static const headStatic = 'HEAD_001';
+
+  // Muscular tension / lack of relaxation (beginner faults surfaced by the
+  // CoachMe coach labels; no detector rule yet)
+  static const tenseUpperBody = 'TENSE_001';
 }

@@ -63,6 +63,10 @@ class Side(IntEnum):
         return Landmark.LEFT_HIP if self is Side.LEFT else Landmark.RIGHT_HIP
 
     @property
+    def knee(self) -> Landmark:
+        return Landmark.LEFT_KNEE if self is Side.LEFT else Landmark.RIGHT_KNEE
+
+    @property
     def ankle(self) -> Landmark:
         return Landmark.LEFT_ANKLE if self is Side.LEFT else Landmark.RIGHT_ANKLE
 

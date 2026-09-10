@@ -1,0 +1,61 @@
+{
+  "video_id": "1_front_1",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Jab"
+  },
+  "coach_labels": [
+    "Rotation of the body is too wide, bend your knees more. Punch should land in front of your eyes. Keep your head steady. Raise your back heel.",
+    "Your whole body is losing its center of gravity.",
+    "You're over-rotating your body, and your feet aren't in a proper fighting stance."
+  ],
+  "observations": [
+    {
+      "code": "BAL_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Your whole body is losing its center of gravity."
+        }
+      ],
+      "map_note": "centre of gravity"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Rotation of the body is too wide, bend your knees more."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    }
+  ],
+  "unmapped_sentences": [
+    "Keep your head steady.",
+    "Punch should land in front of your eyes.",
+    "Raise your back heel.",
+    "You're over-rotating your body, and your feet aren't in a proper fighting stance."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

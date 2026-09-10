@@ -1,0 +1,106 @@
+{
+  "video_id": "4_back_3",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "Your body isn’t rotating; you’re only using your arm strength. Both shoulders are too tense. Your center of gravity isn’t balanced over both feet. Be careful not to lock out your front leg when punching.",
+    "Keep your other hand up for defense, and shift slightly to the left.",
+    "Your hands are too stiff; you're not using the power from your lower body."
+  ],
+  "observations": [
+    {
+      "code": "BAL_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your center of gravity isn’t balanced over both feet."
+        }
+      ],
+      "map_note": "centre of gravity"
+    },
+    {
+      "code": "GUARD_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Keep your other hand up for defense, and shift slightly to the left."
+        }
+      ],
+      "map_note": "keep hand up"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Be careful not to lock out your front leg when punching."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your body isn’t rotating; you’re only using your arm strength."
+        },
+        {
+          "coach": 2,
+          "text": "Your hands are too stiff; you're not using the power from your lower body."
+        }
+      ],
+      "map_note": "arm-only, no rotation"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Both shoulders are too tense."
+        },
+        {
+          "coach": 2,
+          "text": "Your hands are too stiff; you're not using the power from your lower body."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
+  "unmapped_sentences": [],
+  "positive_observations": [],
+  "priority_feedback": []
+}

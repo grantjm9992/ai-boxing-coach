@@ -1,0 +1,20 @@
+{
+  "video_id": "clip",
+  "source_file": "clip.mp4",
+  "split": "development",
+  "status": "unlabelled",
+  "labelled_by": null,
+  "labelled_at": null,
+  "reviewers": [],
+  "notes": "SCAFFOLD — not yet labelled. Fill `context` and `observations` with a coach's judgements, set status to \"draft\", then \"reviewed\" once verified. To seed a draft from the engine's own detections (to correct, not to trust as truth), run: boxing-coach clip.mp4 --json.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "unknown",
+    "skill_level": "unknown",
+    "style": null,
+    "school": null
+  },
+  "observations": [],
+  "positive_observations": [],
+  "priority_feedback": []
+}
