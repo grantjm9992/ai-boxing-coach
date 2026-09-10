@@ -63,7 +63,7 @@
     "POS_003": {"category": "body_position", "label": "Too upright", "default_severity": "minor", "dart": "posTooUpright", "python": []},
     "POS_004": {"category": "body_position", "label": "Position not recovered", "default_severity": "moderate", "dart": "posNotRecovered", "python": []},
     "POS_005": {"category": "body_position", "label": "Off centre after punch", "default_severity": "moderate", "dart": "posOffCentreAfterPunch", "python": []},
-    "POS_006": {"category": "body_position", "label": "Insufficient knee bend / legs too straight", "default_severity": "moderate", "dart": "posInsufficientKneeBend", "python": []},
+    "POS_006": {"category": "body_position", "label": "Insufficient knee bend / legs too straight", "default_severity": "moderate", "dart": "posInsufficientKneeBend", "python": ["knee_bend"]},
 
     "REC_001": {"category": "recovery", "label": "Slow retraction", "default_severity": "moderate", "dart": "recSlow", "python": ["guard_return"]},
     "REC_002": {"category": "recovery", "label": "Hand not returned", "default_severity": "major", "dart": "recHandNotReturned", "python": ["guard_return"]},
@@ -79,6 +79,7 @@
     "hip_rotation": {"category": "rotation", "emits_codes": ["ROT_001", "ROT_002", "ROT_003", "ROT_004", "ROT_005"]},
     "footwork": {"category": "footwork", "emits_codes": ["FOOT_001", "FOOT_002", "FOOT_003", "FOOT_004", "FOOT_005", "FOOT_006", "FOOT_007", "FOOT_008", "FOOT_009"]},
     "head_movement": {"category": "head_movement", "emits_codes": ["HEAD_001"]},
+    "knee_bend": {"category": "body_position", "emits_codes": ["POS_006"], "note": "3D-only (depth-gated); silent on monocular 2D input"},
     "school_adherence": {"category": null, "emits_codes": [], "note": "style adherence, not a fault; excluded from fault precision/recall"}
   }
 }

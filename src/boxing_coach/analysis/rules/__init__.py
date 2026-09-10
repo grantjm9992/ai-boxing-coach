@@ -19,6 +19,7 @@ from .guard_return import GuardReturnRule
 from .hands_up import HandsUpRule
 from .head_movement import HeadMovementRule
 from .hip_rotation import HipRotationRule
+from .knee_bend import KneeBendRule
 from .school_adherence import SchoolAdherenceRule
 
 __all__ = [
@@ -27,18 +28,26 @@ __all__ = [
     "HandsUpRule",
     "HeadMovementRule",
     "HipRotationRule",
+    "KneeBendRule",
     "SchoolAdherenceRule",
     "default_rules",
 ]
 
 
 def default_rules() -> list[Rule]:
-    """The starter rule set. Order is irrelevant — the engine sorts output."""
+    """The starter rule set. Order is irrelevant — the engine sorts output.
+
+    KneeBendRule is registered but self-gates on trustworthy 3D input
+    (`meta["depth"] == "metric_3d"`), so it stays silent on the monocular 2D
+    sequences the app and the golden fixtures use — the frontal-honest set is
+    unchanged.
+    """
     return [
         GuardReturnRule(),
         HandsUpRule(),
         FootworkRule(),
         HeadMovementRule(),
         HipRotationRule(),
+        KneeBendRule(),
         SchoolAdherenceRule(),
     ]

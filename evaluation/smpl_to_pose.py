@@ -63,7 +63,11 @@ def sequence_wire(coords, video_name: str) -> dict:
         frames.append({"i": i, "t": round(i / FPS * 1000.0, 4),
                        "kp": frame_to_kp(joints)})
     return {"fps": FPS, "source": f"coachme/{video_name}",
-            "meta": {"model": "smpl22->mediapipe", "root": "pelvis-centred"},
+            # depth=metric_3d marks the z axis as trustworthy 3D (real SMPL, not
+            # monocular estimate) — the gate depth-dependent rules (knee bend)
+            # check before running, so they stay silent on 2D mediapipe input.
+            "meta": {"model": "smpl22->mediapipe", "root": "pelvis-centred",
+                     "depth": "metric_3d"},
             "frames": frames}
 
 
