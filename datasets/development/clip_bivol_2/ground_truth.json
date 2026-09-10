@@ -2,19 +2,48 @@
   "video_id": "clip_bivol_2",
   "source_file": "clip-bivol-2.mp4",
   "split": "development",
-  "status": "unlabelled",
-  "labelled_by": null,
-  "labelled_at": null,
+  "status": "draft",
+  "labelled_by": "claude-vision-draft",
+  "labelled_at": "2026-09-09",
   "reviewers": [],
-  "notes": "SCAFFOLD — not yet labelled. Fill `context` and `observations` with a coach's judgements, set status to \"draft\", then \"reviewed\" once verified. To seed a draft from the engine's own detections (to correct, not to trust as truth), run: boxing-coach clip-bivol-2.mp4 --json.",
+  "notes": "DRAFT — AI-labelled from extracted frames (2 fps), not by a coach. A coach must review before 'reviewed'. PROVENANCE: same elite professional (appears to be Dmitry Bivol) shadow boxing in a ring at a fight-week media workout (Saudi / Queensberry-Matchroom '5v5'). This is the clip most representative of the app's real use case (shadow boxing), but it is still a CEILING / clean-technique case — its value is false-positive control. The one present=true entry is a LOW-confidence, stylistic observation (hands relaxing while resetting between combos) that a coach may well reject; it is set to confidence 'low' so min_confidence filtering can exclude it. Duration ~14.5s.",
   "context": {
-    "stance": "unknown",
-    "exercise": "unknown",
-    "skill_level": "unknown",
+    "stance": "orthodox",
+    "exercise": "shadow",
+    "skill_level": "advanced",
     "style": null,
     "school": null
   },
-  "observations": [],
-  "positive_observations": [],
+  "observations": [
+    {
+      "code": "FOOT_001",
+      "present": false,
+      "severity": "major",
+      "confidence": "high",
+      "timestamps_s": [],
+      "note": "Light, mobile footwork; feet do not cross while circling."
+    },
+    {
+      "code": "GUARD_006",
+      "present": false,
+      "severity": "major",
+      "confidence": "high",
+      "timestamps_s": [],
+      "note": "Both hands never simultaneously dropped."
+    },
+    {
+      "code": "GUARD_002",
+      "present": true,
+      "severity": "minor",
+      "confidence": "low",
+      "timestamps_s": [],
+      "note": "Rear hand relaxes/drifts down while moving and resetting between combinations — typical of relaxed elite shadow boxing and likely stylistic, not a fault. Low confidence on purpose; a coach may reject this."
+    }
+  ],
+  "positive_observations": [
+    "Light, mobile footwork with good balance throughout",
+    "Relaxed but high guard when engaging",
+    "Clean straight-punch mechanics"
+  ],
   "priority_feedback": []
 }
