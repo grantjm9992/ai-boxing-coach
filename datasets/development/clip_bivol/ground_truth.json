@@ -2,19 +2,48 @@
   "video_id": "clip_bivol",
   "source_file": "clip-bivol.mp4",
   "split": "development",
-  "status": "unlabelled",
-  "labelled_by": null,
-  "labelled_at": null,
+  "status": "draft",
+  "labelled_by": "claude-vision-draft",
+  "labelled_at": "2026-09-09",
   "reviewers": [],
-  "notes": "SCAFFOLD — not yet labelled. Fill `context` and `observations` with a coach's judgements, set status to \"draft\", then \"reviewed\" once verified. To seed a draft from the engine's own detections (to correct, not to trust as truth), run: boxing-coach clip-bivol.mp4 --json.",
+  "notes": "DRAFT — AI-labelled from extracted frames (2 fps), not by a coach. A coach must review before 'reviewed'. PROVENANCE: elite professional (appears to be Dmitry Bivol) doing pad work with a trainer, with a training-app combination overlay (numbered combos). This is a CEILING / clean-technique case — its value to the benchmark is testing that the engine does NOT invent faults (false-positive / true-negative rate), not finding errors. I have deliberately NOT invented faults on a world-class fighter; the present=false entries assert faults that are confidently absent. Duration ~6.5s.",
   "context": {
-    "stance": "unknown",
-    "exercise": "unknown",
-    "skill_level": "unknown",
+    "stance": "orthodox",
+    "exercise": "combination",
+    "skill_level": "advanced",
     "style": null,
     "school": null
   },
-  "observations": [],
-  "positive_observations": [],
+  "observations": [
+    {
+      "code": "FOOT_001",
+      "present": false,
+      "severity": "major",
+      "confidence": "high",
+      "timestamps_s": [],
+      "note": "Feet never cross; stance stays sound while stepping in behind shots."
+    },
+    {
+      "code": "GUARD_006",
+      "present": false,
+      "severity": "major",
+      "confidence": "high",
+      "timestamps_s": [],
+      "note": "Guard stays high; both hands never simultaneously low."
+    },
+    {
+      "code": "ROT_001",
+      "present": false,
+      "severity": "moderate",
+      "confidence": "medium",
+      "timestamps_s": [],
+      "note": "Strong hip/shoulder rotation into the rear cross — rotation is not insufficient."
+    }
+  ],
+  "positive_observations": [
+    "Strong rear-hand rotation and drive on the cross",
+    "Tight guard recovered between shots",
+    "Balanced, grounded stance under the pads"
+  ],
   "priority_feedback": []
 }

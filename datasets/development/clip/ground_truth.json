@@ -2,19 +2,30 @@
   "video_id": "clip",
   "source_file": "clip.mp4",
   "split": "development",
-  "status": "unlabelled",
-  "labelled_by": null,
-  "labelled_at": null,
+  "status": "draft",
+  "labelled_by": "claude-vision-draft",
+  "labelled_at": "2026-09-09",
   "reviewers": [],
-  "notes": "SCAFFOLD — not yet labelled. Fill `context` and `observations` with a coach's judgements, set status to \"draft\", then \"reviewed\" once verified. To seed a draft from the engine's own detections (to correct, not to trust as truth), run: boxing-coach clip.mp4 --json.",
+  "notes": "DRAFT — labelled by an AI from extracted frames (2 fps contact sheet), not by a boxing coach and not from full-speed video. A coach must review before status becomes 'reviewed'. PROVENANCE: this is an instructional social-media clip ('How to punch correctly'), NOT a fighter to be analysed — it deliberately demonstrates a fault and then the correct version, with baked-in captions and a red circle highlighting the error. That makes the fault below high-confidence (the video itself labels it) but the clip is semi-artificial as a benchmark item. Duration ~8.2s.",
   "context": {
-    "stance": "unknown",
-    "exercise": "unknown",
-    "skill_level": "unknown",
+    "stance": "orthodox",
+    "exercise": "shadow",
+    "skill_level": "intermediate",
     "style": null,
     "school": null
   },
-  "observations": [],
-  "positive_observations": [],
-  "priority_feedback": []
+  "observations": [
+    {
+      "code": "GUARD_004",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "timestamps_s": [4.5, 5.5, 6.0],
+      "note": "The rear/non-punching hand drops to the ribs while the lead arm extends on the jab (~4.5-6.5s) — the clip circles this in red and captions it 'Don't drop your hand when punching / Open for counter attacks'. Coded GUARD_004 (rear drops during lead punch) assuming orthodox; if the demonstrator is actually southpaw this should be GUARD_003. The fault's PRESENCE is high-confidence; the exact code is medium."
+    }
+  ],
+  "positive_observations": [
+    "Correct rep shown ~6.5-8s ('Keep your hands up' ✅): guard stays high through the punch"
+  ],
+  "priority_feedback": ["GUARD_004"]
 }
