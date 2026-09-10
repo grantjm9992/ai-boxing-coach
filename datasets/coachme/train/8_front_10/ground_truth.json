@@ -1,0 +1,75 @@
+{
+  "video_id": "8_front_10",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Jab"
+  },
+  "coach_labels": [
+    "Your back foot isn't elevated, which affects your stance. Your body is facing too forward. Your back isn't relaxed, preventing you from utilizing your full body power when punching. You're leaning too far forward when you throw punches.",
+    "Don't shift your weight forward with your punch.",
+    "Your body is too tense and you’re facing too directly forward. Your stance is too narrow."
+  ],
+  "observations": [
+    {
+      "code": "BAL_003",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Don't shift your weight forward with your punch."
+        }
+      ],
+      "map_note": "weight forward"
+    },
+    {
+      "code": "FOOT_002",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your stance is too narrow."
+        }
+      ],
+      "map_note": "stance narrow"
+    },
+    {
+      "code": "LEAN_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "You're leaning too far forward when you throw punches."
+        }
+      ],
+      "map_note": "leaning forward"
+    }
+  ],
+  "unmapped_sentences": [
+    "Your back foot isn't elevated, which affects your stance.",
+    "Your back isn't relaxed, preventing you from utilizing your full body power when punching.",
+    "Your body is facing too forward.",
+    "Your body is too tense and you’re facing too directly forward."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

@@ -1,0 +1,47 @@
+{
+  "video_id": "7_front_1",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Jab"
+  },
+  "coach_labels": [
+    "You're not lifting your back foot. Your rear hand isn't protecting your chin. You're using just your arms instead of your body's power.",
+    "When throwing a punch, make sure your rear hand is guarding properly.",
+    "Lack of defense with the rear hand, and your punches are not precise."
+  ],
+  "observations": [
+    {
+      "code": "GUARD_002",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your rear hand isn't protecting your chin."
+        }
+      ],
+      "map_note": "protect the chin"
+    }
+  ],
+  "unmapped_sentences": [
+    "Lack of defense with the rear hand, and your punches are not precise.",
+    "When throwing a punch, make sure your rear hand is guarding properly.",
+    "You're not lifting your back foot.",
+    "You're using just your arms instead of your body's power."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

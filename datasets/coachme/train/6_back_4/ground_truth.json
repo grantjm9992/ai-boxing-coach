@@ -1,0 +1,80 @@
+{
+  "video_id": "6_back_4",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "Your back foot isn't pivoting, your hips aren't rotating, your arms are too stiff, and your body isn't relaxed, which is preventing your shoulders from swaying naturally from side to side. Also, your stance is too upright, causing your center of gravity to be too high.",
+    "Keep your center of gravity stable.",
+    "You're relying solely on arm strength, and both your arms and upper body are too tense, with no rotation in your hips. Plus, your legs aren't in a partial squat position."
+  ],
+  "observations": [
+    {
+      "code": "BAL_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Also, your stance is too upright, causing your center of gravity to be too high."
+        },
+        {
+          "coach": 1,
+          "text": "Keep your center of gravity stable."
+        }
+      ],
+      "map_note": "centre of gravity"
+    },
+    {
+      "code": "POS_003",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Also, your stance is too upright, causing your center of gravity to be too high."
+        }
+      ],
+      "map_note": "too upright"
+    },
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't pivoting, your hips aren't rotating, your arms are too stiff, and your body isn't relaxed, which is preventing your shoulders from swaying naturally from side to side."
+        },
+        {
+          "coach": 2,
+          "text": "You're relying solely on arm strength, and both your arms and upper body are too tense, with no rotation in your hips."
+        }
+      ],
+      "map_note": "hips not rotating"
+    }
+  ],
+  "unmapped_sentences": [
+    "Plus, your legs aren't in a partial squat position."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

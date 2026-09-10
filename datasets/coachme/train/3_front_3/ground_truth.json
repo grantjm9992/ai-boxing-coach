@@ -1,0 +1,63 @@
+{
+  "video_id": "3_front_3",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Jab"
+  },
+  "coach_labels": [
+    "Your body is too square. Your arms are too stiff. Lift your back heel.",
+    "Move your front foot slightly inward.",
+    "Your body isn't turning sideways, you're only using arm strength."
+  ],
+  "observations": [
+    {
+      "code": "FOOT_004",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your body is too square."
+        }
+      ],
+      "map_note": "feet/body too square"
+    },
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Lift your back heel."
+        },
+        {
+          "coach": 2,
+          "text": "Your body isn't turning sideways, you're only using arm strength."
+        }
+      ],
+      "map_note": "rear heel not pivoting (kinetic chain)"
+    }
+  ],
+  "unmapped_sentences": [
+    "Move your front foot slightly inward.",
+    "Your arms are too stiff."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

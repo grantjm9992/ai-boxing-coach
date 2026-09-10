@@ -1,0 +1,45 @@
+{
+  "video_id": "9_back_4",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "Try to relax your body a bit more.",
+    "Initial stance: keep your weight slightly forward.",
+    "Nice job!."
+  ],
+  "observations": [
+    {
+      "code": "BAL_003",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Initial stance: keep your weight slightly forward."
+        }
+      ],
+      "map_note": "weight forward"
+    }
+  ],
+  "unmapped_sentences": [
+    "Nice job!.",
+    "Try to relax your body a bit more."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

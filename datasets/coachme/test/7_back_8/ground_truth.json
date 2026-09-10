@@ -1,0 +1,53 @@
+{
+  "video_id": "7_back_8",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "Your back foot isn't elevated. Your hips aren't rotating. Your arms are too stiff. Your body isn't relaxed, preventing proper shoulder movement for left-right exchanges. You're not paying attention to defense when throwing punches.",
+    "Keep your body slightly crouched.",
+    "Your punches lack precision, and your right hand isn't in the defensive position. Also, your hips aren't rotating."
+  ],
+  "observations": [
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your hips aren't rotating."
+        },
+        {
+          "coach": 2,
+          "text": "Also, your hips aren't rotating."
+        }
+      ],
+      "map_note": "hips not rotating"
+    }
+  ],
+  "unmapped_sentences": [
+    "Keep your body slightly crouched.",
+    "You're not paying attention to defense when throwing punches.",
+    "Your arms are too stiff.",
+    "Your back foot isn't elevated.",
+    "Your body isn't relaxed, preventing proper shoulder movement for left-right exchanges.",
+    "Your punches lack precision, and your right hand isn't in the defensive position."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

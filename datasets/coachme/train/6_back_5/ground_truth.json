@@ -1,0 +1,50 @@
+{
+  "video_id": "6_back_5",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "Your back foot isn't lifting properly, your hips aren't rotating, your hands are too stiff, your body isn't relaxed enough, which is preventing your shoulders from moving and shifting naturally. Also, your stance has too much weight up high.",
+    "Your body and head should move easily.",
+    "Only using arm strength, your arms and upper body are too stiff, and there's no rotation in the hips. Also, the legs aren't in a slight squat."
+  ],
+  "observations": [
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't lifting properly, your hips aren't rotating, your hands are too stiff, your body isn't relaxed enough, which is preventing your shoulders from moving and shifting naturally."
+        },
+        {
+          "coach": 2,
+          "text": "Only using arm strength, your arms and upper body are too stiff, and there's no rotation in the hips."
+        }
+      ],
+      "map_note": "hips not rotating"
+    }
+  ],
+  "unmapped_sentences": [
+    "Also, the legs aren't in a slight squat.",
+    "Also, your stance has too much weight up high.",
+    "Your body and head should move easily."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

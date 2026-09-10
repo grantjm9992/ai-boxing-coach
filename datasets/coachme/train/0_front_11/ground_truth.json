@@ -1,0 +1,63 @@
+{
+  "video_id": "0_front_11",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Jab"
+  },
+  "coach_labels": [
+    "When you punch, keep your chin tucked down.",
+    "Shift your upper body weight forward.",
+    "Your front knee is too straight when standing. Your basic guard position has your hands too low. When you punch, the front knee is too straight, causing your body weight to shift forward."
+  ],
+  "observations": [
+    {
+      "code": "BAL_003",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Shift your upper body weight forward."
+        },
+        {
+          "coach": 2,
+          "text": "When you punch, the front knee is too straight, causing your body weight to shift forward."
+        }
+      ],
+      "map_note": "weight forward"
+    },
+    {
+      "code": "GUARD_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your basic guard position has your hands too low."
+        }
+      ],
+      "map_note": "hand(s) low"
+    }
+  ],
+  "unmapped_sentences": [
+    "When you punch, keep your chin tucked down.",
+    "Your front knee is too straight when standing."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

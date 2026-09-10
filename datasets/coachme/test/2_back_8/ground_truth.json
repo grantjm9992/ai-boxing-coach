@@ -1,0 +1,34 @@
+{
+  "video_id": "2_back_8",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "Relax your body, focus on increasing your punching speed. Don't shrug your shoulders and keep your fists tightened. Make sure your upper and lower body rotate more in sync.",
+    "Ensure your balance is stable with both feet.",
+    "Your upper body is rotating too much instead of your hips. Also, your arms are too stiff."
+  ],
+  "observations": [],
+  "unmapped_sentences": [
+    "Also, your arms are too stiff.",
+    "Don't shrug your shoulders and keep your fists tightened.",
+    "Ensure your balance is stable with both feet.",
+    "Make sure your upper and lower body rotate more in sync.",
+    "Relax your body, focus on increasing your punching speed.",
+    "Your upper body is rotating too much instead of your hips."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

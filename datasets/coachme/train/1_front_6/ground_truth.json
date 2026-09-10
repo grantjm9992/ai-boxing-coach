@@ -1,0 +1,31 @@
+{
+  "video_id": "1_front_6",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Jab"
+  },
+  "coach_labels": [
+    "Rotation angle of the body is too large Knees are too straight The punch should land in front of your eyes Don't rotate your head Keep the heel of the back foot lifted.",
+    "When throwing the lead hand, keep the back foot stable and stationary.",
+    "Over-rotating the body, not standing in a proper fighting stance, punching too low."
+  ],
+  "observations": [],
+  "unmapped_sentences": [
+    "Over-rotating the body, not standing in a proper fighting stance, punching too low.",
+    "Rotation angle of the body is too large Knees are too straight The punch should land in front of your eyes Don't rotate your head Keep the heel of the back foot lifted.",
+    "When throwing the lead hand, keep the back foot stable and stationary."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

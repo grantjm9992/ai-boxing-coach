@@ -1,0 +1,54 @@
+{
+  "video_id": "4_back_6",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "You're only using arm strength without rotating your entire body. Both shoulders are too stiff. Your body weight isn't centered between your feet. When throwing punches, you're accidentally locking your front leg.",
+    "Rotate your hips a bit more.",
+    "Your hands are too stiff, you're not using the power from your lower body."
+  ],
+  "observations": [
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 3,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "You're only using arm strength without rotating your entire body."
+        },
+        {
+          "coach": 1,
+          "text": "Rotate your hips a bit more."
+        },
+        {
+          "coach": 2,
+          "text": "Your hands are too stiff, you're not using the power from your lower body."
+        }
+      ],
+      "map_note": "arm-only, no rotation"
+    }
+  ],
+  "unmapped_sentences": [
+    "Both shoulders are too stiff.",
+    "When throwing punches, you're accidentally locking your front leg.",
+    "Your body weight isn't centered between your feet."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

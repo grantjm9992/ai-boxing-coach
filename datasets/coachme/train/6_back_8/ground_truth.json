@@ -1,0 +1,73 @@
+{
+  "video_id": "6_back_8",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "Back foot isn't lifted. Hips aren't rotating. Hands are too stiff. Body isn't relaxed, causing shoulders to struggle with proper left-right movement. Stance's center of gravity is too high. Striking point is too low.",
+    "When throwing a straight rear hand punch, make sure to rotate your hips first.",
+    "Use only the power of your hands, but both your upper body and hands are too stiff, and there's no rotation in your hips. Also, your legs aren't bending into a half-squat."
+  ],
+  "observations": [
+    {
+      "code": "BAL_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Stance's center of gravity is too high."
+        }
+      ],
+      "map_note": "centre of gravity"
+    },
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 3,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Back foot isn't lifted."
+        },
+        {
+          "coach": 0,
+          "text": "Hips aren't rotating."
+        },
+        {
+          "coach": 1,
+          "text": "When throwing a straight rear hand punch, make sure to rotate your hips first."
+        },
+        {
+          "coach": 2,
+          "text": "Use only the power of your hands, but both your upper body and hands are too stiff, and there's no rotation in your hips."
+        }
+      ],
+      "map_note": "rear heel not pivoting (kinetic chain)"
+    }
+  ],
+  "unmapped_sentences": [
+    "Also, your legs aren't bending into a half-squat.",
+    "Body isn't relaxed, causing shoulders to struggle with proper left-right movement.",
+    "Hands are too stiff.",
+    "Striking point is too low."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

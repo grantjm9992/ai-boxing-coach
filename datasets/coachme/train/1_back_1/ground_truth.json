@@ -1,0 +1,62 @@
+{
+  "video_id": "1_back_1",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "The back foot is not on the ball. Keep your head in line with your punches. Your impact point is too low. Your hips aren't fully rotating. Your knees are too straight.",
+    "When punching, aim to keep your fist at eye level.",
+    "You're aiming too low, your stance is too narrow, and your hips aren't fully engaging in the rotation."
+  ],
+  "observations": [
+    {
+      "code": "FOOT_002",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "You're aiming too low, your stance is too narrow, and your hips aren't fully engaging in the rotation."
+        }
+      ],
+      "map_note": "stance narrow"
+    },
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your hips aren't fully rotating."
+        }
+      ],
+      "map_note": "hips not rotating"
+    }
+  ],
+  "unmapped_sentences": [
+    "Keep your head in line with your punches.",
+    "The back foot is not on the ball.",
+    "When punching, aim to keep your fist at eye level.",
+    "Your impact point is too low.",
+    "Your knees are too straight."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

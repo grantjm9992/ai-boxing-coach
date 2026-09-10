@@ -1,0 +1,32 @@
+{
+  "video_id": "5_front_8",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Jab"
+  },
+  "coach_labels": [
+    "Your arms are too stiff, preventing proper extension. You're not lifting your back foot enough, and your body is too rigid.",
+    "There's a large opening in the middle of your body.",
+    "If your arms are too stiff, you're only using your hands for power."
+  ],
+  "observations": [],
+  "unmapped_sentences": [
+    "If your arms are too stiff, you're only using your hands for power.",
+    "There's a large opening in the middle of your body.",
+    "You're not lifting your back foot enough, and your body is too rigid.",
+    "Your arms are too stiff, preventing proper extension."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

@@ -1,0 +1,46 @@
+{
+  "video_id": "0_front_6",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Jab"
+  },
+  "coach_labels": [
+    "Keep your chin tucked down when you punch. Avoid leaning your upper body forward too much when your punch is fully extended.",
+    "When you punch with your lead hand, make sure to keep your rear hand tight.",
+    "Keep your front knee slightly bent Your basic stance has your hands too low Your front knee is too straight when you throw punches."
+  ],
+  "observations": [
+    {
+      "code": "GUARD_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Keep your front knee slightly bent Your basic stance has your hands too low Your front knee is too straight when you throw punches."
+        }
+      ],
+      "map_note": "hand(s) low"
+    }
+  ],
+  "unmapped_sentences": [
+    "Avoid leaning your upper body forward too much when your punch is fully extended.",
+    "Keep your chin tucked down when you punch.",
+    "When you punch with your lead hand, make sure to keep your rear hand tight."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

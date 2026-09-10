@@ -1,0 +1,66 @@
+{
+  "video_id": "1_back_2",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Cross"
+  },
+  "coach_labels": [
+    "You're not lifting the back foot. Make sure your head follows the rotation of your punch. Strike higher, your impact point is too low. Rotate your hips fully. Don't stand with your knees too straight.",
+    "When throwing punches, keep your head from constantly turning.",
+    "Your punches are too low, your stance is too narrow, and you're not using your hips to fully rotate your body."
+  ],
+  "observations": [
+    {
+      "code": "FOOT_002",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your punches are too low, your stance is too narrow, and you're not using your hips to fully rotate your body."
+        }
+      ],
+      "map_note": "stance narrow"
+    },
+    {
+      "code": "ROT_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Rotate your hips fully."
+        },
+        {
+          "coach": 2,
+          "text": "Your punches are too low, your stance is too narrow, and you're not using your hips to fully rotate your body."
+        }
+      ],
+      "map_note": "cue to rotate hips"
+    }
+  ],
+  "unmapped_sentences": [
+    "Don't stand with your knees too straight.",
+    "Make sure your head follows the rotation of your punch.",
+    "Strike higher, your impact point is too low.",
+    "When throwing punches, keep your head from constantly turning.",
+    "You're not lifting the back foot."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}

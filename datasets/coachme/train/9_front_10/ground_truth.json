@@ -1,0 +1,31 @@
+{
+  "video_id": "9_front_10",
+  "source_file": null,
+  "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
+  "split": "development",
+  "status": "draft",
+  "labelled_by": "coachme-phrase-map",
+  "reviewers": [],
+  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "context": {
+    "stance": "unknown",
+    "exercise": "drill",
+    "skill_level": "beginner",
+    "style": null,
+    "school": null,
+    "motion_type": "Jab"
+  },
+  "coach_labels": [
+    "Your footing isn't right.",
+    "Your body should stay still, but keep your feet from moving.",
+    "Good job."
+  ],
+  "observations": [],
+  "unmapped_sentences": [
+    "Good job.",
+    "Your body should stay still, but keep your feet from moving.",
+    "Your footing isn't right."
+  ],
+  "positive_observations": [],
+  "priority_feedback": []
+}
