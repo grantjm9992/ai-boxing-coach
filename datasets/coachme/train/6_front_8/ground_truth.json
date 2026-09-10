@@ -36,6 +36,20 @@
       "map_note": "lead hand low / raise lead"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, your back foot isn't lifted properly, your body is too rigid, and you're not bending your knees slightly."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -48,10 +62,27 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, your back foot isn't lifted properly, your body is too rigid, and you're not bending your knees slightly."
+        },
+        {
+          "coach": 2,
+          "text": "Your arms are too stiff, and you're only using your hands for power."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Your arms are too stiff, and you're only using your hands for power.",
     "Your basic stance isn't correct."
   ],
   "positive_observations": [],

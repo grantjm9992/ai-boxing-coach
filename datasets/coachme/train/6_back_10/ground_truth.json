@@ -36,6 +36,20 @@
       "map_note": "centre of gravity"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Plus, there's no hip rotation and you're not bending your knees at all."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -56,13 +70,30 @@
         }
       ],
       "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The hands are too stiff."
+        },
+        {
+          "coach": 2,
+          "text": "You're only using your arm strength and your arms and upper body are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Keep your knees slightly bent.",
     "The back foot isn't elevated.",
     "The body isn't relaxed, which prevents the shoulders from naturally swinging and switching.",
-    "The hands are too stiff.",
     "The striking point is too low."
   ],
   "positive_observations": [],

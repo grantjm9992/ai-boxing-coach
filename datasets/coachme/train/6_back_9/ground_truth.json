@@ -52,11 +52,28 @@
         }
       ],
       "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, and your body isn't relaxed, which prevents proper shoulder movement for exchanging punches."
+        },
+        {
+          "coach": 2,
+          "text": "Use only your arm's strength, and your arm and upper body are too stiff while your hips do not rotate."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Also, your legs are not bending into a semi-squat position.",
-    "Your arms are too stiff, and your body isn't relaxed, which prevents proper shoulder movement for exchanging punches.",
     "Your punch isn't fully extended."
   ],
   "positive_observations": [],

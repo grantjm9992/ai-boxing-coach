@@ -20,10 +20,37 @@
     "Tuck your chin down a bit.",
     "Well done."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Tuck your chin down a bit."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Relax your body a little more."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "Relax your body a little more.",
-    "Tuck your chin down a bit.",
     "Well done."
   ],
   "positive_observations": [],

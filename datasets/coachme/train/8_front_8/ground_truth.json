@@ -38,6 +38,20 @@
         }
       ],
       "map_note": "feet/body too square"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your body is too stiff, and you're standing too square to your opponent."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [

@@ -20,12 +20,29 @@
     "Keep your weight centered.",
     "Your arms are too tense and you're only using them for power. You need to work on your basic stance."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, your back foot is not on the ball, your body is too rigid, and your knees aren't slightly bent."
+        },
+        {
+          "coach": 2,
+          "text": "Your arms are too tense and you're only using them for power."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
     "Keep your weight centered.",
-    "You need to work on your basic stance.",
-    "Your arms are too stiff, your back foot is not on the ball, your body is too rigid, and your knees aren't slightly bent.",
-    "Your arms are too tense and you're only using them for power."
+    "You need to work on your basic stance."
   ],
   "positive_observations": [],
   "priority_feedback": []

@@ -36,6 +36,20 @@
       "map_note": "centre of gravity"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The front leg straightens unintentionally when punching."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -48,13 +62,28 @@
         }
       ],
       "map_note": "arm-only, no rotation"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Both shoulders are too tense."
+        },
+        {
+          "coach": 2,
+          "text": "Your hands are too stiff, and you're not utilizing the power of your lower body."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Both shoulders are too tense.",
-    "Punch straighter, don't throw only halfway.",
-    "The front leg straightens unintentionally when punching.",
-    "Your hands are too stiff, and you're not utilizing the power of your lower body."
+    "Punch straighter, don't throw only halfway."
   ],
   "positive_observations": [],
   "priority_feedback": []

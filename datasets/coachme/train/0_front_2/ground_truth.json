@@ -48,12 +48,37 @@
         }
       ],
       "map_note": "hand(s) low"
+    },
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "When throwing a punch, tuck your chin down."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "You're standing with your lead knee too straight, and your guard is too low."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
     }
   ],
-  "unmapped_sentences": [
-    "When throwing a punch, tuck your chin down.",
-    "You're standing with your lead knee too straight, and your guard is too low."
-  ],
+  "unmapped_sentences": [],
   "positive_observations": [],
   "priority_feedback": []
 }

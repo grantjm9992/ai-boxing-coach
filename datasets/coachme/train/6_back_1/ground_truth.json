@@ -36,6 +36,20 @@
       "map_note": "centre of gravity"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Also, your legs aren't in a half-squat position."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -52,12 +66,32 @@
         }
       ],
       "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't lifted properly, your hips aren't rotating, and your hands are too stiff."
+        },
+        {
+          "coach": 0,
+          "text": "You're not relaxing your body, which is preventing your shoulders from moving and exchanging normally side to side."
+        },
+        {
+          "coach": 2,
+          "text": "You're only using your arm strength, and both your upper body and arms are too stiff without any hip rotation."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Also, your legs aren't in a half-squat position.",
-    "When you throw a punch, your fist should be at the same level as your eyes.",
-    "You're not relaxing your body, which is preventing your shoulders from moving and exchanging normally side to side."
+    "When you throw a punch, your fist should be at the same level as your eyes."
   ],
   "positive_observations": [],
   "priority_feedback": []

@@ -70,6 +70,24 @@
         }
       ],
       "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't pivoting, your hips aren't rotating, your arms are too stiff, and your body isn't relaxed, which is preventing your shoulders from swaying naturally from side to side."
+        },
+        {
+          "coach": 2,
+          "text": "You're relying solely on arm strength, and both your arms and upper body are too tense, with no rotation in your hips."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [

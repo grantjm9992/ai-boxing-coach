@@ -20,12 +20,26 @@
     "Rotate your back foot a bit more.",
     "Your chin isn't tucked properly."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your chin isn't tucked properly."
+        }
+      ],
+      "map_note": "chin not tucked"
+    }
+  ],
   "unmapped_sentences": [
     "In the video, it was leaning a bit to the left.",
     "Rotate your back foot a bit more.",
-    "When throwing a punch, your weight should be shifting forward.",
-    "Your chin isn't tucked properly."
+    "When throwing a punch, your weight should be shifting forward."
   ],
   "positive_observations": [],
   "priority_feedback": []

@@ -38,12 +38,28 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your shoulders are a bit tense."
+        },
+        {
+          "coach": 2,
+          "text": "Also, your arms are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Also, your arms are too stiff.",
     "The punch should go out straight and come back straight.",
-    "Your shoulders are a bit tense.",
     "Your upper body is rotating too much instead of your hips."
   ],
   "positive_observations": [],

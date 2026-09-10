@@ -36,6 +36,20 @@
       "map_note": "stance narrow"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your knees are too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -54,8 +68,7 @@
     "Keep your head in line with your punches.",
     "The back foot is not on the ball.",
     "When punching, aim to keep your fist at eye level.",
-    "Your impact point is too low.",
-    "Your knees are too straight."
+    "Your impact point is too low."
   ],
   "positive_observations": [],
   "priority_feedback": []

@@ -34,13 +34,33 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, which is preventing them from extending fully."
+        },
+        {
+          "coach": 0,
+          "text": "You're not lifting your back heel, and your body is too tense."
+        },
+        {
+          "coach": 2,
+          "text": "If your arms are too tense, you're only using your hands to generate power."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Also, there's a slight pause when you punch, which is good because it indicates you're braking your movement, but your elbow is flaring out, causing you to swing your punches.",
-    "If your arms are too tense, you're only using your hands to generate power.",
     "You should incorporate more body rotation to enhance your power.",
-    "Your arms are too stiff, which is preventing them from extending fully.",
     "Your lower body isn't involved at all in your punches, but you're generating good power with your punching arm."
   ],
   "positive_observations": [],

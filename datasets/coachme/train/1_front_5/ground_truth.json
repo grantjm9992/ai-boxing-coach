@@ -22,6 +22,20 @@
   ],
   "observations": [
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Don't lock your knees."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -42,7 +56,6 @@
   ],
   "unmapped_sentences": [
     "Aim your strikes directly in front of your eyes.",
-    "Don't lock your knees.",
     "Keep your head still.",
     "Slightly turn your front foot inward.",
     "You're over-rotating your body, your feet aren't in a proper fighting stance, and you're punching too low and not straight."

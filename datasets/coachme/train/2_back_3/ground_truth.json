@@ -20,13 +20,30 @@
     "Rotate your back foot significantly.",
     "You're over-rotating your upper body instead of using your hips, and your arms are too stiff."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The shoulders seem a bit stiff."
+        },
+        {
+          "coach": 2,
+          "text": "You're over-rotating your upper body instead of using your hips, and your arms are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
     "Rotate your back foot significantly.",
     "Smile sneakily.",
-    "The back foot isn't on the toes.",
-    "The shoulders seem a bit stiff.",
-    "You're over-rotating your upper body instead of using your hips, and your arms are too stiff."
+    "The back foot isn't on the toes."
   ],
   "positive_observations": [],
   "priority_feedback": []

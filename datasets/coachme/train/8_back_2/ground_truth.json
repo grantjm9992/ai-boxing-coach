@@ -60,12 +60,25 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Engage your core more.",
-    "The back foot needs to have a wider stance.",
-    "Your arms are too stiff."
+    "The back foot needs to have a wider stance."
   ],
   "positive_observations": [],
   "priority_feedback": []

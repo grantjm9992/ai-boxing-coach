@@ -20,11 +20,28 @@
     "Move your back foot slightly to the left.",
     "Your hands are too stiff."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "You're not pivoting properly on your back foot when you punch, and your shoulders are too tense."
+        },
+        {
+          "coach": 2,
+          "text": "Your hands are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "Move your back foot slightly to the left.",
-    "You're not pivoting properly on your back foot when you punch, and your shoulders are too tense.",
-    "Your hands are too stiff."
+    "Move your back foot slightly to the left."
   ],
   "positive_observations": [],
   "priority_feedback": []

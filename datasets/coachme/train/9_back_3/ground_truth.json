@@ -20,11 +20,25 @@
     "Keep your lead foot stable.",
     "Good job!."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "You can relax your body a bit more."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
     "Good job!.",
-    "Keep your lead foot stable.",
-    "You can relax your body a bit more."
+    "Keep your lead foot stable."
   ],
   "positive_observations": [],
   "priority_feedback": []

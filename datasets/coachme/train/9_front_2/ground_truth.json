@@ -20,10 +20,24 @@
     "When throwing a straight punch, the power is dissipating.",
     "Nice punch!."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The back feels a bit stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
     "Nice punch!.",
-    "The back feels a bit stiff.",
     "When throwing a straight punch, the power is dissipating."
   ],
   "positive_observations": [],

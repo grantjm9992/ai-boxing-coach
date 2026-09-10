@@ -36,6 +36,20 @@
       "map_note": "protect the chin"
     },
     {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Keep your chin down a bit."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -51,7 +65,6 @@
     }
   ],
   "unmapped_sentences": [
-    "Keep your chin down a bit.",
     "You're relying only on your arms instead of using your body strength.",
     "Your rear hand lacks defense, and your punches aren't landing effectively."
   ],

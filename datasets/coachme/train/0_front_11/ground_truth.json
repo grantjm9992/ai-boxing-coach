@@ -52,12 +52,41 @@
         }
       ],
       "map_note": "hand(s) low"
+    },
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "When you punch, keep your chin tucked down."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your front knee is too straight when standing."
+        },
+        {
+          "coach": 2,
+          "text": "When you punch, the front knee is too straight, causing your body weight to shift forward."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
     }
   ],
-  "unmapped_sentences": [
-    "When you punch, keep your chin tucked down.",
-    "Your front knee is too straight when standing."
-  ],
+  "unmapped_sentences": [],
   "positive_observations": [],
   "priority_feedback": []
 }

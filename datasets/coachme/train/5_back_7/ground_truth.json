@@ -20,11 +20,28 @@
     "Keep your body slightly hunched.",
     "Your hands are too stiff."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't planted properly when you throw a punch, and your shoulders and arms are too tense."
+        },
+        {
+          "coach": 2,
+          "text": "Your hands are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "Keep your body slightly hunched.",
-    "Your back foot isn't planted properly when you throw a punch, and your shoulders and arms are too tense.",
-    "Your hands are too stiff."
+    "Keep your body slightly hunched."
   ],
   "positive_observations": [],
   "priority_feedback": []

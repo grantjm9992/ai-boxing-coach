@@ -34,13 +34,26 @@
         }
       ],
       "map_note": "centre of gravity"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Rotation of the body is too wide, bend your knees more."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
     }
   ],
   "unmapped_sentences": [
     "Keep your head steady.",
     "Punch should land in front of your eyes.",
     "Raise your back heel.",
-    "Rotation of the body is too wide, bend your knees more.",
     "You're over-rotating your body, and your feet aren't in a proper fighting stance."
   ],
   "positive_observations": [],

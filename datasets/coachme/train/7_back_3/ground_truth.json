@@ -38,6 +38,20 @@
         }
       ],
       "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't lifting properly, your hips aren't rotating, your hands are too tense, and your body isn't relaxed enough, which is preventing your shoulders from moving and exchanging naturally."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [

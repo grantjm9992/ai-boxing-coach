@@ -36,6 +36,20 @@
       "map_note": "centre of gravity"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Additionally, you're not doing a half-squat with your legs."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -52,10 +66,27 @@
         }
       ],
       "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The back foot isn't elevated, the hips aren't rotating, the arms are too stiff, and the body isn't relaxed, preventing proper shoulder movement for effective shifting."
+        },
+        {
+          "coach": 2,
+          "text": "You're only using arm strength, and both your arms and upper body are too stiff without hip rotation."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Additionally, you're not doing a half-squat with your legs.",
     "Keep your lead foot angled inward."
   ],
   "positive_observations": [],

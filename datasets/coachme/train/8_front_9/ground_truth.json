@@ -66,6 +66,20 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your body is too rigid and you're facing too squarely."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [

@@ -38,12 +38,28 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your shoulders are a bit stiff."
+        },
+        {
+          "coach": 2,
+          "text": "You're over-rotating your upper body instead of using your hips, and your arms are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Defensive moves and your body should stay close together.",
-    "You're over-rotating your upper body instead of using your hips, and your arms are too stiff.",
-    "Your shoulders are a bit stiff."
+    "Defensive moves and your body should stay close together."
   ],
   "positive_observations": [],
   "priority_feedback": []

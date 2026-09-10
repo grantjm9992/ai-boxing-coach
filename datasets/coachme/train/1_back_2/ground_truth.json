@@ -36,6 +36,20 @@
       "map_note": "stance narrow"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Don't stand with your knees too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -55,7 +69,6 @@
     }
   ],
   "unmapped_sentences": [
-    "Don't stand with your knees too straight.",
     "Make sure your head follows the rotation of your punch.",
     "Strike higher, your impact point is too low.",
     "When throwing punches, keep your head from constantly turning.",

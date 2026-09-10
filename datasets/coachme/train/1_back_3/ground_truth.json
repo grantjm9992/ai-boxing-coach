@@ -64,6 +64,20 @@
       "map_note": "leaning forward"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Back foot didn't lift up Head should rotate with the punch Striking point is too low Hips didn't fully rotate Knees are too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",

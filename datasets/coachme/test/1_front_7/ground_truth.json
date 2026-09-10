@@ -20,14 +20,28 @@
     "When punching, make sure to throw straight and retract straight.",
     "Body is over-rotating, feet are not in a proper fighting stance, punches are too low and not straight."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your knees are too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    }
+  ],
   "unmapped_sentences": [
     "Body is over-rotating, feet are not in a proper fighting stance, punches are too low and not straight.",
     "Keep your head from rotating.",
     "Raise the heel of your back foot.",
     "The impact point should be right in front of your eyes.",
-    "When punching, make sure to throw straight and retract straight.",
-    "Your knees are too straight."
+    "When punching, make sure to throw straight and retract straight."
   ],
   "positive_observations": [],
   "priority_feedback": []

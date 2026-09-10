@@ -20,11 +20,38 @@
     "When you throw a lead hand punch, keep your back foot firmly planted.",
     "Your front knee is too straight, and your guard is too low."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "When throwing a punch, keep your chin tucked down."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your front knee is too straight, and your guard is too low."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    }
+  ],
   "unmapped_sentences": [
-    "When throwing a punch, keep your chin tucked down.",
-    "When you throw a lead hand punch, keep your back foot firmly planted.",
-    "Your front knee is too straight, and your guard is too low."
+    "When you throw a lead hand punch, keep your back foot firmly planted."
   ],
   "positive_observations": [],
   "priority_feedback": []

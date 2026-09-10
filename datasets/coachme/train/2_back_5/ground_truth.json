@@ -34,11 +34,28 @@
         }
       ],
       "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't fully elevated, your hips aren't completely rotating, and your shoulders are a bit stiff."
+        },
+        {
+          "coach": 2,
+          "text": "Also, the arms are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Adjust your other hand's defense a bit more to the left.",
-    "Also, the arms are too stiff.",
     "The upper body is rotating too much instead of the hips."
   ],
   "positive_observations": [],

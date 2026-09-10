@@ -62,13 +62,26 @@
         }
       ],
       "map_note": "leaning forward"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your body is too tense and you’re facing too directly forward."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Your back foot isn't elevated, which affects your stance.",
     "Your back isn't relaxed, preventing you from utilizing your full body power when punching.",
-    "Your body is facing too forward.",
-    "Your body is too tense and you’re facing too directly forward."
+    "Your body is facing too forward."
   ],
   "positive_observations": [],
   "priority_feedback": []

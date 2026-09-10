@@ -34,13 +34,26 @@
         }
       ],
       "map_note": "guard up"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your front knee is too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
     }
   ],
   "unmapped_sentences": [
     "Don't rely solely on your arms for power, and keep your chin tucked in.",
     "Keep your lead foot slightly to the inside.",
-    "Move your feet to initiate the punch, engage your whole body to generate power, and throw the punch at the end.",
-    "Your front knee is too straight."
+    "Move your feet to initiate the punch, engage your whole body to generate power, and throw the punch at the end."
   ],
   "positive_observations": [],
   "priority_feedback": []

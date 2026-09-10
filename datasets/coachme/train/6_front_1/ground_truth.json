@@ -34,14 +34,34 @@
         }
       ],
       "map_note": "arm-only, no rotation"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff."
+        },
+        {
+          "coach": 0,
+          "text": "Your body is also too rigid."
+        },
+        {
+          "coach": 2,
+          "text": "Your arms are too stiff, and you're only using arm strength."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "When throwing a punch, keep your rear hand tightly in place.",
     "You're not lifting your back foot.",
-    "Your arms are too stiff.",
     "Your basic stance needs to be corrected.",
-    "Your body is also too rigid.",
     "Your knees need to be slightly bent."
   ],
   "positive_observations": [],

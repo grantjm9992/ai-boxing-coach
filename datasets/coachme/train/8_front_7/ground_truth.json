@@ -38,13 +38,43 @@
         }
       ],
       "map_note": "feet/body too square"
+    },
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Keep your chin down."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back is too tense, preventing you from using the full power of your body when punching."
+        },
+        {
+          "coach": 2,
+          "text": "Your body is too stiff and you're facing too square to the opponent."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Keep your chin down.",
     "The back foot isn't raised.",
-    "Widen your stance.",
-    "Your back is too tense, preventing you from using the full power of your body when punching."
+    "Widen your stance."
   ],
   "positive_observations": [],
   "priority_feedback": []

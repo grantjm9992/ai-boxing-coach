@@ -20,11 +20,25 @@
     "Throw straight punches inside.",
     "Your chin isn't tucked properly."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your chin isn't tucked properly."
+        }
+      ],
+      "map_note": "chin not tucked"
+    }
+  ],
   "unmapped_sentences": [
     "Throw straight punches inside.",
-    "You're not relaxing your waist.",
-    "Your chin isn't tucked properly."
+    "You're not relaxing your waist."
   ],
   "positive_observations": [],
   "priority_feedback": []

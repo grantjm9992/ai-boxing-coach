@@ -34,11 +34,24 @@
         }
       ],
       "map_note": "leaning forward"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "You need to relax your body a bit more."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Well done.",
-    "You need to relax your body a bit more."
+    "Well done."
   ],
   "positive_observations": [],
   "priority_feedback": []

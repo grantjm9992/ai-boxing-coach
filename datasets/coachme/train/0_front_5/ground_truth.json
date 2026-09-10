@@ -34,13 +34,42 @@
         }
       ],
       "map_note": "hand(s) low"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your front knee is too straight when standing."
+        },
+        {
+          "coach": 2,
+          "text": "Your front knee is too straight when throwing punches."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "When throwing the jab, make sure to keep your rear hand tight to your body."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "When throwing a punch, keep your chin tucked in.",
-    "When throwing the jab, make sure to keep your rear hand tight to your body.",
-    "Your front knee is too straight when standing.",
-    "Your front knee is too straight when throwing punches."
+    "When throwing a punch, keep your chin tucked in."
   ],
   "positive_observations": [],
   "priority_feedback": []

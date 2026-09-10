@@ -20,11 +20,28 @@
     "The lead hand should not be at the same height as the rear hand.",
     "Your upper body is rotating too much instead of your hips. Also, your arms are too stiff."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Relax your body a bit and focus on throwing your punches with speed."
+        },
+        {
+          "coach": 2,
+          "text": "Also, your arms are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "Also, your arms are too stiff.",
     "Keep your shoulders down, make sure to clench your fists, and aim for more coordinated movement between your upper and lower body.",
-    "Relax your body a bit and focus on throwing your punches with speed.",
     "The lead hand should not be at the same height as the rear hand.",
     "Your upper body is rotating too much instead of your hips."
   ],

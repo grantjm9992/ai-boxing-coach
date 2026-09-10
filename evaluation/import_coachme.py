@@ -77,6 +77,11 @@ _RULES: list[tuple[re.Pattern[str], str, str]] = [
     # Body position
     (re.compile(r"too upright|standing.{0,12}(too )?(tall|straight)", re.I), "POS_003", "too upright"),
     (re.compile(r"head.{0,15}(too far )?forward", re.I), "POS_001", "head too far forward"),
+    (re.compile(r"(knee|leg)s?.{0,15}(too )?straight|lock.{0,10}(out )?(your )?(front )?(leg|knee)|(not|aren'?t).{0,15}half.?squat|bend.{0,10}(your )?knees", re.I), "POS_006", "knees too straight / no bend"),
+    # Chin
+    (re.compile(r"chin.{0,15}(isn'?t|is not|not).{0,10}tuck|tuck.{0,10}(your |the )?chin|chin.{0,6}(up|out|exposed)|keep.{0,10}chin.{0,10}down", re.I), "GUARD_007", "chin not tucked"),
+    # Muscular tension
+    (re.compile(r"(too )?(stiff|tense|rigid|tight)\b|relax.{0,15}(your )?(body|shoulders|arms)", re.I), "TENSE_001", "upper-body tension"),
 ]
 
 _GUARD_BY_MOTION = {"Cross": "GUARD_001", "Jab": "GUARD_002"}  # non-punching = other hand

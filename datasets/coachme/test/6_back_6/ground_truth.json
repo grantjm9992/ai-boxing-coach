@@ -36,6 +36,20 @@
       "map_note": "centre of gravity"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Also, your legs aren't in a half-squat position."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -52,10 +66,27 @@
         }
       ],
       "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The back foot isn't raised up, the hips aren't rotating, the hands are too stiff, and the body isn't relaxed, which prevents the shoulders from moving and transferring smoothly."
+        },
+        {
+          "coach": 2,
+          "text": "You're only using arm strength, and your arms and upper body are too stiff without hip rotation."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Also, your legs aren't in a half-squat position.",
     "Make sure to pivot your back foot slightly."
   ],
   "positive_observations": [],

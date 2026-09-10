@@ -22,6 +22,20 @@
   ],
   "observations": [
     {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Avoid shrugging your rear shoulder, and keep your chin down."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -34,11 +48,23 @@
         }
       ],
       "map_note": "cue to rotate"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Keep your back hand tight and still."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Avoid shrugging your rear shoulder, and keep your chin down.",
-    "Keep your back hand tight and still.",
     "Raise your back shoulder, and keep your rear foot flat."
   ],
   "positive_observations": [],

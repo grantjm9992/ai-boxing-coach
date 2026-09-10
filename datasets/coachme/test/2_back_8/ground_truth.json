@@ -20,13 +20,30 @@
     "Ensure your balance is stable with both feet.",
     "Your upper body is rotating too much instead of your hips. Also, your arms are too stiff."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Relax your body, focus on increasing your punching speed."
+        },
+        {
+          "coach": 2,
+          "text": "Also, your arms are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "Also, your arms are too stiff.",
     "Don't shrug your shoulders and keep your fists tightened.",
     "Ensure your balance is stable with both feet.",
     "Make sure your upper and lower body rotate more in sync.",
-    "Relax your body, focus on increasing your punching speed.",
     "Your upper body is rotating too much instead of your hips."
   ],
   "positive_observations": [],

@@ -20,13 +20,27 @@
     "Keep your feet shoulder-width apart.",
     "Body over-rotates, feet not in a fighting stance, punches are too low and not straight."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Knees are too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    }
+  ],
   "unmapped_sentences": [
     "Body over-rotates, feet not in a fighting stance, punches are too low and not straight.",
     "Body rotation angle is too wide.",
     "Keep your feet shoulder-width apart.",
     "Keep your head still.",
-    "Knees are too straight.",
     "Raise the heel of your back foot.",
     "Striking point should be in front of your eyes."
   ],

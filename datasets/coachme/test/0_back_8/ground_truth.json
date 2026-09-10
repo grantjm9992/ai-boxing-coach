@@ -34,10 +34,23 @@
         }
       ],
       "map_note": "centre of gravity"
+    },
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Chin isn't tucked properly."
+        }
+      ],
+      "map_note": "chin not tucked"
     }
   ],
   "unmapped_sentences": [
-    "Chin isn't tucked properly.",
     "Good job with your punches."
   ],
   "positive_observations": [],

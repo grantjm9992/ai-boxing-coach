@@ -36,6 +36,20 @@
       "map_note": "centre of gravity"
     },
     {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "When you throw a punch, keep your chin tucked down."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
       "code": "LEAN_001",
       "present": true,
       "severity": "moderate",
@@ -48,13 +62,25 @@
         }
       ],
       "map_note": "leaning forward"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "The front knee is too straight when standing."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
     }
   ],
   "unmapped_sentences": [
     "Keep your basic stance with your hands up.",
-    "The front knee is too straight when standing.",
-    "When throwing the lead hand, make sure there's a gap in your center.",
-    "When you throw a punch, keep your chin tucked down."
+    "When throwing the lead hand, make sure there's a gap in your center."
   ],
   "positive_observations": [],
   "priority_feedback": []

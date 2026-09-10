@@ -20,13 +20,33 @@
     "Turn your lead foot slightly inward.",
     "Your arms are too stiff; you're only using your hands for power."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, which is preventing them from fully extending."
+        },
+        {
+          "coach": 0,
+          "text": "Your body is also too rigid."
+        },
+        {
+          "coach": 2,
+          "text": "Your arms are too stiff; you're only using your hands for power."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
     "Turn your lead foot slightly inward.",
-    "You need to pick up your rear foot on the toes.",
-    "Your arms are too stiff, which is preventing them from fully extending.",
-    "Your arms are too stiff; you're only using your hands for power.",
-    "Your body is also too rigid."
+    "You need to pick up your rear foot on the toes."
   ],
   "positive_observations": [],
   "priority_feedback": []

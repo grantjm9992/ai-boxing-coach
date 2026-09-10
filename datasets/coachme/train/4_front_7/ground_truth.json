@@ -22,6 +22,20 @@
   ],
   "observations": [
     {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Keep your chin down as you throw a punch."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
       "code": "POS_003",
       "present": true,
       "severity": "moderate",
@@ -34,11 +48,23 @@
         }
       ],
       "map_note": "too upright"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Bend your knees slightly."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
     }
   ],
   "unmapped_sentences": [
-    "Bend your knees slightly.",
-    "Keep your chin down as you throw a punch.",
     "Keep your upper body relaxed.",
     "Shift your body's weight upwards.",
     "When you punch, make sure to extend your arm fully."

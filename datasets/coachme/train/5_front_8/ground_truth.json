@@ -20,12 +20,32 @@
     "There's a large opening in the middle of your body.",
     "If your arms are too stiff, you're only using your hands for power."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, preventing proper extension."
+        },
+        {
+          "coach": 0,
+          "text": "You're not lifting your back foot enough, and your body is too rigid."
+        },
+        {
+          "coach": 2,
+          "text": "If your arms are too stiff, you're only using your hands for power."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "If your arms are too stiff, you're only using your hands for power.",
-    "There's a large opening in the middle of your body.",
-    "You're not lifting your back foot enough, and your body is too rigid.",
-    "Your arms are too stiff, preventing proper extension."
+    "There's a large opening in the middle of your body."
   ],
   "positive_observations": [],
   "priority_feedback": []

@@ -20,14 +20,48 @@
     "Draw your front foot inward.",
     "Your arms are too stiff and you're only using your hands for power. Your basic stance isn't correct."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your body is also too rigid, and you need to bend your knees slightly."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, and your back foot isn't on the ball."
+        },
+        {
+          "coach": 0,
+          "text": "Your body is also too rigid, and you need to bend your knees slightly."
+        },
+        {
+          "coach": 2,
+          "text": "Your arms are too stiff and you're only using your hands for power."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
     "Draw your front foot inward.",
     "The impact point is too low.",
-    "Your arms are too stiff and you're only using your hands for power.",
-    "Your arms are too stiff, and your back foot isn't on the ball.",
-    "Your basic stance isn't correct.",
-    "Your body is also too rigid, and you need to bend your knees slightly."
+    "Your basic stance isn't correct."
   ],
   "positive_observations": [],
   "priority_feedback": []

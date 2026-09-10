@@ -62,12 +62,25 @@
         }
       ],
       "map_note": "body not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Engage your core.",
-    "You need to be on the ball of your back foot.",
-    "Your arms are too stiff."
+    "You need to be on the ball of your back foot."
   ],
   "positive_observations": [],
   "priority_feedback": []

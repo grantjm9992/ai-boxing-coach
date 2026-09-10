@@ -66,10 +66,27 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Don't tense up your shoulders too much."
+        },
+        {
+          "coach": 2,
+          "text": "You're too stiff and standing too square."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Don't tense up your shoulders too much.",
     "Your back isn't relaxed, which is preventing you from using your whole body strength when punching."
   ],
   "positive_observations": [],

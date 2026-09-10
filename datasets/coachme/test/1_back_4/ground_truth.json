@@ -36,6 +36,20 @@
       "map_note": "stance narrow"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Rear foot isn't pivoting, head should follow the punch rotation, striking point is too low, hips aren't fully rotating, knees are too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",

@@ -62,6 +62,24 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't lifting properly, you're standing too face-on, and your back is too tense, which is preventing you from using your full body power when punching."
+        },
+        {
+          "coach": 2,
+          "text": "Your whole body is too stiff and you're standing too square."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [

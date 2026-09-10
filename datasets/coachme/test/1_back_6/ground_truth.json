@@ -36,6 +36,20 @@
       "map_note": "stance narrow"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your knees are too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -58,8 +72,7 @@
     "When throwing the rear straight, make sure your hand doesn't move away from your head and body.",
     "You're hitting too low.",
     "You're not pivoting your back foot.",
-    "Your head should follow the rotation of your punch.",
-    "Your knees are too straight."
+    "Your head should follow the rotation of your punch."
   ],
   "positive_observations": [],
   "priority_feedback": []

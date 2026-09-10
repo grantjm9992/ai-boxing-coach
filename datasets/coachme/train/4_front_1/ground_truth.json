@@ -20,12 +20,39 @@
     "Slightly angle your lead foot inward.",
     "Your core isn't engaged properly. Your front leg is too straight."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your front leg is too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Relax your upper body and keep your knees slightly bent."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "Relax your upper body and keep your knees slightly bent.",
     "Slightly angle your lead foot inward.",
-    "Your core isn't engaged properly.",
-    "Your front leg is too straight."
+    "Your core isn't engaged properly."
   ],
   "positive_observations": [],
   "priority_feedback": []

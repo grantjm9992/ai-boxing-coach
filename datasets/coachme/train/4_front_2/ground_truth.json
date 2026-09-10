@@ -20,12 +20,43 @@
     "Keep your shoulder movement minimal when throwing a punch.",
     "Core not engaged. Front leg is too straight."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Keep your upper body relaxed, bend your knees slightly, and tuck your chin down when throwing punches."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Keep your upper body relaxed, bend your knees slightly, and tuck your chin down when throwing punches."
+        },
+        {
+          "coach": 2,
+          "text": "Front leg is too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    }
+  ],
   "unmapped_sentences": [
     "Core not engaged.",
-    "Front leg is too straight.",
-    "Keep your shoulder movement minimal when throwing a punch.",
-    "Keep your upper body relaxed, bend your knees slightly, and tuck your chin down when throwing punches."
+    "Keep your shoulder movement minimal when throwing a punch."
   ],
   "positive_observations": [],
   "priority_feedback": []

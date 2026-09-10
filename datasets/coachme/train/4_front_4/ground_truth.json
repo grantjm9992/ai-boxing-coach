@@ -20,12 +20,29 @@
     "Stand with your back foot slightly to the side.",
     "You're not engaging your core. Your front leg is too straight."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Keep your upper body relaxed, slightly bend your knees, and make sure your punches are straight when you throw them."
+        },
+        {
+          "coach": 2,
+          "text": "Your front leg is too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    }
+  ],
   "unmapped_sentences": [
-    "Keep your upper body relaxed, slightly bend your knees, and make sure your punches are straight when you throw them.",
     "Stand with your back foot slightly to the side.",
-    "You're not engaging your core.",
-    "Your front leg is too straight."
+    "You're not engaging your core."
   ],
   "positive_observations": [],
   "priority_feedback": []

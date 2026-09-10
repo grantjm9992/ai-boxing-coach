@@ -50,6 +50,20 @@
       "map_note": "other hand up for defence"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Also, there's no slight bend in the knees."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -66,11 +80,27 @@
         }
       ],
       "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The back foot isn't elevated, the hips aren't rotating, the arms are too stiff, and a lack of relaxation in the body prevents the shoulders from moving and switching properly."
+        },
+        {
+          "coach": 2,
+          "text": "Only using hand strength, the arms and upper body are too stiff, and there's no hip rotation."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
-  "unmapped_sentences": [
-    "Also, there's no slight bend in the knees."
-  ],
+  "unmapped_sentences": [],
   "positive_observations": [],
   "priority_feedback": []
 }

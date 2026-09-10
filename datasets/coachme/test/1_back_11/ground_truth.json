@@ -50,6 +50,20 @@
       "map_note": "too upright"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The back foot isn't lifted up Your head needs to follow the punch rotation Your striking point is too low Your hips aren't fully rotating Your knees are standing too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",

@@ -20,11 +20,25 @@
     "When throwing a punch, keep your weight centered.",
     "Keep your chin tucked in."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back is a bit stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
     "Keep your chin tucked in.",
-    "When throwing a punch, keep your weight centered.",
-    "Your back is a bit stiff."
+    "When throwing a punch, keep your weight centered."
   ],
   "positive_observations": [],
   "priority_feedback": []

@@ -38,6 +38,24 @@
         }
       ],
       "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't lifting properly, your hips aren't rotating, your hands are too stiff, your body isn't relaxed enough, which is preventing your shoulders from moving and shifting naturally."
+        },
+        {
+          "coach": 2,
+          "text": "Only using arm strength, your arms and upper body are too stiff, and there's no rotation in the hips."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [

@@ -46,11 +46,24 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The hands are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "The body isn't relaxed, which prevents the shoulders from moving and alternating properly.",
-    "The hands are too stiff.",
     "There's no attention to defense when throwing punches.",
     "Your punches are not landing accurately, and your right hand isn't in a defensive position."
   ],

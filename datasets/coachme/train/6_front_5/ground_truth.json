@@ -48,13 +48,33 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, and your back foot isn't lifted."
+        },
+        {
+          "coach": 0,
+          "text": "Your body's also too rigid, and your knees aren't slightly bent."
+        },
+        {
+          "coach": 2,
+          "text": "Your arms are too stiff, and you're only using your hands for power."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Keep your feet shoulder-width apart.",
-    "Make sure to get into the proper basic stance.",
-    "Your arms are too stiff, and you're only using your hands for power.",
-    "Your body's also too rigid, and your knees aren't slightly bent."
+    "Make sure to get into the proper basic stance."
   ],
   "positive_observations": [],
   "priority_feedback": []

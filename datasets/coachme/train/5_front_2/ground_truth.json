@@ -20,12 +20,32 @@
     "The knuckles should be facing you.",
     "Your arms are too stiff; you're only using your hands for power."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The arms are too stiff, causing a lack of reach."
+        },
+        {
+          "coach": 0,
+          "text": "The back foot isn't elevated, and the body is also too rigid."
+        },
+        {
+          "coach": 2,
+          "text": "Your arms are too stiff; you're only using your hands for power."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "The arms are too stiff, causing a lack of reach.",
-    "The back foot isn't elevated, and the body is also too rigid.",
-    "The knuckles should be facing you.",
-    "Your arms are too stiff; you're only using your hands for power."
+    "The knuckles should be facing you."
   ],
   "positive_observations": [],
   "priority_feedback": []

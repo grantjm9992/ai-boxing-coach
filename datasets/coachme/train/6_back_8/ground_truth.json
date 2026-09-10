@@ -60,12 +60,32 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Hands are too stiff."
+        },
+        {
+          "coach": 0,
+          "text": "Body isn't relaxed, causing shoulders to struggle with proper left-right movement."
+        },
+        {
+          "coach": 2,
+          "text": "Use only the power of your hands, but both your upper body and hands are too stiff, and there's no rotation in your hips."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Also, your legs aren't bending into a half-squat.",
-    "Body isn't relaxed, causing shoulders to struggle with proper left-right movement.",
-    "Hands are too stiff.",
     "Striking point is too low."
   ],
   "positive_observations": [],

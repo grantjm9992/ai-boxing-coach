@@ -36,6 +36,20 @@
       "map_note": "centre of gravity"
     },
     {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your chin isn't tucked down."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -52,13 +66,28 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your shoulders are a bit stiff."
+        },
+        {
+          "coach": 2,
+          "text": "Also, your arms are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Also, your arms are too stiff.",
-    "You are rotating your upper body too much instead of using your hips.",
-    "Your chin isn't tucked down.",
-    "Your shoulders are a bit stiff."
+    "You are rotating your upper body too much instead of using your hips."
   ],
   "positive_observations": [],
   "priority_feedback": []

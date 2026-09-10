@@ -20,12 +20,32 @@
     "Keep your body and rear foot stable as you punch.",
     "Your arms are too stiff, you're only using your hands for power."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, which prevents them from extending fully."
+        },
+        {
+          "coach": 0,
+          "text": "Your back foot isn't raised up, and your body is also too rigid."
+        },
+        {
+          "coach": 2,
+          "text": "Your arms are too stiff, you're only using your hands for power."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "Keep your body and rear foot stable as you punch.",
-    "Your arms are too stiff, which prevents them from extending fully.",
-    "Your arms are too stiff, you're only using your hands for power.",
-    "Your back foot isn't raised up, and your body is also too rigid."
+    "Keep your body and rear foot stable as you punch."
   ],
   "positive_observations": [],
   "priority_feedback": []

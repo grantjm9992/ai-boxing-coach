@@ -38,12 +38,25 @@
         }
       ],
       "map_note": "hips not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Keep your body slightly crouched.",
     "You're not paying attention to defense when throwing punches.",
-    "Your arms are too stiff.",
     "Your back foot isn't elevated.",
     "Your body isn't relaxed, preventing proper shoulder movement for left-right exchanges.",
     "Your punches lack precision, and your right hand isn't in the defensive position."

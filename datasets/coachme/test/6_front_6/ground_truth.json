@@ -20,11 +20,41 @@
     "Keep your chin down, don't lift it.",
     "Your arms are too stiff; you're only using your hands for power. Your basic stance needs improvement."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Keep your chin down, don't lift it."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff, your back foot isn't properly lifted, your body is too rigid, and your knees aren't slightly bent."
+        },
+        {
+          "coach": 2,
+          "text": "Your arms are too stiff; you're only using your hands for power."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "Keep your chin down, don't lift it.",
-    "Your arms are too stiff, your back foot isn't properly lifted, your body is too rigid, and your knees aren't slightly bent.",
-    "Your arms are too stiff; you're only using your hands for power.",
     "Your basic stance needs improvement."
   ],
   "positive_observations": [],

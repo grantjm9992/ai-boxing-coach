@@ -34,6 +34,20 @@
         }
       ],
       "map_note": "keep hand up"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your knees are too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
     }
   ],
   "unmapped_sentences": [
@@ -41,7 +55,6 @@
     "Over-rotating the body, not standing in a fighting stance, and punching too low.",
     "Raise the heel of your back foot.",
     "Your body rotation angle is too wide.",
-    "Your knees are too straight.",
     "Your punching point should be in front of your eyes."
   ],
   "positive_observations": [],

@@ -20,12 +20,43 @@
     "When throwing the rear hand punch, extend it a bit longer.",
     "Your hands are too stiff."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arm and shoulder are too tense, and your front knee is too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arm and shoulder are too tense, and your front knee is too straight."
+        },
+        {
+          "coach": 2,
+          "text": "Your hands are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
     "When throwing punches, your rear foot's toes aren't positioned correctly.",
-    "When throwing the rear hand punch, extend it a bit longer.",
-    "Your arm and shoulder are too tense, and your front knee is too straight.",
-    "Your hands are too stiff."
+    "When throwing the rear hand punch, extend it a bit longer."
   ],
   "positive_observations": [],
   "priority_feedback": []

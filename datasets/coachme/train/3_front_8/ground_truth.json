@@ -62,11 +62,24 @@
         }
       ],
       "map_note": "not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff without generating power from your body."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Keep your body angled.",
-    "Your arms are too stiff without generating power from your body.",
     "Your back foot needs to be on the ball."
   ],
   "positive_observations": [],

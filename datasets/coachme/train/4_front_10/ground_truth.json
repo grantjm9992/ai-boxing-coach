@@ -20,13 +20,43 @@
     "Bend your body slightly forward.",
     "Core isn't engaged; your front leg is too straight."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Keep your chin down when you punch."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Slightly bend your knees."
+        },
+        {
+          "coach": 2,
+          "text": "Core isn't engaged; your front leg is too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    }
+  ],
   "unmapped_sentences": [
     "Bend your body slightly forward.",
-    "Core isn't engaged; your front leg is too straight.",
-    "Keep your chin down when you punch.",
     "Keep your upper body relaxed.",
-    "Slightly bend your knees.",
     "When you punch, extend your arm straight."
   ],
   "positive_observations": [],

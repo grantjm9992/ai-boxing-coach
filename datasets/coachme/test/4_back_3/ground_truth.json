@@ -50,6 +50,20 @@
       "map_note": "keep hand up"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Be careful not to lock out your front leg when punching."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -66,12 +80,27 @@
         }
       ],
       "map_note": "arm-only, no rotation"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Both shoulders are too tense."
+        },
+        {
+          "coach": 2,
+          "text": "Your hands are too stiff; you're not using the power from your lower body."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
-  "unmapped_sentences": [
-    "Be careful not to lock out your front leg when punching.",
-    "Both shoulders are too tense."
-  ],
+  "unmapped_sentences": [],
   "positive_observations": [],
   "priority_feedback": []
 }

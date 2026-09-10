@@ -1,6 +1,6 @@
 {
   "_doc": "Canonical boxing-fault taxonomy — the single source of truth for evaluation. See README.md in this directory for why it exists and how the two engines are reconciled. Codes are identity, not display text: once shipped, a code's meaning must not drift. Add codes; never renumber or repurpose. Keep in sync with app/lib/analysis/error_codes.dart (Dart) and the rule `id`s in src/boxing_coach/analysis/rules/ (Python).",
-  "version": 1,
+  "version": 2,
 
   "severities": {
     "major": {"weight": 5},
@@ -18,7 +18,8 @@
     "body_position": "Head position, uprightness, centre of mass",
     "recovery": "Punch retraction / hand return",
     "head_movement": "Slipping and off-line head movement",
-    "defence": "Defensive posture during/after exchanges"
+    "defence": "Defensive posture during/after exchanges",
+    "tension": "Muscular tension / lack of relaxation"
   },
 
   "codes": {
@@ -28,6 +29,7 @@
     "GUARD_004": {"category": "guard", "label": "Rear drops during lead punch", "default_severity": "moderate", "dart": "guardRearDropsDuringLead", "python": ["guard_return"]},
     "GUARD_005": {"category": "guard", "label": "Slow guard recovery after punch", "default_severity": "moderate", "dart": "guardSlowRecovery", "python": ["guard_return"]},
     "GUARD_006": {"category": "guard", "label": "Both hands low", "default_severity": "major", "dart": "guardBothHandsLow", "python": ["hands_up"]},
+    "GUARD_007": {"category": "guard", "label": "Chin exposed / not tucked", "default_severity": "moderate", "dart": "guardChinExposed", "python": []},
 
     "ROT_001": {"category": "rotation", "label": "Insufficient rotation", "default_severity": "moderate", "dart": "rotInsufficient", "python": ["hip_rotation"]},
     "ROT_002": {"category": "rotation", "label": "Over-rotation", "default_severity": "moderate", "dart": "rotOver", "python": ["hip_rotation"]},
@@ -61,12 +63,14 @@
     "POS_003": {"category": "body_position", "label": "Too upright", "default_severity": "minor", "dart": "posTooUpright", "python": []},
     "POS_004": {"category": "body_position", "label": "Position not recovered", "default_severity": "moderate", "dart": "posNotRecovered", "python": []},
     "POS_005": {"category": "body_position", "label": "Off centre after punch", "default_severity": "moderate", "dart": "posOffCentreAfterPunch", "python": []},
+    "POS_006": {"category": "body_position", "label": "Insufficient knee bend / legs too straight", "default_severity": "moderate", "dart": "posInsufficientKneeBend", "python": []},
 
     "REC_001": {"category": "recovery", "label": "Slow retraction", "default_severity": "moderate", "dart": "recSlow", "python": ["guard_return"]},
     "REC_002": {"category": "recovery", "label": "Hand not returned", "default_severity": "major", "dart": "recHandNotReturned", "python": ["guard_return"]},
     "REC_003": {"category": "recovery", "label": "Overextended", "default_severity": "moderate", "dart": "recOverextended", "python": []},
 
-    "HEAD_001": {"category": "head_movement", "label": "Head static / on centre line", "default_severity": "minor", "dart": "headStatic", "python": ["head_movement"]}
+    "HEAD_001": {"category": "head_movement", "label": "Head static / on centre line", "default_severity": "minor", "dart": "headStatic", "python": ["head_movement"]},
+    "TENSE_001": {"category": "tension", "label": "Upper body too tense / rigid", "default_severity": "minor", "dart": "tenseUpperBody", "python": []}
   },
 
   "python_rules": {

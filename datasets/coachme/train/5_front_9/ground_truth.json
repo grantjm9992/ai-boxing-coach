@@ -20,14 +20,34 @@
     "Your lower body isn't involved at all in your punches, but the power from your punching hand is decent. You should incorporate more body rotation to generate power. When you throw your punch, there’s a slight hesitation, which means your body is effectively braking, and that’s good. However, your elbows flare out, and you're swinging your punches.",
     "If your arms are too stiff, you're only using your hands for power."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too tense, which is preventing you from extending them properly."
+        },
+        {
+          "coach": 0,
+          "text": "Your back foot needs to be on the ball, and your body is too stiff."
+        },
+        {
+          "coach": 2,
+          "text": "If your arms are too stiff, you're only using your hands for power."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
     "However, your elbows flare out, and you're swinging your punches.",
-    "If your arms are too stiff, you're only using your hands for power.",
     "When you throw your punch, there’s a slight hesitation, which means your body is effectively braking, and that’s good.",
     "You should incorporate more body rotation to generate power.",
-    "Your arms are too tense, which is preventing you from extending them properly.",
-    "Your back foot needs to be on the ball, and your body is too stiff.",
     "Your lower body isn't involved at all in your punches, but the power from your punching hand is decent."
   ],
   "positive_observations": [],

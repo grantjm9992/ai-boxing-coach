@@ -48,12 +48,29 @@
         }
       ],
       "map_note": "rear heel not pivoting (kinetic chain)"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The arms are too stiff, the back foot isn't lifted, the body is also too rigid, the knees aren't slightly bent, and the body's center of gravity is too high."
+        },
+        {
+          "coach": 2,
+          "text": "Your arms are too stiff and you're only using your hands for power."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "Make sure to establish a proper stance.",
-    "The jab should be at the height of your eyes.",
-    "Your arms are too stiff and you're only using your hands for power."
+    "The jab should be at the height of your eyes."
   ],
   "positive_observations": [],
   "priority_feedback": []

@@ -50,6 +50,20 @@
       "map_note": "feet/body too square"
     },
     {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "Keep your chin tucked down a bit."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -68,9 +82,7 @@
       "map_note": "hips not rotating"
     }
   ],
-  "unmapped_sentences": [
-    "Keep your chin tucked down a bit."
-  ],
+  "unmapped_sentences": [],
   "positive_observations": [],
   "priority_feedback": []
 }

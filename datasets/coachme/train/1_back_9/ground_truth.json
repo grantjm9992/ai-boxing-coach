@@ -36,6 +36,20 @@
       "map_note": "stance narrow"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The knees are too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -56,7 +70,6 @@
   ],
   "unmapped_sentences": [
     "The back foot isn't elevated.",
-    "The knees are too straight.",
     "The strike point is too low.",
     "When you throw a punch, make sure it goes out straight and comes back straight."
   ],

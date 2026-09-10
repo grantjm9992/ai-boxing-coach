@@ -20,11 +20,28 @@
     "Lift your back foot a bit higher.",
     "Your hands are too stiff."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back foot isn't positioned correctly when you throw a punch, and your arms and shoulders are too tense."
+        },
+        {
+          "coach": 2,
+          "text": "Your hands are too stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "Lift your back foot a bit higher.",
-    "Your back foot isn't positioned correctly when you throw a punch, and your arms and shoulders are too tense.",
-    "Your hands are too stiff."
+    "Lift your back foot a bit higher."
   ],
   "positive_observations": [],
   "priority_feedback": []

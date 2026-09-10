@@ -34,12 +34,52 @@
         }
       ],
       "map_note": "hand(s) low"
+    },
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Keep your chin tucked down when you punch."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Keep your front knee slightly bent Your basic stance has your hands too low Your front knee is too straight when you throw punches."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 1,
+          "text": "When you punch with your lead hand, make sure to keep your rear hand tight."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
-    "Avoid leaning your upper body forward too much when your punch is fully extended.",
-    "Keep your chin tucked down when you punch.",
-    "When you punch with your lead hand, make sure to keep your rear hand tight."
+    "Avoid leaning your upper body forward too much when your punch is fully extended."
   ],
   "positive_observations": [],
   "priority_feedback": []

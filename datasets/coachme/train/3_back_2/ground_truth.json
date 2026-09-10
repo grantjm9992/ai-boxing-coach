@@ -50,6 +50,20 @@
       "map_note": "feet/body too square"
     },
     {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "The knees are too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    },
+    {
       "code": "ROT_001",
       "present": true,
       "severity": "moderate",
@@ -70,8 +84,7 @@
   ],
   "unmapped_sentences": [
     "Keep your balance steady with both feet planted firmly.",
-    "The back foot isn't on the ball.",
-    "The knees are too straight."
+    "The back foot isn't on the ball."
   ],
   "positive_observations": [],
   "priority_feedback": []

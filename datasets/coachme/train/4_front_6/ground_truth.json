@@ -20,12 +20,29 @@
     "Lower your body slightly.",
     "Your core isn't engaged. Your front leg is too straight."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "high",
+      "coach_agreement": 2,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Keep your upper body relaxed, slightly bend your knees, and make sure to punch straight."
+        },
+        {
+          "coach": 2,
+          "text": "Your front leg is too straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
+    }
+  ],
   "unmapped_sentences": [
-    "Keep your upper body relaxed, slightly bend your knees, and make sure to punch straight.",
     "Lower your body slightly.",
-    "Your core isn't engaged.",
-    "Your front leg is too straight."
+    "Your core isn't engaged."
   ],
   "positive_observations": [],
   "priority_feedback": []

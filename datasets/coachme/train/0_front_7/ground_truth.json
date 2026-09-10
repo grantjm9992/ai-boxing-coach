@@ -48,13 +48,29 @@
         }
       ],
       "map_note": "leaning forward"
+    },
+    {
+      "code": "POS_006",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your lead leg knee is too straight."
+        },
+        {
+          "coach": 2,
+          "text": "When you punch, make sure the knee of your lead leg isn't locked straight."
+        }
+      ],
+      "map_note": "knees too straight / no bend"
     }
   ],
   "unmapped_sentences": [
     "Keep your chin tucked when you throw a punch.",
-    "When throwing a punch, keep your weight centered.",
-    "When you punch, make sure the knee of your lead leg isn't locked straight.",
-    "Your lead leg knee is too straight."
+    "When throwing a punch, keep your weight centered."
   ],
   "positive_observations": [],
   "priority_feedback": []

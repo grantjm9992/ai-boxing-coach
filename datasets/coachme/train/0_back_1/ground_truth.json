@@ -20,11 +20,25 @@
     "When throwing a rear straight punch, make sure your body movements are not too large.",
     "Your chin isn't tucked properly."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your chin isn't tucked properly."
+        }
+      ],
+      "map_note": "chin not tucked"
+    }
+  ],
   "unmapped_sentences": [
     "When throwing a rear straight punch, make sure your body movements are not too large.",
-    "You need to relax your waist.",
-    "Your chin isn't tucked properly."
+    "You need to relax your waist."
   ],
   "positive_observations": [],
   "priority_feedback": []

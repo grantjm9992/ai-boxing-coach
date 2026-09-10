@@ -20,11 +20,38 @@
     "When throwing a punch, keep your elbows in.",
     "Your chin isn't tucked in properly."
   ],
-  "observations": [],
+  "observations": [
+    {
+      "code": "GUARD_007",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 2,
+          "text": "Your chin isn't tucked in properly."
+        }
+      ],
+      "map_note": "chin not tucked"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your back feels a bit stiff."
+        }
+      ],
+      "map_note": "upper-body tension"
+    }
+  ],
   "unmapped_sentences": [
-    "When throwing a punch, keep your elbows in.",
-    "Your back feels a bit stiff.",
-    "Your chin isn't tucked in properly."
+    "When throwing a punch, keep your elbows in."
   ],
   "positive_observations": [],
   "priority_feedback": []

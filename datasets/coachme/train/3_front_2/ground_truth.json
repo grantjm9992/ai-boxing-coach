@@ -66,6 +66,20 @@
         }
       ],
       "map_note": "squared up on the shot"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your body is too squared up, your arms are too stiff, and your back heel needs to be off the ground."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [

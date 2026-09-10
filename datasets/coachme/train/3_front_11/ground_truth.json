@@ -52,11 +52,24 @@
         }
       ],
       "map_note": "body not rotating"
+    },
+    {
+      "code": "TENSE_001",
+      "present": true,
+      "severity": "moderate",
+      "confidence": "medium",
+      "coach_agreement": 1,
+      "source_sentences": [
+        {
+          "coach": 0,
+          "text": "Your arms are too stiff and lack natural rotation."
+        }
+      ],
+      "map_note": "upper-body tension"
     }
   ],
   "unmapped_sentences": [
     "When throwing punches, extend straight out and bring them straight back.",
-    "Your arms are too stiff and lack natural rotation.",
     "Your back foot needs to be elevated."
   ],
   "positive_observations": [],
