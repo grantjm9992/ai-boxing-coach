@@ -105,7 +105,7 @@ def _print_report(analysis: RoundAnalysis, style_label: str | None = None) -> No
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Analyse a shadow-boxing video.")
-    parser.add_argument("video", help="path to the video file")
+    parser.add_argument("video", nargs="?", help="path to the video file (omit if --from-pose)")
     parser.add_argument(
         "--stance", choices=["orthodox", "southpaw"], default="orthodox"
     )
@@ -124,6 +124,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--notes", default="")
     parser.add_argument("--json", action="store_true", help="emit JSON instead of a report")
     parser.add_argument(
+        "--from-pose", metavar="PATH",
+        help="analyse a pose sequence JSON (golden-fixture wire format) instead of "
+             "a video — skips pose estimation, so no mediapipe/video is needed. "
+             "Used to score pose-only clips (e.g. CoachMe) through the engine.",
+    )
+    parser.add_argument(
         "--dump-pose", metavar="PATH",
         help="write the estimated pose sequence (golden-fixture wire format) to "
              "PATH ('-' for stdout) and exit — feeds the Dart engine headlessly",
@@ -138,14 +144,25 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    # Import the estimator lazily so --help and JSON schema work without mediapipe.
-    from .pose_estimation import load_mediapipe_estimator
-
-    estimator = load_mediapipe_estimator(sample_every_ms=args.sample_every_ms)
-    pipeline = AnalysisPipeline(estimator, PoseOnlyAdapter())
-
     drill = _build_drill(args)
-    sequence = pipeline.estimate(args.video)
+
+    if args.from_pose:
+        # Analyse a pre-computed pose sequence — no estimator, no mediapipe, no
+        # video. Lets pose-only clips (e.g. CoachMe SMPL) run through the engine.
+        from .golden_fixtures import sequence_from_json
+
+        with open(args.from_pose) as fh:
+            sequence = sequence_from_json(json.load(fh))
+        pipeline = AnalysisPipeline(None, PoseOnlyAdapter())
+    else:
+        if not args.video:
+            parser.error("a video path is required unless --from-pose is given")
+        # Import the estimator lazily so --help and JSON schema work without mediapipe.
+        from .pose_estimation import load_mediapipe_estimator
+
+        estimator = load_mediapipe_estimator(sample_every_ms=args.sample_every_ms)
+        pipeline = AnalysisPipeline(estimator, PoseOnlyAdapter())
+        sequence = pipeline.estimate(args.video)
 
     if args.dump_pose:
         from .golden_fixtures import sequence_to_json
@@ -161,6 +178,8 @@ def main(argv: list[str] | None = None) -> int:
     analysis = pipeline.analyse_sequence(sequence, drill)
 
     if args.stills:
+        if not args.video:
+            parser.error("--stills needs a video (not available with --from-pose)")
         from .rendering import StillRenderer
 
         analysis.correction_priorities = StillRenderer().render(

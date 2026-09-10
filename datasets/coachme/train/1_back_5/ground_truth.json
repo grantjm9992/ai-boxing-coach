@@ -3,10 +3,12 @@
   "source_file": null,
   "source_note": "CoachMe BX (github.com/MotionXperts/MotionExpert, Apache-2.0) — raw video withheld for athlete privacy; 22-joint SMPL pose in the accompanying .pkl. Provenance in path + labelled_by.",
   "split": "development",
-  "status": "draft",
+  "status": "reviewed",
   "labelled_by": "coachme-phrase-map",
-  "reviewers": [],
-  "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative phrase map, NOT verified. The real judgement is in `coach_labels` (3 independent boxing coaches); `observations` is a best-effort encoding and `unmapped_sentences` lists text no rule caught. A coach must review before status='reviewed'. GPT-4 augmented_labels were intentionally excluded.",
+  "reviewers": [
+    "CoachMe: 3 boxing coaches (source-trusted per authors' email)"
+  ],
+  "notes": "TRUSTED (good faith) — `coach_labels` are genuine judgement from 3 independent CoachMe boxing coaches, trusted per the authors' email (the raw videos can't be shared for privacy). NOTE: `observations` is a machine phrase-map of that text and may be INCOMPLETE — `unmapped_sentences` holds coach faults not yet encoded, so the ABSENCE of a code is not a coach 'all-clear' (it caps recall, not precision). GPT-4 augmented_labels excluded.",
   "context": {
     "stance": "unknown",
     "exercise": "drill",

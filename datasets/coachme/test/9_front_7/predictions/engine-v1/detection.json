@@ -1,0 +1,54 @@
+{
+  "overall_summary": "0 punches thrown. Main thing to fix: Your lead hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+  "specific_observations": [
+    {
+      "rule_id": "hands_up",
+      "category": "defence",
+      "severity": "minor",
+      "coaching_text": "Your lead hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "timestamp_ms": 1060.0,
+      "metrics": {
+        "down_fraction": 0.37
+      },
+      "highlight_landmarks": [
+        15
+      ]
+    }
+  ],
+  "positive_notes": [],
+  "correction_priorities": [
+    {
+      "priority": 1,
+      "category": "defence",
+      "description": "Your lead hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "suggested_drill": "Jab\u2013return shadow drill: throw the jab, snap the hand back to your cheek before resetting.",
+      "example_timestamp_ms": 1060.0,
+      "highlight_landmarks": [
+        15
+      ],
+      "still_path": null
+    }
+  ],
+  "metrics": {
+    "punches_thrown": 0,
+    "guard_return_rate": null,
+    "punch_mix": {},
+    "values": {
+      "body_scale": 0.2133,
+      "output_per_min": 0.0,
+      "mobility": 0.575,
+      "ground_coverage": 0.044,
+      "torso_lean_deg": 0.979,
+      "body_shot_ratio": 0.0,
+      "jab_ratio": 0.0,
+      "punch_variety": 0.0
+    }
+  },
+  "flagged_moments": [
+    {
+      "timestamp_ms": 1060.0,
+      "reason": "Your lead hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "severity": "minor"
+    }
+  ]
+}

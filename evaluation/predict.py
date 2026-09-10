@@ -70,6 +70,21 @@ def _detection_cmd(engine_cmd: list[str], video: Path, ctx: dict) -> list[str]:
     return cmd
 
 
+def _from_pose_cmd(engine_cmd: list[str], pose: Path, ctx: dict) -> list[str]:
+    """Build the `boxing-coach --from-pose` invocation (pose-only clips)."""
+    cmd = [*engine_cmd, "--from-pose", str(pose), "--json"]
+    stance = ctx.get("stance")
+    if stance in ENGINE_STANCES:
+        cmd += ["--stance", stance]
+    style = ctx.get("style")
+    if style in ENGINE_STYLES:
+        cmd += ["--style", style]
+    school = ctx.get("school")
+    if school in ENGINE_SCHOOLS:
+        cmd += ["--school", school]
+    return cmd
+
+
 def _resolve_video(gt: dict, gt_path: Path, videos_dir: Path) -> Path | None:
     """Find the clip's source video: absolute, next to the labels, or in videos_dir."""
     src = gt.get("source_file")
@@ -88,7 +103,7 @@ def _write(pred_path: Path, payload: dict) -> None:
 
 def predict(dataset_dir: Path, version: str, layer: str, *,
             engine_cmd: list[str], videos_dir: Path, import_dir: Path | None,
-            force: bool, dry_run: bool, only: set[str] | None) -> int:
+            from_pose: bool, force: bool, dry_run: bool, only: set[str] | None) -> int:
     gt_paths = sorted(dataset_dir.glob("*/ground_truth.json"))
     if not gt_paths:
         print(f"no ground_truth.json under {dataset_dir}", file=sys.stderr)
@@ -109,11 +124,18 @@ def predict(dataset_dir: Path, version: str, layer: str, *,
             continue
 
         if layer == "detection":
-            video = _resolve_video(gt, gt_path, videos_dir)
-            if video is None:
-                failed.append(f"{clip} (video {gt.get('source_file')!r} not found)")
-                continue
-            cmd = _detection_cmd(engine_cmd, video, gt.get("context", {}))
+            if from_pose:
+                pose = gt_path.parent / "pose.json"
+                if not pose.is_file():
+                    failed.append(f"{clip} (no pose.json)")
+                    continue
+                cmd = _from_pose_cmd(engine_cmd, pose, gt.get("context", {}))
+            else:
+                video = _resolve_video(gt, gt_path, videos_dir)
+                if video is None:
+                    failed.append(f"{clip} (video {gt.get('source_file')!r} not found)")
+                    continue
+                cmd = _detection_cmd(engine_cmd, video, gt.get("context", {}))
             if dry_run:
                 print(f"{clip}: {shlex.join(cmd)} -> {_rel(pred_path)}")
                 continue
@@ -183,6 +205,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="where source_file videos live (default: repo root)")
     ap.add_argument("--import-dir", type=Path, default=None,
                     help="coaching layer: dir of exported <video_id>.json reports")
+    ap.add_argument("--from-pose", action="store_true",
+                    help="detection layer: analyse each clip's pose.json via the "
+                         "engine (no video needed) — for pose-only clips like CoachMe")
     ap.add_argument("--only", nargs="*", metavar="VIDEO_ID",
                     help="restrict to these clip ids")
     ap.add_argument("--force", action="store_true", help="overwrite existing prediction files")
@@ -197,7 +222,7 @@ def main(argv: list[str] | None = None) -> int:
     return predict(
         args.dataset, args.version, args.layer,
         engine_cmd=engine_cmd, videos_dir=args.videos_dir, import_dir=args.import_dir,
-        force=args.force, dry_run=args.dry_run,
+        from_pose=args.from_pose, force=args.force, dry_run=args.dry_run,
         only=set(args.only) if args.only else None,
     )
 

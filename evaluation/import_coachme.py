@@ -98,7 +98,30 @@ def _resolve(code: str, motion_type: str) -> str:
     return code
 
 
-def convert_entry(entry: dict, valid_codes: set[str]) -> dict:
+_NOTES = {
+    "draft": (
+        "DRAFT — coach free-text auto-mapped to taxonomy codes by a conservative "
+        "phrase map, NOT verified. The real judgement is in `coach_labels` (3 "
+        "independent boxing coaches); `observations` is a best-effort encoding and "
+        "`unmapped_sentences` lists text no rule caught. A coach must review before "
+        "status='reviewed'. GPT-4 augmented_labels were intentionally excluded."
+    ),
+    "reviewed": (
+        "TRUSTED (good faith) — `coach_labels` are genuine judgement from 3 "
+        "independent CoachMe boxing coaches, trusted per the authors' email (the "
+        "raw videos can't be shared for privacy). NOTE: `observations` is a "
+        "machine phrase-map of that text and may be INCOMPLETE — `unmapped_sentences` "
+        "holds coach faults not yet encoded, so the ABSENCE of a code is not a "
+        "coach 'all-clear' (it caps recall, not precision). GPT-4 augmented_labels "
+        "excluded."
+    ),
+}
+_REVIEWERS = {
+    "reviewed": ["CoachMe: 3 boxing coaches (source-trusted per authors' email)"],
+}
+
+
+def convert_entry(entry: dict, valid_codes: set[str], status: str = "draft") -> dict:
     video_name = entry.get("video_name", "unknown")
     motion = entry.get("motion_type", "unknown")
     coach_labels = [l for l in entry.get("labels", []) if isinstance(l, str)]
@@ -142,6 +165,11 @@ def convert_entry(entry: dict, valid_codes: set[str]) -> dict:
             "map_note": rec["note"],
         })
 
+    # Don't promote a clip to 'reviewed' with no encoded faults — that would
+    # assert the coach saw nothing, but they did (it's in coach_labels /
+    # unmapped_sentences); the phrase map just caught none. Keep it draft.
+    effective_status = status if observations else "draft"
+
     return {
         "video_id": video_name,
         "source_file": None,
@@ -149,15 +177,10 @@ def convert_entry(entry: dict, valid_codes: set[str]) -> dict:
                        "— raw video withheld for athlete privacy; 22-joint SMPL pose "
                        "in the accompanying .pkl. Provenance in path + labelled_by.",
         "split": "development",
-        "status": "draft",
+        "status": effective_status,
         "labelled_by": "coachme-phrase-map",
-        "reviewers": [],
-        "notes": "DRAFT — coach free-text auto-mapped to taxonomy codes by a "
-                 "conservative phrase map, NOT verified. The real judgement is in "
-                 "`coach_labels` (3 independent boxing coaches); `observations` is "
-                 "a best-effort encoding and `unmapped_sentences` lists text no "
-                 "rule caught. A coach must review before status='reviewed'. "
-                 "GPT-4 augmented_labels were intentionally excluded.",
+        "reviewers": _REVIEWERS.get(effective_status, []),
+        "notes": _NOTES.get(effective_status, _NOTES["draft"]),
         "context": {
             "stance": "unknown",
             "exercise": "drill",
@@ -181,6 +204,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--split", required=True, help="subsplit dir name, e.g. train / test")
     ap.add_argument("--out", type=Path, default=ROOT / "datasets" / "coachme",
                     help="output root (default datasets/coachme)")
+    ap.add_argument("--status", default="draft", choices=["draft", "reviewed"],
+                    help="label status. 'reviewed' trusts the CoachMe coach text in "
+                         "good faith (the code mapping stays machine-derived — see the "
+                         "note it writes). Default 'draft'.")
     ap.add_argument("--dry-run", action="store_true", help="report stats, write nothing")
     args = ap.parse_args(argv)
 
@@ -193,7 +220,7 @@ def main(argv: list[str] | None = None) -> int:
     code_freq: dict[str, int] = {}
     clips_with_obs = 0
     for entry in entries:
-        gt = convert_entry(entry, valid_codes)
+        gt = convert_entry(entry, valid_codes, status=args.status)
         n_obs += len(gt["observations"])
         n_unmapped += len(gt["unmapped_sentences"])
         clips_with_obs += 1 if gt["observations"] else 0

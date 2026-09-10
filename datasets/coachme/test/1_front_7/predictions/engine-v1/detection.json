@@ -1,0 +1,63 @@
+{
+  "overall_summary": "1 punches thrown. Main thing to fix: Your rear leg is locked out straight. Keep a soft bend in the knees \u2014 that's your spring and your base to turn on.",
+  "specific_observations": [
+    {
+      "rule_id": "knee_bend",
+      "category": "footwork",
+      "severity": "minor",
+      "coaching_text": "Your rear leg is locked out straight. Keep a soft bend in the knees \u2014 that's your spring and your base to turn on.",
+      "timestamp_ms": null,
+      "metrics": {
+        "knee_angle_deg": 168.5
+      },
+      "highlight_landmarks": [
+        26
+      ]
+    },
+    {
+      "rule_id": "guard_return",
+      "category": "defence",
+      "severity": "positive",
+      "coaching_text": "Clean guard return all round \u2014 hands came straight back to guard.",
+      "timestamp_ms": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight_landmarks": []
+    }
+  ],
+  "positive_notes": [
+    "Clean guard return all round \u2014 hands came straight back to guard."
+  ],
+  "correction_priorities": [
+    {
+      "priority": 1,
+      "category": "footwork",
+      "description": "Your rear leg is locked out straight. Keep a soft bend in the knees \u2014 that's your spring and your base to turn on.",
+      "suggested_drill": "In-and-out drill: two minutes never letting both feet stay planted for more than a beat.",
+      "example_timestamp_ms": null,
+      "highlight_landmarks": [
+        26
+      ],
+      "still_path": null
+    }
+  ],
+  "metrics": {
+    "punches_thrown": 1,
+    "guard_return_rate": 1.0,
+    "punch_mix": {
+      "jab": 1
+    },
+    "values": {
+      "body_scale": 0.2014,
+      "output_per_min": 41.096,
+      "mobility": 0.79,
+      "ground_coverage": 0.21,
+      "torso_lean_deg": 6.478,
+      "body_shot_ratio": 0.0,
+      "jab_ratio": 1.0,
+      "punch_variety": 1.0
+    }
+  },
+  "flagged_moments": []
+}
