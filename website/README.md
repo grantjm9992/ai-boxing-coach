@@ -13,6 +13,14 @@ cd website
 python3 -m http.server 8080     # then visit http://localhost:8080
 ```
 
+## Deploy / cache-busting
+
+Assets are served with `cache-control: max-age=14400` (4h), so they're referenced
+with a version query — `styles.css?v=YYYYMMDD`, `main.js?v=YYYYMMDD`. **Bump that
+`?v=` value (in `index.html` + the three legal pages) whenever you change
+`styles.css` or `main.js`**, or returning visitors keep the cached copy for hours
+after a deploy.
+
 ## Files
 
 | File | What |
