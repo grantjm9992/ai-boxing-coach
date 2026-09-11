@@ -117,6 +117,35 @@ def normalise_coaching(report: dict, taxonomy: dict) -> list[Prediction]:
     return out
 
 
+def normalise_dart_detection(analysis: dict, taxonomy: dict) -> list[Prediction]:
+    """Dart `RoundAnalysis.toJson()` → predictions.
+
+    The Dart engine (the shipping app) emits `specificObservations`, each already
+    carrying a FINE code (e.g. GUARD_001) plus camelCase keys. Scored on the fine
+    code directly, like the coaching layer — this is how you benchmark the actual
+    app engine (which has rules the Python reference lacks, e.g. balance/lean).
+    Positive notes carry no fault code and are skipped.
+    """
+    codes = taxonomy["codes"]
+    out: list[Prediction] = []
+    for obs in analysis.get("specificObservations", []):
+        code = obs.get("code")
+        severity = normalise_severity(obs.get("severity"))
+        if not isinstance(code, str) or not code or severity is None or severity == "positive":
+            continue
+        spec = codes.get(code)
+        ts_ms = obs.get("timestampMs")
+        out.append(Prediction(
+            source=code,
+            candidate_codes=frozenset({code}),
+            category=spec["category"] if spec else obs.get("category"),
+            severity=severity,
+            timestamps_s=() if ts_ms is None else (float(ts_ms) / 1000.0,),
+            confidence=float(obs.get("confidence", 1.0)),
+        ))
+    return out
+
+
 @dataclass(frozen=True)
 class Truth:
     """One ground-truth observation, enriched with its taxonomy category."""
