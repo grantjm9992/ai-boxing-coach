@@ -165,8 +165,10 @@
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        // New-style publishable keys (sb_publishable_…) are NOT JWTs. Sent as a
+        // Bearer token they break anon role resolution and every insert fails
+        // RLS (42501); the `apikey` header alone maps correctly to `anon`.
         'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
         // Duplicate (email, list) is a success, not an error.
         'Prefer': 'resolution=ignore-duplicates,return=minimal'
       },

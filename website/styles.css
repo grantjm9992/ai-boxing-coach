@@ -143,6 +143,9 @@ h1, h2, h3, .section__title, .final__title, .hero__title {
   display: flex; flex-direction: column; gap: 6px; padding: 12px var(--pad) 22px;
   border-bottom: 1px solid var(--line); background: var(--bg-2);
 }
+/* The `hidden` attribute must win over the display:flex above — otherwise the
+   menu is permanently open on mobile (a class selector beats the UA [hidden]). */
+.nav__mobile[hidden] { display: none; }
 .nav__mobile a { padding: 12px 4px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); }
 .nav__mobile a:last-child { margin-top: 10px; border: 0; color: #fff; justify-content: center; }
 

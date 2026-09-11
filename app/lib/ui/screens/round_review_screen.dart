@@ -115,6 +115,13 @@ class _ClipTile extends StatelessWidget {
           style: const TextStyle(color: AppTheme.textSecondary),
         ),
         enabled: exists,
+        trailing: exists
+            ? IconButton(
+                icon: const Icon(Icons.save_alt, color: AppTheme.textSecondary),
+                tooltip: 'Save video to phone',
+                onPressed: () => saveClipVideo(context, clip),
+              )
+            : null,
         onTap: exists
             ? () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -124,6 +131,33 @@ class _ClipTile extends StatelessWidget {
               )
             : null,
       ),
+    );
+  }
+}
+
+/// Hands the round's raw `.mp4` to the OS share sheet so it can be saved out of
+/// the app (Photos / Files). Clips are auto-deleted after seven days, so this is
+/// how footage is kept — e.g. shadow-boxing sessions saved for later labelling.
+Future<void> saveClipVideo(BuildContext context, RoundClip clip) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final file = File(clip.path);
+  if (!file.existsSync()) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Video file is no longer available')),
+    );
+    return;
+  }
+  try {
+    await SharePlus.instance.share(
+      ShareParams(
+        files: <XFile>[XFile(file.path, mimeType: 'video/mp4')],
+        subject: 'Boxing round video',
+        text: clip.title ?? clip.positionLabel,
+      ),
+    );
+  } on Object catch (error) {
+    messenger.showSnackBar(
+      SnackBar(content: Text('Could not save video: $error')),
     );
   }
 }
@@ -395,6 +429,11 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
         backgroundColor: Colors.black,
         title: Text(widget.clip.title ?? widget.clip.positionLabel),
         actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.save_alt),
+            tooltip: 'Save video to phone',
+            onPressed: () => saveClipVideo(context, widget.clip),
+          ),
           if (_result != null)
             IconButton(
               icon: const Icon(Icons.ios_share),
