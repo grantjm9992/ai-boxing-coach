@@ -1,12 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
+import '../../domain/round_clip.dart';
 import '../../domain/session_record.dart';
 import '../../domain/skill_category.dart';
+import '../../services/clip_store.dart';
 import '../../services/session_history_store.dart';
 import '../../services/sync/history_reader.dart';
 import '../format.dart';
 import '../theme.dart';
 import '../widgets/category_widgets.dart';
+import 'round_review_screen.dart' show saveClipVideo;
 
 /// Session history and the weekly category balance — the spec's MVP "am I
 /// training in balance?" view, rolled up across every completed session.
@@ -187,6 +192,11 @@ class _SessionDetailScreenState extends State<_SessionDetailScreen> {
   HistorySession? _cloud;
   bool _loading = true;
 
+  /// Local clip videos for this session that are still on disk (the retention
+  /// sweep deletes them after 7 days). Used for "Save video" so footage — e.g.
+  /// a shadow round — can be kept for later labelling.
+  List<RoundClip> _clips = <RoundClip>[];
+
   @override
   void initState() {
     super.initState();
@@ -200,11 +210,26 @@ class _SessionDetailScreenState extends State<_SessionDetailScreen> {
     } on Object {
       cloud = null; // any failure → local fallback
     }
+    List<RoundClip> clips;
+    try {
+      clips = await ClipStore().listForSession(widget.session.sessionId);
+      clips = clips.where((c) => File(c.path).existsSync()).toList();
+    } on Object {
+      clips = <RoundClip>[];
+    }
     if (!mounted) return;
     setState(() {
       _cloud = cloud;
+      _clips = clips;
       _loading = false;
     });
+  }
+
+  Future<void> _saveVideos() async {
+    for (final clip in _clips) {
+      if (!mounted) return;
+      await saveClipVideo(context, clip);
+    }
   }
 
   @override
@@ -213,7 +238,19 @@ class _SessionDetailScreenState extends State<_SessionDetailScreen> {
     final localRounds =
         widget.session.rounds.where((r) => r.summary != null).toList();
     return Scaffold(
-      appBar: AppBar(title: Text(widget.session.templateName)),
+      appBar: AppBar(
+        title: Text(widget.session.templateName),
+        actions: <Widget>[
+          if (_clips.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.save_alt),
+              tooltip: _clips.length == 1
+                  ? 'Save video to phone'
+                  : 'Save videos to phone',
+              onPressed: _saveVideos,
+            ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: <Widget>[
