@@ -169,8 +169,12 @@
         // Bearer token they break anon role resolution and every insert fails
         // RLS (42501); the `apikey` header alone maps correctly to `anon`.
         'apikey': SUPABASE_KEY,
-        // Duplicate (email, list) is a success, not an error.
-        'Prefer': 'resolution=ignore-duplicates,return=minimal'
+        // Plain INSERT. NOT resolution=ignore-duplicates: that makes PostgREST
+        // do INSERT ... ON CONFLICT, which must READ the conflicting row — but
+        // the table has no SELECT policy (emails can't be read back), so RLS
+        // rejects it (42501). A duplicate instead returns 409, handled as
+        // success below.
+        'Prefer': 'return=minimal'
       },
       body: JSON.stringify({ email: email, list: list, source: location.pathname })
     });
@@ -192,7 +196,8 @@
       if (msg) { msg.classList.remove('is-error'); msg.textContent = 'Adding you…'; }
       if (button) button.disabled = true;
       saveSignup(email, list).then(function (res) {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        // 409 = already on the list (unique email+list). That's a success.
+        if (!res.ok && res.status !== 409) throw new Error('HTTP ' + res.status);
         if (msg) { msg.classList.remove('is-error'); msg.textContent = "You're on the list. We'll be in touch."; }
         track('signup', { list: list, email_domain: email.split('@')[1] || '' });
         form.reset();
