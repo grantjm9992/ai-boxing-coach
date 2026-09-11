@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../analysis/round_analysis.dart';
 import '../../analysis/session_type.dart';
+import '../../domain/round_clip.dart';
 import '../../domain/shadow_round.dart';
+import '../../services/clip_store.dart';
 import '../../services/session_history_store.dart';
+import '../../services/sync/backfill_queue.dart';
+import '../../services/sync/round_sync.dart';
 import '../theme.dart';
 import 'round_capture_screen.dart';
+import 'round_review_screen.dart' show saveClipVideo;
 
 /// Runs a standalone shadow-boxing round: framing check + count-in + record
 /// (via [RoundCaptureScreen]), analyse, save it to History/Progress, then show
@@ -16,8 +21,14 @@ Future<void> startShadowRound(
   BuildContext context, {
   Duration duration = const Duration(minutes: 2),
   SessionHistoryStore? store,
+  ClipStore? clipStore,
+  SupabaseRoundSync? sync,
   DateTime Function()? now,
 }) async {
+  final at = (now ?? DateTime.now)();
+  final sessionId = 'shadow_${at.millisecondsSinceEpoch}';
+  final clips = clipStore ?? ClipStore();
+
   final capture = await Navigator.of(context).push<RoundCaptureResult>(
     MaterialPageRoute<RoundCaptureResult>(
       builder: (_) => RoundCaptureScreen(
@@ -27,6 +38,10 @@ Future<void> startShadowRound(
             'feet — so the coach can read your work.',
         sessionType: SessionType.shadowBoxing,
         maxDuration: duration,
+        // Keep the video + run the full analyzer (AI + keyframes) so this round
+        // reaches parity with a session round in History.
+        clipStore: clips,
+        sessionId: sessionId,
       ),
     ),
   );
@@ -45,34 +60,63 @@ Future<void> startShadowRound(
     return;
   }
 
-  final at = (now ?? DateTime.now)();
   final record = shadowSessionRecord(
     analysis,
     durationMs: capture.durationMs,
-    sessionId: 'shadow_${at.millisecondsSinceEpoch}',
+    sessionId: sessionId,
     completedAt: at,
   );
   await (store ?? SessionHistoryStore()).save(record);
 
+  // Best-effort cloud sync of the round (pose + AI + keyframes) so opening it
+  // from History shows the same rich detail as a session round. Durable queue:
+  // retries on a later launch if offline / signed out — nothing is lost.
+  final clip = capture.clip;
+  if (clip != null) {
+    final queue =
+        sync != null ? BackfillQueue(sync: sync) : BackfillQueue.instance;
+    await queue.enqueueRound(
+      clip,
+      title: 'Shadow boxing',
+      mode: analysis.aiReport != null ? 'keyframe' : 'offline',
+    );
+    queue.process().ignore();
+  }
+
   if (!context.mounted) return;
   await Navigator.of(context).push<void>(
     MaterialPageRoute<void>(
-      builder: (_) => ShadowResultScreen(analysis: analysis),
+      builder: (_) => ShadowResultScreen(analysis: analysis, clip: clip),
     ),
   );
 }
 
 /// The feedback for a completed shadow round.
 class ShadowResultScreen extends StatelessWidget {
-  const ShadowResultScreen({super.key, required this.analysis});
+  const ShadowResultScreen({super.key, required this.analysis, this.clip});
 
   final RoundAnalysis analysis;
+
+  /// The saved round video, if it was kept — enables "Save video to phone".
+  final RoundClip? clip;
 
   @override
   Widget build(BuildContext context) {
     final corrections = analysis.correctionPriorities;
+    final coaching = analysis.modelCoaching;
+    final roundClip = clip;
     return Scaffold(
-      appBar: AppBar(title: const Text('Shadow round')),
+      appBar: AppBar(
+        title: const Text('Shadow round'),
+        actions: <Widget>[
+          if (roundClip != null)
+            IconButton(
+              icon: const Icon(Icons.save_alt),
+              tooltip: 'Save video to phone',
+              onPressed: () => saveClipVideo(context, roundClip),
+            ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: <Widget>[
@@ -88,11 +132,24 @@ class ShadowResultScreen extends StatelessWidget {
               height: 1.4,
             ),
           ),
+          if (coaching != null && coaching.trim().isNotEmpty) ...<Widget>[
+            const SizedBox(height: 24),
+            const _Header('Coach'),
+            const SizedBox(height: 6),
+            Text(
+              coaching.trim(),
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 16,
+                height: 1.4,
+              ),
+            ),
+          ],
           if (corrections.isNotEmpty) ...<Widget>[
             const SizedBox(height: 24),
-            const _Header('Top things to fix'),
+            const _Header('Things to fix'),
             const SizedBox(height: 8),
-            for (final c in corrections.take(3))
+            for (final c in corrections)
               _Bullet('${c.priority}. ${c.description}'),
           ],
           if (analysis.positiveNotes.isNotEmpty) ...<Widget>[

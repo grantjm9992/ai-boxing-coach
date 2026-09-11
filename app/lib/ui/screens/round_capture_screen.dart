@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -7,22 +8,37 @@ import '../../analysis/drill.dart';
 import '../../analysis/pose_only_adapter.dart';
 import '../../analysis/round_analysis.dart';
 import '../../analysis/session_type.dart';
+import '../../domain/round_clip.dart';
+import '../../domain/session_phase.dart';
+import '../../services/ai/ai_settings_store.dart';
+import '../../services/ai/coach_vision_model.dart';
 import '../../services/analytics.dart';
 import '../../services/camera_round_recorder.dart';
+import '../../services/clip_store.dart';
+import '../../services/frame_grabber.dart';
 import '../../services/pose_estimator.dart';
 import '../../services/profile_store.dart';
+import '../../services/round_analyzer.dart';
 import '../../services/round_recorder.dart';
 import '../format.dart';
 import '../theme.dart';
 import 'camera_check_screen.dart';
 
-/// What a capture produced: the analysis (null if it couldn't be produced) and
-/// the round's duration.
+/// What a capture produced: the analysis (null if it couldn't be produced), the
+/// round's duration, and — on the deep-analysis path — the persisted clip.
 class RoundCaptureResult {
-  const RoundCaptureResult({required this.analysis, required this.durationMs});
+  const RoundCaptureResult({
+    required this.analysis,
+    required this.durationMs,
+    this.clip,
+  });
 
   final RoundAnalysis? analysis;
   final double durationMs;
+
+  /// The saved [RoundClip], when the capture ran the full analyzer and kept the
+  /// video (shadow rounds). Null for the pose-only combination-drill path.
+  final RoundClip? clip;
 }
 
 /// Records one round with the same pre-flight as a routine — the [CameraCheckScreen]
@@ -49,11 +65,22 @@ class RoundCaptureScreen extends StatefulWidget {
     this.profileLoader,
     this.analytics,
     this.skipFramingCheck = false,
+    this.clipStore,
+    this.sessionId,
   });
 
   final String title;
   final SessionType sessionType;
   final String framingSubtitle;
+
+  /// When both are set, the capture keeps the video (saved to [clipStore] under
+  /// [sessionId]) and runs the FULL analyzer — pose + AI coaching + keyframes,
+  /// written to the AnalysisStore for cloud sync — instead of the pose-only
+  /// read. This is how a standalone shadow round reaches parity with a session
+  /// round (History detail, AI, saved video). Left null, the capture stays
+  /// pose-only and keeps nothing (the combination drill).
+  final ClipStore? clipStore;
+  final String? sessionId;
 
   /// When set, the round auto-stops and analyses after this long. The user can
   /// still stop early. Null = record until the user stops.
@@ -90,6 +117,7 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
 
   Timer? _countdown;
   Duration? _remaining;
+  DateTime? _recordStartedAt;
 
   @override
   void initState() {
@@ -178,6 +206,7 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
             : AnalyticsEvent.technicalRoundStarted,
         <String, Object?>{'type': widget.sessionType.value},
       );
+      _recordStartedAt = DateTime.now();
       if (!mounted) return;
       setState(() => _stage = _Stage.recording);
       final limit = widget.maxDuration;
@@ -224,6 +253,12 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
     if (widget.analyseOverride != null) {
       return widget.analyseOverride!(path, drill);
     }
+    final clipStore = widget.clipStore;
+    final sessionId = widget.sessionId;
+    if (clipStore != null && sessionId != null) {
+      return _deepAnalyse(clipStore, sessionId, path, drill);
+    }
+    // Pose-only path (combination drill): read the round, keep nothing.
     RoundAnalysis? analysis;
     double durationMs = 0;
     await for (final progress in _estimator.analyse(path)) {
@@ -234,6 +269,55 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
       }
     }
     return RoundCaptureResult(analysis: analysis, durationMs: durationMs);
+  }
+
+  /// Deep path (shadow round): keep the video in [ClipStore] and run the FULL
+  /// analyzer — pose + AI coaching + keyframes, persisted to the AnalysisStore
+  /// so the cloud sync uploads it and History shows the same rich detail a
+  /// session round does.
+  Future<RoundCaptureResult> _deepAnalyse(
+    ClipStore clipStore,
+    String sessionId,
+    String path,
+    DrillContext drill,
+  ) async {
+    final startedAt = _recordStartedAt ?? DateTime.now();
+    final durationMs =
+        DateTime.now().difference(startedAt).inMilliseconds.toDouble();
+
+    // Move the recording into the managed clip store so it survives the round
+    // (and can be exported). rename can fail across mounts — fall back to copy.
+    final target = await clipStore.allocatePath(sessionId, 0);
+    try {
+      await File(path).rename(target);
+    } on FileSystemException {
+      await File(path).copy(target);
+    }
+    final clip = RoundClip(
+      sessionId: sessionId,
+      segmentIndex: 0,
+      phase: SessionPhase.shadow,
+      path: target,
+      recordedAt: startedAt,
+      roundNumber: 1,
+      durationMs: durationMs.round(),
+      title: widget.title,
+    );
+    await clipStore.add(clip);
+
+    final profile = await const ProfileStore().load();
+    final config = await const AiSettingsStore().load();
+    final visionModel = profile.analysisMode.usesAi
+        ? resolveCoachVisionModel(config: config)
+        : null;
+    final analyzer = visionModel != null
+        ? RoundAnalyzer(
+            visionModel: visionModel, frameGrabber: PluginFrameGrabber())
+        : RoundAnalyzer();
+    final analysis =
+        await analyzer.analyse(clip, drill: drill, mode: profile.analysisMode);
+    return RoundCaptureResult(
+        analysis: analysis, durationMs: durationMs, clip: clip);
   }
 
   @override
@@ -256,13 +340,19 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
     if (controller != null &&
         controller.value.isInitialized &&
         _stage == _Stage.recording) {
+      // SizedBox.expand + BoxFit.cover fills the whole preview area edge to
+      // edge and centres the camera in it. Without the expand, the Column's
+      // default (centre) cross-axis alignment left the preview narrower than
+      // the screen with dead space beside it.
       return ClipRect(
-        child: FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: controller.value.previewSize?.height ?? 9,
-            height: controller.value.previewSize?.width ?? 16,
-            child: CameraPreview(controller),
+        child: SizedBox.expand(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: controller.value.previewSize?.height ?? 9,
+              height: controller.value.previewSize?.width ?? 16,
+              child: CameraPreview(controller),
+            ),
           ),
         ),
       );
