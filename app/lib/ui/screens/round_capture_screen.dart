@@ -15,6 +15,7 @@ import '../../services/ai/coach_vision_model.dart';
 import '../../services/analytics.dart';
 import '../../services/camera_round_recorder.dart';
 import '../../services/clip_store.dart';
+import '../../services/debug_log.dart';
 import '../../services/frame_grabber.dart';
 import '../../services/pose_estimator.dart';
 import '../../services/profile_store.dart';
@@ -333,10 +334,52 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
         ? RoundAnalyzer(
             visionModel: visionModel, frameGrabber: PluginFrameGrabber())
         : RoundAnalyzer();
+    DebugLog.instance.log(
+      'shadow round: analysisMode=${profile.analysisMode.value} '
+      'aiModel=${visionModel != null}',
+      tag: 'shadow',
+    );
     final analysis =
         await analyzer.analyse(clip, drill: drill, mode: profile.analysisMode);
+    _logAnalysis(analysis);
     return RoundCaptureResult(
         analysis: analysis, durationMs: durationMs, clip: clip);
+  }
+
+  /// Dumps the whole analysis to the debug log (Profile → Debug log) so the full
+  /// set of detected faults is visible — not just the one headline correction.
+  void _logAnalysis(RoundAnalysis? a) {
+    final log = DebugLog.instance;
+    if (a == null) {
+      log.log('analysis: null (no pose detected)', tag: 'shadow');
+      return;
+    }
+    log.log('summary: ${a.overallSummary}', tag: 'shadow');
+    final ai = a.modelCoaching;
+    log.log('AI coaching: ${ai == null || ai.trim().isEmpty ? '(none)' : ai}',
+        tag: 'shadow');
+    log.log('observations (${a.specificObservations.length}):', tag: 'shadow');
+    for (final o in a.specificObservations) {
+      final ts = o.timestampMs == null ? '-' : '${o.timestampMs!.round()}ms';
+      log.log(
+        '  ${o.ruleId}/${o.code} [${o.severity.value}] @$ts: ${o.coachingText}',
+        tag: 'shadow',
+      );
+    }
+    log.log('corrections (${a.correctionPriorities.length}):', tag: 'shadow');
+    for (final c in a.correctionPriorities) {
+      log.log('  ${c.priority}. [${c.category.value}] ${c.description}',
+          tag: 'shadow');
+    }
+    final report = a.aiReport;
+    if (report != null) {
+      log.log('AI report issues (${report.priorityIssues.length}):',
+          tag: 'shadow');
+      for (final i in report.priorityIssues) {
+        log.log('  ${i.code} [${i.severity.value}]: ${i.correction}',
+            tag: 'shadow');
+      }
+    }
   }
 
   @override

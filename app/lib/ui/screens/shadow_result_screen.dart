@@ -10,7 +10,7 @@ import '../../services/sync/backfill_queue.dart';
 import '../../services/sync/round_sync.dart';
 import '../theme.dart';
 import 'round_capture_screen.dart';
-import 'round_review_screen.dart' show saveClipVideo;
+import 'round_review_screen.dart' show RoundReviewScreen, saveClipVideo;
 
 /// Runs a standalone shadow-boxing round: framing check + count-in + record
 /// (via [RoundCaptureScreen]), analyse, save it to History/Progress, then show
@@ -79,6 +79,13 @@ Future<void> startShadowRound(
       clip,
       title: 'Shadow boxing',
       mode: analysis.aiReport != null ? 'keyframe' : 'offline',
+    );
+    // Finalize with the totals too — the cloud session is preferred over the
+    // local one in History, so without a rollup it would show 0 min.
+    await queue.enqueueFinalize(
+      sessionId,
+      title: 'Shadow boxing',
+      rollup: record.rollupJson,
     );
     queue.process().ignore();
   }
@@ -158,8 +165,23 @@ class ShadowResultScreen extends StatelessWidget {
             const SizedBox(height: 8),
             for (final note in analysis.positiveNotes.take(3)) _Bullet(note),
           ],
-          const SizedBox(height: 28),
-          FilledButton.icon(
+          if (roundClip != null) ...<Widget>[
+            const SizedBox(height: 28),
+            FilledButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => RoundReviewScreen(
+                    clipStore: ClipStore(),
+                    sessionId: roundClip.sessionId,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.play_circle_outline),
+              label: const Text('Watch round with pose overlay'),
+            ),
+          ],
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
             onPressed: () async {
               Navigator.of(context).pop();
               await startShadowRound(context);
