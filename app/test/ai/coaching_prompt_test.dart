@@ -53,6 +53,23 @@ void main() {
       expect(bursts.first.timestamps.first, 0);
     });
 
+    test('a bare flagged moment is labelled with its reason', () {
+      // A flag with no correction at its instant must carry its own reason
+      // (not fall through to a generic "Flagged moment").
+      final a = RoundAnalysis(
+        overallSummary: 's',
+        flaggedMoments: const <FlaggedMoment>[
+          FlaggedMoment(
+            timestampMs: 500,
+            reason: 'Rear hand drifts down',
+            severity: Severity.moderate,
+          ),
+        ],
+      );
+      final bursts = CoachingPrompt.keyframeBursts(a, durationMs: 10000);
+      expect(bursts.single.label, 'Rear hand drifts down');
+    });
+
     test('respects the moment cap', () {
       final many = RoundAnalysis(
         overallSummary: 's',

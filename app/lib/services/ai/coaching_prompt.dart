@@ -54,8 +54,13 @@ class CoachingPrompt {
       final t = c.exampleTimestampMs;
       if (t != null) byTime.putIfAbsent(t, () => c.description);
     }
+    // A flagged moment carries its own specific reason (the observation's coach
+    // text) — use it as the label so the review/history strips read e.g. "Rear
+    // hand drifts down", not a bare "Flagged moment". A correction's example
+    // instant, added above, still wins for the same timestamp.
     for (final f in analysis.flaggedMoments) {
-      byTime.putIfAbsent(f.timestampMs, () => null);
+      final reason = f.reason.trim();
+      byTime.putIfAbsent(f.timestampMs, () => reason.isEmpty ? null : reason);
     }
     final entries = byTime.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));

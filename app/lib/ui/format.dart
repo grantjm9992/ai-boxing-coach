@@ -16,10 +16,14 @@ class TimeFormat {
     return '$minutes:$paddedSeconds';
   }
 
-  /// `48 min`, rounded to the nearest minute.
+  /// `48 min`, rounded to the nearest minute. Non-zero durations that round
+  /// down to zero (under 30s — e.g. one short round split across categories)
+  /// show `<1 min` rather than a misleading `0 min` next to a filled bar.
   static String minutes(Duration duration) {
-    final value = (duration.inSeconds / 60).round();
-    return '$value min';
+    final seconds = duration.inSeconds;
+    if (seconds <= 0) return '0 min';
+    final value = (seconds / 60).round();
+    return value == 0 ? '<1 min' : '$value min';
   }
 
   /// `2 × 3:00` style round description.

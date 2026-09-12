@@ -216,8 +216,26 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
     }
   }
 
+  /// The round's length. For a timed round the countdown is the reliable
+  /// source; wall-clock from record start can be skewed (or, if the start time
+  /// never landed, ~zero), which is why a timed shadow round could log 0 min.
+  /// Untimed rounds fall back to wall-clock.
+  double _elapsedMs() {
+    final limit = widget.maxDuration;
+    if (limit != null) {
+      final elapsed = limit - (_remaining ?? Duration.zero);
+      return (elapsed.isNegative ? Duration.zero : elapsed)
+          .inMilliseconds
+          .toDouble();
+    }
+    final started = _recordStartedAt;
+    if (started == null) return 0;
+    return DateTime.now().difference(started).inMilliseconds.toDouble();
+  }
+
   Future<void> _stopAndAnalyse() async {
     if (_stage != _Stage.recording) return; // guard double-stop (timer + tap)
+    final elapsedMs = _elapsedMs();
     _countdown?.cancel();
     setState(() {
       _stage = _Stage.analysing;
@@ -231,7 +249,7 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
         return;
       }
       final drill = await _loadDrill();
-      final result = await _analyse(path, drill);
+      final result = await _analyse(path, drill, elapsedMs);
       if (!mounted) return;
       Navigator.of(context).pop(result);
     } on Object catch (error) {
@@ -249,14 +267,15 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
     );
   }
 
-  Future<RoundCaptureResult> _analyse(String path, DrillContext drill) async {
+  Future<RoundCaptureResult> _analyse(
+      String path, DrillContext drill, double elapsedMs) async {
     if (widget.analyseOverride != null) {
       return widget.analyseOverride!(path, drill);
     }
     final clipStore = widget.clipStore;
     final sessionId = widget.sessionId;
     if (clipStore != null && sessionId != null) {
-      return _deepAnalyse(clipStore, sessionId, path, drill);
+      return _deepAnalyse(clipStore, sessionId, path, drill, elapsedMs);
     }
     // Pose-only path (combination drill): read the round, keep nothing.
     RoundAnalysis? analysis;
@@ -280,10 +299,10 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
     String sessionId,
     String path,
     DrillContext drill,
+    double elapsedMs,
   ) async {
     final startedAt = _recordStartedAt ?? DateTime.now();
-    final durationMs =
-        DateTime.now().difference(startedAt).inMilliseconds.toDouble();
+    final durationMs = elapsedMs;
 
     // Move the recording into the managed clip store so it survives the round
     // (and can be exported). rename can fail across mounts — fall back to copy.
