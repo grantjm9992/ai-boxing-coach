@@ -12,9 +12,13 @@ import '../rule.dart';
 /// habit: between exchanges, do the wrists stay up near the head, or drift below
 /// the shoulder line? We measure the fraction of idle frames spent hands-down.
 class HandsUpConfig {
+  // dropMargin / maxDownFraction were tuned against the CoachMe pose benchmark
+  // (evaluation/tuned/coachme-detectors-v1.json; 0.10->0.12 and 0.25->0.20) and
+  // human-reviewed. Guard geometry is torso-relative so these transfer to the
+  // frontal-2D view; kept in parity with the Python HandsUpConfig.
   const HandsUpConfig({
-    this.dropMargin = 0.10,
-    this.maxDownFraction = 0.25,
+    this.dropMargin = 0.12,
+    this.maxDownFraction = 0.20,
     this.checkLead = true,
     this.checkRear = true,
     this.relativeToBaseline = false,

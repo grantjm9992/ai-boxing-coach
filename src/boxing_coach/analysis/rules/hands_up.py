@@ -21,11 +21,17 @@ from ..rule import Rule
 
 @dataclass(frozen=True, slots=True)
 class HandsUpConfig:
+    # drop_margin / max_down_fraction were tuned against the CoachMe pose
+    # benchmark (evaluation/tuned/coachme-detectors-v1.json; drop_margin
+    # 0.10->0.12, max_down_fraction 0.25->0.20) and human-reviewed. Guard geometry
+    # is torso-relative, so these transfer to the frontal-2D app view (unlike the
+    # rotation/knee thresholds, which are 3D-only — see evaluation/PORTING.md).
+    #
     # A hand is "down" when the wrist sits this far below the shoulder line
     # (in torso-lengths). Small buffer avoids flagging a hand right at the line.
-    drop_margin: float = 0.10
+    drop_margin: float = 0.12
     # Flag the round if a hand is down for more than this fraction of idle time.
-    max_down_fraction: float = 0.25
+    max_down_fraction: float = 0.20
     # Which hands to judge. A Philly shell keeps its lead hand deliberately low,
     # so that style checks the rear hand only (check_lead=False).
     check_lead: bool = True
