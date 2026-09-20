@@ -68,6 +68,54 @@ def _sum(scores: list[CategoryScore]) -> CategoryScore:
     return total
 
 
+def aggregate(results: list, per_clip: list[dict] | None = None) -> dict:
+    """Roll up a list of `ScoreResult` into the metrics block runner records use.
+
+    The single source of truth for overall/by-category/by-severity P/R/F1, the
+    severity-weighted micro F1, severity accuracy and hallucination rate — so the
+    optimiser's in-process harness scores candidates with the exact same maths
+    the promotion gate (`compare`) later reads. Returns the metric-bearing subset
+    of a run record (no provenance fields).
+    """
+    overall = _sum([r.overall for r in results])
+    cats = {c for r in results for c in r.by_category}
+    by_cat = {c: _sum([r.by_category.get(c, CategoryScore()) for r in results]) for c in cats}
+    sevs = {s for r in results for s in r.by_severity}
+    by_sev = {s: _sum([r.by_severity.get(s, CategoryScore()) for r in results]) for s in sevs}
+
+    sev_correct = sum(r.severity_correct for r in results)
+    contradicted = sum(r.contradicted_fp for r in results)
+    total_preds = overall.tp + overall.fp
+    prio = [r.priority_top1_hit for r in results if r.priority_top1_hit is not None]
+
+    def r4(x): return round(x, 4)
+    metrics = {
+        "overall": overall.as_dict(),
+        "weighted": None,   # filled below
+        "severity_accuracy": r4(sev_correct / overall.tp) if overall.tp else 0.0,
+        "hallucination_rate": r4(contradicted / total_preds) if total_preds else 0.0,
+        "major_recall": r4(by_sev["major"].recall) if "major" in by_sev else None,
+        "priority_hit_rate": r4(sum(prio) / len(prio)) if prio else None,
+    }
+    # Micro severity-weighted P/R/F1.
+    w = {"major": 5, "moderate": 3, "minor": 1}
+    w_tp = sum(w.get(s, 1) * v.tp for s, v in by_sev.items())
+    w_fn = sum(w.get(s, 1) * v.fn for s, v in by_sev.items())
+    w_fp = w.get("moderate", 3) * overall.fp  # FPs lack a truth severity; middle weight
+    w_prec = w_tp / (w_tp + w_fp) if (w_tp + w_fp) else 0.0
+    w_rec = w_tp / (w_tp + w_fn) if (w_tp + w_fn) else 0.0
+    w_f1 = 0.0 if w_prec + w_rec == 0 else 2 * w_prec * w_rec / (w_prec + w_rec)
+    metrics["weighted"] = {"precision": r4(w_prec), "recall": r4(w_rec), "f1": r4(w_f1)}
+
+    return {
+        "clip_count": len(results),
+        "metrics": metrics,
+        "by_category": {c: s.as_dict() for c, s in sorted(by_cat.items())},
+        "by_severity": {s: v.as_dict() for s, v in sorted(by_sev.items())},
+        "per_clip": per_clip or [],
+    }
+
+
 def run(dataset_dir: Path, version: str, layer: str, *,
         min_confidence: str | None = None, allow_draft: bool = False,
         save: bool = True) -> dict:
@@ -101,18 +149,6 @@ def run(dataset_dir: Path, version: str, layer: str, *,
         raise SystemExit(f"no scorable clips in {dataset_dir} for {version}/{layer}. "
                          f"skipped: {skipped or 'none found'}")
 
-    overall = _sum([r.overall for r in results])
-    cats = {c for r in results for c in r.by_category}
-    by_cat = {c: _sum([r.by_category.get(c, CategoryScore()) for r in results]) for c in cats}
-    sevs = {s for r in results for s in r.by_severity}
-    by_sev = {s: _sum([r.by_severity.get(s, CategoryScore()) for r in results]) for s in sevs}
-
-    sev_correct = sum(r.severity_correct for r in results)
-    contradicted = sum(r.contradicted_fp for r in results)
-    total_preds = overall.tp + overall.fp
-    prio = [r.priority_top1_hit for r in results if r.priority_top1_hit is not None]
-
-    def r4(x): return round(x, 4)
     record = {
         "experiment_id": f"{dt.datetime.now():%Y%m%dT%H%M%S}_{version}_{layer}",
         "timestamp": dt.datetime.now().isoformat(timespec="seconds"),
@@ -121,29 +157,9 @@ def run(dataset_dir: Path, version: str, layer: str, *,
         "version": version,
         "layer": layer,
         "min_confidence": min_confidence,
-        "clip_count": len(results),
         "skipped": skipped,
-        "metrics": {
-            "overall": overall.as_dict(),
-            "weighted": None,   # micro-weighted below
-            "severity_accuracy": r4(sev_correct / overall.tp) if overall.tp else 0.0,
-            "hallucination_rate": r4(contradicted / total_preds) if total_preds else 0.0,
-            "major_recall": r4(by_sev["major"].recall) if "major" in by_sev else None,
-            "priority_hit_rate": r4(sum(prio) / len(prio)) if prio else None,
-        },
-        "by_category": {c: s.as_dict() for c, s in sorted(by_cat.items())},
-        "by_severity": {s: v.as_dict() for s, v in sorted(by_sev.items())},
-        "per_clip": per_clip,
+        **aggregate(results, per_clip),
     }
-    # Micro weighted P/R/F1 from severity weights.
-    w = {"major": 5, "moderate": 3, "minor": 1}
-    w_tp = sum(w.get(s, 1) * v.tp for s, v in by_sev.items())
-    w_fn = sum(w.get(s, 1) * v.fn for s, v in by_sev.items())
-    w_fp = w.get("moderate", 3) * overall.fp  # FPs lack a truth severity; charge the middle weight
-    w_prec = w_tp / (w_tp + w_fp) if (w_tp + w_fp) else 0.0
-    w_rec = w_tp / (w_tp + w_fn) if (w_tp + w_fn) else 0.0
-    w_f1 = 0.0 if w_prec + w_rec == 0 else 2 * w_prec * w_rec / (w_prec + w_rec)
-    record["metrics"]["weighted"] = {"precision": r4(w_prec), "recall": r4(w_rec), "f1": r4(w_f1)}
 
     if save:
         EXPERIMENTS.mkdir(exist_ok=True)

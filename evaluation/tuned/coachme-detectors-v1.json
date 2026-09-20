@@ -1,0 +1,16 @@
+{
+  "name": "coachme-tuned",
+  "overrides": {
+    "hip_rotation": {
+      "min_shoulder_drive": 0.28,
+      "min_peak_reach": 0.85
+    },
+    "knee_bend": {
+      "straight_deg": 166.0
+    },
+    "hands_up": {
+      "drop_margin": 0.12,
+      "max_down_fraction": 0.2
+    }
+  }
+}
