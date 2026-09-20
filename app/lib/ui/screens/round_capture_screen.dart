@@ -5,21 +5,19 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 import '../../analysis/drill.dart';
+import '../../analysis/pose.dart';
 import '../../analysis/pose_only_adapter.dart';
 import '../../analysis/round_analysis.dart';
 import '../../analysis/session_type.dart';
 import '../../domain/round_clip.dart';
 import '../../domain/session_phase.dart';
-import '../../services/ai/ai_settings_store.dart';
-import '../../services/ai/coach_vision_model.dart';
+import '../../services/analysis_store.dart';
 import '../../services/analytics.dart';
 import '../../services/camera_round_recorder.dart';
 import '../../services/clip_store.dart';
 import '../../services/debug_log.dart';
-import '../../services/frame_grabber.dart';
 import '../../services/pose_estimator.dart';
 import '../../services/profile_store.dart';
-import '../../services/round_analyzer.dart';
 import '../../services/round_recorder.dart';
 import '../format.dart';
 import '../theme.dart';
@@ -68,6 +66,7 @@ class RoundCaptureScreen extends StatefulWidget {
     this.skipFramingCheck = false,
     this.clipStore,
     this.sessionId,
+    this.deferAnalysis = false,
   });
 
   final String title;
@@ -82,6 +81,13 @@ class RoundCaptureScreen extends StatefulWidget {
   /// pose-only and keeps nothing (the combination drill).
   final ClipStore? clipStore;
   final String? sessionId;
+
+  /// When true (shadow round), the capture keeps the video and returns
+  /// IMMEDIATELY without analysing — the slow pose+AI+upload work is left to the
+  /// caller to run in the background, so the user can start the next round at
+  /// once. When false (drill), the clip is kept but analysed inline so the
+  /// caller gets combination feedback straight away.
+  final bool deferAnalysis;
 
   /// When set, the round auto-stops and analyses after this long. The user can
   /// still stop early. Null = record until the user stops.
@@ -291,10 +297,14 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
     return RoundCaptureResult(analysis: analysis, durationMs: durationMs);
   }
 
-  /// Deep path (shadow round): keep the video in [ClipStore] and run the FULL
-  /// analyzer — pose + AI coaching + keyframes, persisted to the AnalysisStore
-  /// so the cloud sync uploads it and History shows the same rich detail a
-  /// session round does.
+  /// Deep path: keep the video in [ClipStore] so the round can be reviewed,
+  /// re-analysed and exported later (History parity). The clip is filed
+  /// synchronously; how it's analysed depends on [RoundCaptureScreen.deferAnalysis]:
+  ///
+  ///  * deferAnalysis (shadow) — return at once with no analysis; the caller runs
+  ///    the slow pose+AI+upload in the background so the next round can start now.
+  ///  * else (drill) — analyse inline (pose only, fast) for immediate combination
+  ///    feedback and persist it to the AnalysisStore so it's re-runnable.
   Future<RoundCaptureResult> _deepAnalyse(
     ClipStore clipStore,
     String sessionId,
@@ -316,7 +326,9 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
     final clip = RoundClip(
       sessionId: sessionId,
       segmentIndex: 0,
-      phase: SessionPhase.shadow,
+      phase: widget.sessionType == SessionType.shadowBoxing
+          ? SessionPhase.shadow
+          : SessionPhase.technical,
       path: target,
       recordedAt: startedAt,
       roundNumber: 1,
@@ -325,22 +337,28 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
     );
     await clipStore.add(clip);
 
-    final profile = await const ProfileStore().load();
-    final config = await const AiSettingsStore().load();
-    final visionModel = profile.analysisMode.usesAi
-        ? resolveCoachVisionModel(config: config)
-        : null;
-    final analyzer = visionModel != null
-        ? RoundAnalyzer(
-            visionModel: visionModel, frameGrabber: PluginFrameGrabber())
-        : RoundAnalyzer();
-    DebugLog.instance.log(
-      'shadow round: analysisMode=${profile.analysisMode.value} '
-      'aiModel=${visionModel != null}',
-      tag: 'shadow',
-    );
-    final analysis =
-        await analyzer.analyse(clip, drill: drill, mode: profile.analysisMode);
+    if (widget.deferAnalysis) {
+      // Slow analysis happens in the background (caller's job) — hand back the
+      // clip immediately so the user isn't blocked.
+      return RoundCaptureResult(
+          analysis: null, durationMs: durationMs, clip: clip);
+    }
+
+    // Inline pose-only analysis (drill): fast, gives combination feedback, and
+    // is persisted so it can be watched back / re-run.
+    RoundAnalysis? analysis;
+    PoseSequence? sequence;
+    await for (final progress in _estimator.analyse(target)) {
+      final result = progress.result;
+      if (result != null) {
+        sequence = result.sequence;
+        analysis = PoseOnlyAdapter().analyse(result.sequence, drill);
+      }
+    }
+    if (analysis != null && sequence != null) {
+      await AnalysisStore().save(sessionId, 0,
+          analysis: analysis, sequence: sequence);
+    }
     _logAnalysis(analysis);
     return RoundCaptureResult(
         analysis: analysis, durationMs: durationMs, clip: clip);

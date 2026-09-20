@@ -10,7 +10,7 @@ import 'skill_category.dart';
 /// is attributed with a fixed profile of what shadow boxing trains. Pure and
 /// testable — no I/O.
 SessionRecord shadowSessionRecord(
-  ra.RoundAnalysis analysis, {
+  ra.RoundAnalysis? analysis, {
   required double durationMs,
   required String sessionId,
   required DateTime completedAt,
@@ -30,17 +30,20 @@ SessionRecord shadowSessionRecord(
     for (final e in weights.entries) e.key.key: (workSeconds * e.value).round(),
   };
 
-  final correction = analysis.correctionPriorities.isNotEmpty
+  // Analysis may be deferred (running in the background) — keep a non-null
+  // summary so the History tile stays openable; the cloud record replaces this
+  // with the real summary once the background analysis syncs.
+  final correction = analysis != null && analysis.correctionPriorities.isNotEmpty
       ? analysis.correctionPriorities.first.description
       : null;
   final round = RoundSummary(
     segmentIndex: 0,
     title: 'Shadow round',
     roundNumber: 1,
-    summary: analysis.overallSummary,
+    summary: analysis?.overallSummary ?? 'Analysing…',
     topCorrection: correction,
-    punchesThrown: analysis.metrics.punchesThrown,
-    guardReturnRate: analysis.metrics.guardReturnRate,
+    punchesThrown: analysis?.metrics.punchesThrown,
+    guardReturnRate: analysis?.metrics.guardReturnRate,
   );
 
   return SessionRecord(

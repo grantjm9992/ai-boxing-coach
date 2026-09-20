@@ -18,6 +18,7 @@ import '../../services/ai/coach_vision_model.dart';
 import '../../services/ai/coaching_prompt.dart';
 import '../../services/ai/vision_model.dart';
 import '../../services/analysis_store.dart';
+import '../../services/background_analysis.dart';
 import '../../services/clip_store.dart';
 import '../../services/debug_log.dart';
 import '../../services/frame_grabber.dart';
@@ -35,6 +36,7 @@ class RoundReviewScreen extends StatefulWidget {
     required this.clipStore,
     required this.sessionId,
     this.estimator,
+    this.onAnotherRound,
     super.key,
   });
 
@@ -44,6 +46,10 @@ class RoundReviewScreen extends StatefulWidget {
   /// Injectable so tests / no-camera platforms can supply a fake. Defaults to
   /// the real MediaPipe estimator.
   final PoseEstimator? estimator;
+
+  /// When set (a standalone shadow round), shows an "Another round" action so
+  /// the user can go again without backing all the way out.
+  final VoidCallback? onAnotherRound;
 
   @override
   State<RoundReviewScreen> createState() => _RoundReviewScreenState();
@@ -90,6 +96,21 @@ class _RoundReviewScreenState extends State<RoundReviewScreen> {
           );
         },
       ),
+      bottomNavigationBar: widget.onAnotherRound == null
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    widget.onAnotherRound!();
+                  },
+                  icon: const Icon(Icons.replay),
+                  label: const Text('Another round'),
+                ),
+              ),
+            ),
     );
   }
 }
@@ -224,11 +245,22 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
     final pose = await _store.loadPose(sessionId, segment);
     if (!mounted) return;
     if (analysis == null || pose == null) {
-      DebugLog.instance.log(
-        'review seg$segment: no saved analysis — offering recompute',
-        tag: 'review',
-      );
-      return; // stays idle → user can recompute on demand
+      // If the analysis is still running in the background (a fresh shadow
+      // round), reflect that and refresh when it lands, instead of offering a
+      // redundant recompute.
+      if (BackgroundAnalysis.instance.isRunning(widget.clip)) {
+        setState(() {
+          _state = _AnalysisState.running;
+          _progress = 0;
+        });
+        BackgroundAnalysis.instance.running.addListener(_onBackgroundChanged);
+      } else {
+        DebugLog.instance.log(
+          'review seg$segment: no saved analysis — offering recompute',
+          tag: 'review',
+        );
+      }
+      return; // idle/running → user can recompute on demand
     }
     DebugLog.instance.log(
       'review seg$segment: showing saved analysis'
@@ -283,8 +315,18 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
     }
   }
 
+  /// Background analysis finished (or another clip's did): once ours is no
+  /// longer running, pull the saved result in.
+  void _onBackgroundChanged() {
+    if (!BackgroundAnalysis.instance.isRunning(widget.clip)) {
+      BackgroundAnalysis.instance.running.removeListener(_onBackgroundChanged);
+      if (mounted) _loadSaved();
+    }
+  }
+
   @override
   void dispose() {
+    BackgroundAnalysis.instance.running.removeListener(_onBackgroundChanged);
     _controller.dispose();
     super.dispose();
   }

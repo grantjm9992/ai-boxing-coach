@@ -4,9 +4,11 @@ import '../../analysis/session_type.dart';
 import '../../analysis/drill_matching.dart';
 import '../../data/combination_library.dart';
 import '../../services/analytics.dart';
+import '../../services/clip_store.dart';
 import '../theme.dart';
 import '../widgets/duration_selector.dart';
 import 'round_capture_screen.dart';
+import 'round_review_screen.dart';
 
 /// A combination's detail + drill view (brief §15). Shows the sequence, the
 /// coaching points and — once a drill round has been analysed — the per-attempt
@@ -37,6 +39,11 @@ class CombinationDetailScreen extends StatefulWidget {
 class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
   DrillResult? _result;
   Duration _duration = const Duration(minutes: 2);
+  final ClipStore _clipStore = ClipStore();
+
+  /// Session id of the last drill round recorded here, so it can be watched
+  /// back / re-analysed like a session or shadow round.
+  String? _lastSessionId;
 
   @override
   void initState() {
@@ -54,6 +61,7 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
       return;
     }
     final combo = widget.combo;
+    final sessionId = 'drill_${DateTime.now().millisecondsSinceEpoch}';
     final capture = await Navigator.of(context).push<RoundCaptureResult>(
       MaterialPageRoute<RoundCaptureResult>(
         builder: (_) => RoundCaptureScreen(
@@ -65,10 +73,15 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
           maxDuration: _duration,
           focus: const <String>{'combinations'},
           notes: combo.numberLabel,
+          // Keep the clip + persist the (pose-only) analysis so the drill round
+          // can be watched back and re-analysed, like a session round.
+          clipStore: _clipStore,
+          sessionId: sessionId,
         ),
       ),
     );
     if (capture == null || !mounted) return;
+    if (capture.clip != null) _lastSessionId = sessionId;
     final result = evaluateDrill(
       combo.numbers,
       capture.analysis?.combinationAnalyses ?? const [],
@@ -132,6 +145,21 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
             const _SectionHeader('Your drill'),
             const SizedBox(height: 8),
             _DrillResultView(result: result),
+            if (_lastSessionId != null) ...<Widget>[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => RoundReviewScreen(
+                      clipStore: _clipStore,
+                      sessionId: _lastSessionId!,
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.play_circle_outline),
+                label: const Text('Watch round · re-analyse'),
+              ),
+            ],
           ],
           const SizedBox(height: 28),
           DurationSelector(

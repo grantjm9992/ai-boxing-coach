@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'services/auth/auth_service.dart';
+import 'services/background_analysis.dart';
 import 'services/clip_store.dart';
 import 'services/debug_log.dart';
 import 'services/sync/backfill_queue.dart';
@@ -44,6 +45,7 @@ class BoxingCoachApp extends StatelessWidget {
     return MaterialApp(
       title: 'AI Boxing Coach',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: BackgroundAnalysis.messengerKey,
       theme: AppTheme.dark(),
       home: const AuthGate(),
     );
