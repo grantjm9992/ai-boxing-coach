@@ -31,18 +31,29 @@ class GuardReturnConfig:
     drop_margin: float = 0.15
     # ...and a wrist still this far from its shoulder reads as left hanging out.
     extended_reach: float = 1.0
-    # How long after retraction the hand has to get back.
+    # Base/minimum time after retraction the hand has to get back. The effective
+    # window scales with how the punch was thrown (see below), so a fast snap is
+    # judged tightly and a slow, deliberate punch is given proportionally longer.
     return_window_ms: float = 500.0
+    # The return window is judged RELATIVE TO THE PUNCH SPEED: a slow, deliberate
+    # punch should get a slow, deliberate return, not be nagged against a fixed
+    # clock. Effective window = clamp(extension_ms * factor, return_window_ms,
+    # max_return_window_ms), where extension_ms is how long the punch took to
+    # reach full extension (its throw speed). factor 0 restores the fixed window.
+    return_speed_factor: float = 1.5
+    max_return_window_ms: float = 900.0
     # Below this fraction of returning punches, flag it as a round-level fault.
     healthy_return_rate: float = 0.8
     # Which hands to judge. A Philly shell returns its lead hand low on purpose,
     # so that style checks the rear hand only (check_lead=False).
     check_lead: bool = True
     check_rear: bool = True
-    # Soviet in-and-out: don't fault a hand that ends low/away when the fighter
-    # steps out through the return. It launched from its own guard (already the
-    # reference) and the low finish is distance management, not a dropped guard.
-    excuse_while_moving: bool = False
+    # Range vs movement: don't fault a hand that ends low/away when the fighter
+    # steps out through the return. If they hold their ground (stay in range) the
+    # hand is expected back; if they move off, the low finish is distance
+    # management, not a dropped guard. On by default so this holds for everyone,
+    # not just the Soviet in-and-out style.
+    excuse_while_moving: bool = True
     # Stance-centre speed (torso-lengths/sec) above which the fighter counts as
     # stepping in/out during the return, for excuse_while_moving.
     moving_speed: float = 0.6
@@ -118,6 +129,22 @@ class GuardReturnRule(Rule):
             sides.add(stance.rear)
         return sides
 
+    @staticmethod
+    def _return_window_ms(seq, punch, cfg: GuardReturnConfig) -> float:
+        """The allowed return time for this punch, scaled to its throw speed.
+
+        A punch's extension phase (start -> peak) is how fast it was thrown; the
+        return is judged proportionally, clamped to [return_window_ms,
+        max_return_window_ms]. So a slow, deliberate punch earns a slow return
+        and isn't faulted against a fast punch's clock.
+        """
+        extension_ms = (
+            seq.frames[punch.peak_index].timestamp_ms
+            - seq.frames[punch.start_index].timestamp_ms
+        )
+        scaled = extension_ms * cfg.return_speed_factor
+        return float(min(max(scaled, cfg.return_window_ms), cfg.max_return_window_ms))
+
     def _classify_return(
         self, context: AnalysisContext, punch, cfg: GuardReturnConfig
     ) -> tuple[str, int] | None:
@@ -129,7 +156,8 @@ class GuardReturnRule(Rule):
         if np.any(np.isnan(ref)):
             return None  # no usable guard reference — don't judge
 
-        deadline = seq.frames[punch.end_index].timestamp_ms + cfg.return_window_ms
+        window_ms = self._return_window_ms(seq, punch, cfg)
+        deadline = seq.frames[punch.end_index].timestamp_ms + window_ms
 
         best_dist = np.inf
         worst_dist = -np.inf
@@ -150,8 +178,13 @@ class GuardReturnRule(Rule):
         if best_dist <= cfg.return_radius:
             return None
 
+        # Stepping out through the return is distance management, not a lapse: if
+        # the fighter moves off, don't hold the hand to the same standard as when
+        # they hold their ground in range. A planted fighter (no step) is still
+        # judged — that's the important case. On by default so movement is taken
+        # into account for everyone, not just the Soviet in-and-out style.
         if cfg.excuse_while_moving and self._moving_through_return(context, punch, cfg):
-            return None  # stepped out through the return — in-and-out, not a drop
+            return None
 
         # It didn't get back to guard — figure out how it failed for the cue.
         end_frame = seq.frames[min(punch.end_index, len(seq) - 1)]
@@ -186,7 +219,10 @@ class GuardReturnRule(Rule):
         """
         seq = context.sequence
         speeds = context.stance_speed
-        deadline = seq.frames[punch.end_index].timestamp_ms + cfg.return_window_ms
+        deadline = (
+            seq.frames[punch.end_index].timestamp_ms
+            + GuardReturnRule._return_window_ms(seq, punch, cfg)
+        )
         for i in range(punch.peak_index, len(seq)):
             if seq.frames[i].timestamp_ms > deadline:
                 break

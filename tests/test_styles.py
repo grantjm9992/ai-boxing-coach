@@ -131,11 +131,11 @@ def test_soviet_still_flags_a_hand_sagging_below_its_own_carriage():
     assert _faults(HandsUpRule().evaluate(_soviet_ctx(fixtures.sagging_guard_idle())))
 
 
-def test_soviet_excuses_a_low_hand_while_stepping_out():
-    # Default: the hand ends low after the jab -> dropped-guard fault...
-    assert _faults(GuardReturnRule().evaluate(_ctx(fixtures.out_step_dropped_jab(), Style.HIGH_GUARD)))
-    # ...but under Soviet the feet step out through the return, so the low finish
-    # is distance management, not a dropped guard.
+def test_stepping_out_excuses_a_low_hand_for_every_style():
+    # Movement is now taken into account by default: stepping out through the
+    # return is distance management, so the low finish isn't a dropped guard —
+    # under the default high guard AND the Soviet in-and-out alike.
+    assert not _faults(GuardReturnRule().evaluate(_ctx(fixtures.out_step_dropped_jab(), Style.HIGH_GUARD)))
     assert not _faults(GuardReturnRule().evaluate(_soviet_ctx(fixtures.out_step_dropped_jab())))
 
 

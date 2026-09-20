@@ -3,6 +3,7 @@ import '../error_codes.dart';
 import '../features.dart';
 import '../geometry.dart' as geo;
 import '../landmarks.dart';
+import '../pose.dart';
 import '../round_analysis.dart';
 import '../rule.dart';
 
@@ -21,10 +22,12 @@ class GuardReturnConfig {
     this.dropMargin = 0.15,
     this.extendedReach = 1.0,
     this.returnWindowMs = 500.0,
+    this.returnSpeedFactor = 1.5,
+    this.maxReturnWindowMs = 900.0,
     this.healthyReturnRate = 0.8,
     this.checkLead = true,
     this.checkRear = true,
-    this.excuseWhileMoving = false,
+    this.excuseWhileMoving = true,
     this.movingSpeed = 0.6,
     this.requireFullReturnWindow = true,
   });
@@ -39,7 +42,14 @@ class GuardReturnConfig {
   /// ...and a wrist still this far from its shoulder reads as left hanging out.
   final double extendedReach;
 
+  /// Base/minimum return time (ms). The effective window scales with throw speed.
   final double returnWindowMs;
+
+  /// The return window is judged relative to the punch speed: a slow, deliberate
+  /// punch earns a slow return. Effective window = clamp(extensionMs * factor,
+  /// returnWindowMs, maxReturnWindowMs). 0 restores the fixed window.
+  final double returnSpeedFactor;
+  final double maxReturnWindowMs;
 
   /// Below this fraction of returning punches, flag a round-level fault.
   final double healthyReturnRate;
@@ -47,8 +57,9 @@ class GuardReturnConfig {
   final bool checkLead;
   final bool checkRear;
 
-  /// Soviet in-and-out: don't fault a hand that ends low/away when the fighter
-  /// steps out through the return. (v2; off by default.)
+  /// Range vs movement: don't fault a hand that ends low/away when the fighter
+  /// steps out through the return — that's distance management. A planted fighter
+  /// is still judged. On by default so movement counts for every style.
   final bool excuseWhileMoving;
 
   /// Stance-centre speed (torso-lengths/sec) above which the fighter counts as
@@ -67,6 +78,8 @@ class GuardReturnConfig {
     dropMargin: dropMargin,
     extendedReach: extendedReach,
     returnWindowMs: returnWindowMs,
+    returnSpeedFactor: returnSpeedFactor,
+    maxReturnWindowMs: maxReturnWindowMs,
     healthyReturnRate: healthyReturnRate,
     checkLead: checkLead,
     checkRear: checkRear,
@@ -159,7 +172,8 @@ class GuardReturnRule extends Rule {
     final ref = geo.framePoint(seq.frames[punch.startIndex], punch.side.wrist);
     if (ref.any((v) => v.isNaN)) return null; // no usable guard reference
 
-    final deadline = seq.frames[punch.endIndex].timestampMs + cfg.returnWindowMs;
+    final deadline = seq.frames[punch.endIndex].timestampMs +
+        _returnWindowMs(seq, punch, cfg);
 
     var bestDist = double.infinity;
     var worstDist = double.negativeInfinity;
@@ -211,6 +225,19 @@ class GuardReturnRule extends Rule {
     return (mode, worstFrame);
   }
 
+  /// The allowed return time for this punch, scaled to its throw speed (the
+  /// extension phase start->peak), clamped to [returnWindowMs, maxReturnWindowMs].
+  static double _returnWindowMs(
+    PoseSequence seq,
+    PunchEvent punch,
+    GuardReturnConfig cfg,
+  ) {
+    final extensionMs = seq.frames[punch.peakIndex].timestampMs -
+        seq.frames[punch.startIndex].timestampMs;
+    final scaled = extensionMs * cfg.returnSpeedFactor;
+    return scaled.clamp(cfg.returnWindowMs, cfg.maxReturnWindowMs).toDouble();
+  }
+
   bool _movingThroughReturn(
     AnalysisContext context,
     PunchEvent punch,
@@ -218,7 +245,8 @@ class GuardReturnRule extends Rule {
   ) {
     final seq = context.sequence;
     final speeds = context.stanceSpeed;
-    final deadline = seq.frames[punch.endIndex].timestampMs + cfg.returnWindowMs;
+    final deadline =
+        seq.frames[punch.endIndex].timestampMs + _returnWindowMs(seq, punch, cfg);
     for (var i = punch.peakIndex; i < seq.length; i++) {
       if (seq.frames[i].timestampMs > deadline) break;
       if (speeds[i] > cfg.movingSpeed) return true; // NaN > x is false = unknown

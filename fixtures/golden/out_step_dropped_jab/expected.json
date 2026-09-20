@@ -14,15 +14,13 @@
     {
       "ruleId": "guard_return",
       "category": "defence",
-      "severity": "moderate",
-      "coachingText": "Your lead hand drops after the punch \u2014 bring it back up to your guard, don't let it sink.",
-      "timestampMs": 800.0,
+      "severity": "positive",
+      "coachingText": "Clean guard return all round \u2014 hands came straight back to guard.",
+      "timestampMs": null,
       "metrics": {
-        "peak_reach": 1.50333
+        "guard_return_rate": 1.0
       },
-      "highlight": [
-        15
-      ]
+      "highlight": []
     }
   ],
   "roundProfile": {
