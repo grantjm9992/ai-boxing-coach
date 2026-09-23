@@ -27,47 +27,36 @@ import argparse
 import json
 from pathlib import Path
 
+from mappings.joints import SMPL22
+
 ROOT = Path(__file__).resolve().parent.parent
 
-# SMPL joint index -> mediapipe landmark index. SMPL order per CoachMe authors.
-SMPL_TO_MP = {
-    15: 0,    # head        -> nose (head reference)
-    16: 11, 17: 12,   # shoulders L/R
-    18: 13, 19: 14,   # elbows L/R
-    20: 15, 21: 16,   # wrists L/R
-    1: 23,  2: 24,    # hips L/R
-    4: 25,  5: 26,    # knees L/R
-    7: 27,  8: 28,    # ankles L/R
-    # SMPL feet (10/11) are dropped: our Landmark set has no foot-index (31/32);
-    # ankles carry the footwork signal.
-}
-OFFSET = 0.5  # move pelvis-centred coords into positive [~0,1] frame space
-FPS = 50.0    # CoachMe / Olympic source footage is 50 fps
+# The SMPL-22 -> mediapipe joint mapping (indices, +0.5 offset, 50 fps, the
+# metric_3d depth flag) now lives behind the versioned joint registry so a
+# second pose source can't collide with it. Kept as module aliases for anyone
+# importing them.
+JOINT_MAP = SMPL22
+SMPL_TO_MP = SMPL22.source_to_mediapipe
+OFFSET = SMPL22.offset
+FPS = SMPL22.default_fps
 
 
 def frame_to_kp(joints) -> dict[str, list[float]]:
     """One (22,3) frame -> {mp_index: [x, y, z, visibility]}."""
-    kp: dict[str, list[float]] = {}
-    for smpl_idx, mp_idx in SMPL_TO_MP.items():
-        x, y, z = (float(v) for v in joints[smpl_idx])
-        kp[str(mp_idx)] = [round(x + OFFSET, 4), round(y + OFFSET, 4),
-                           round(z + OFFSET, 4), 1.0]
-    return kp
+    return JOINT_MAP.frame_to_keypoints(joints)
 
 
 def sequence_wire(coords, video_name: str) -> dict:
     """(T,66) coordinates -> our pose wire dict."""
     frames = []
     for i, flat in enumerate(coords):
-        joints = [flat[j * 3:j * 3 + 3] for j in range(22)]
+        joints = [flat[j * 3:j * 3 + 3] for j in range(JOINT_MAP.source_joint_count)]
         frames.append({"i": i, "t": round(i / FPS * 1000.0, 4),
                        "kp": frame_to_kp(joints)})
+    # meta carries depth=metric_3d (trustworthy SMPL 3D) so depth-gated rules
+    # (knee bend) may run; a 2D source's JointMap would not set it.
     return {"fps": FPS, "source": f"coachme/{video_name}",
-            # depth=metric_3d marks the z axis as trustworthy 3D (real SMPL, not
-            # monocular estimate) — the gate depth-dependent rules (knee bend)
-            # check before running, so they stay silent on 2D mediapipe input.
-            "meta": {"model": "smpl22->mediapipe", "root": "pelvis-centred",
-                     "depth": "metric_3d"},
+            "meta": dict(JOINT_MAP.meta),
             "frames": frames}
 
 
