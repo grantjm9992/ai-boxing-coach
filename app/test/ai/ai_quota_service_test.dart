@@ -3,9 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AiQuotaService', () {
-    test('weekly limit matches the server default (3)', () {
-      expect(kWeeklyAiLimit, 3);
-      expect(AiQuotaService().weeklyLimit, 3);
+    test('weekly limit is the alpha allowance (50)', () {
+      // ALPHA: bumped from 3. Server enforcement must match via AI_WEEKLY_LIMIT.
+      expect(kWeeklyAiLimit, 50);
+      expect(AiQuotaService().weeklyLimit, 50);
     });
 
     test('remaining is null when Supabase is unavailable', () async {
