@@ -1,9 +1,14 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// The free-tier weekly AI-analysis allowance. Mirrors the server default in
-/// migration 0003 (`consume_ai_quota` / `ai_quota_remaining`) and the website
-/// copy — keep the three in step.
-const int kWeeklyAiLimit = 3;
+/// The weekly AI-analysis allowance shown in-app and passed to
+/// `ai_quota_remaining` for the badge.
+///
+/// ALPHA: bumped 3 -> 50 for alpha testing. Server enforcement is driven by the
+/// `AI_WEEKLY_LIMIT` env var on the `analyze` edge function — set it to 50 to
+/// match, or the app will show "50 left" but the server still cuts off at its
+/// env value. Revert this to 3 (and unset/lower the env) when alpha ends. The
+/// public website/terms copy is deliberately left at 3 (the real free tier).
+const int kWeeklyAiLimit = 50;
 
 /// Reads how many AI analyses the signed-in user has left this week, via the
 /// `ai_quota_remaining` SQL function.

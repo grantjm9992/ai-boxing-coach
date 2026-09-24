@@ -258,7 +258,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const _Label('AI coaching'),
                   const SizedBox(height: 4),
                   const Text(
-                    'Included — 3 detailed AI analyses per week on the free tier, '
+                    'Included — 50 detailed AI analyses per week during alpha, '
                     'nothing to set up. Runs on our servers when you\'re signed '
                     'in; your allowance resets every Monday.',
                     style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
