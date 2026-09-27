@@ -63,8 +63,10 @@ jobs:
       - name: Test
         run: flutter test
 
-      - name: Build APK
-        run: flutter build apk --release
+      # One APK per CPU architecture: each is a fraction of the universal APK's
+      # size (modern phones need arm64-v8a).
+      - name: Build APKs
+        run: flutter build apk --release --split-per-abi
 
       - name: Publish pre-release
         env:
@@ -72,15 +74,17 @@ jobs:
         run: |
           VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
           TAG="apk-${VERSION//+/-build}-run${GITHUB_RUN_NUMBER}"
-          APK="build/app/outputs/flutter-apk/ai-cornerman-${VERSION//+/-}.apk"
-          cp build/app/outputs/flutter-apk/app-release.apk "$APK"
-          gh release create "$TAG" "$APK" \
+          OUT=build/app/outputs/flutter-apk
+          for ABI in arm64-v8a armeabi-v7a x86_64; do
+            cp "$OUT/app-$ABI-release.apk" "$OUT/ai-cornerman-${VERSION//+/-}-$ABI.apk"
+          done
+          gh release create "$TAG" "$OUT"/ai-cornerman-*.apk \
             --prerelease \
             --target "$GITHUB_SHA" \
             --title "Test APK ${VERSION} (${GITHUB_REF_NAME})" \
-            --notes "Built from ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}. Open on your phone and tap the .apk to install."
+            --notes "Built from ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}. Most phones: download the **arm64-v8a** APK and tap it to install."
 
       - uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: app/build/app/outputs/flutter-apk/*.apk
+          path: app/build/app/outputs/flutter-apk/ai-cornerman-*.apk
