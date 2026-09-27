@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import '../../analysis/drill.dart';
 import '../../analysis/round_analysis.dart';
+import 'video_vision_model.dart';
 import 'vision_model.dart';
 
 /// A moment the rules flagged, with its label where we have one (a correction's
@@ -124,8 +125,8 @@ class CoachingPrompt {
     return <double>[for (var i = 0; i < n; i++) start + i * spacing];
   }
 
-  /// Evenly spaced timestamps (ms) across a round for full-frame mode, at [fps],
-  /// capped at [max] so cost stays bounded.
+  /// Evenly spaced timestamps (ms) across a round, at [fps], capped at [max]
+  /// so cost stays bounded. Context frames for the advanced structured path.
   static List<double> sampledTimestamps(
     double durationMs, {
     double fps = 3.0,
@@ -177,24 +178,47 @@ class CoachingPrompt {
     );
   }
 
-  static VisionRequest fullFrameRequest(
-    DrillContext drill,
-    List<VisionImage> images,
-  ) {
-    final prompt = StringBuffer()
+  /// Full AI review: the whole round's video, sampled by the provider at
+  /// [fps], alongside what the on-device rules flagged — so the model confirms
+  /// or corrects those same moments (the ones the review screen highlights)
+  /// with the full motion in view, and can tell style apart from error.
+  static VideoVisionRequest fullVideoRequest(
+    RoundAnalysis analysis,
+    DrillContext drill, {
+    required String videoPath,
+    double fps = kFullReviewFps,
+  }) {
+    final moments = keyframeMoments(analysis);
+    final buffer = StringBuffer()
       ..writeln(_context(drill))
-      ..writeln(
-        'The attached ${images.length} frames are sampled evenly across one '
-        'technical boxing round, in time order. Watch the round through them '
-        'and give your coaching: what looked good, and the one or two things to '
-        'fix next round.',
-      );
-    return VisionRequest(
+      ..writeln('Our on-device rules analysed the round and found:')
+      ..writeln(analysis.overallSummary);
+    if (moments.isNotEmpty) {
+      buffer.writeln('\nFlagged points, in order:');
+      for (var i = 0; i < moments.length; i++) {
+        final m = moments[i];
+        final at = '~${(m.timestampMs / 1000).toStringAsFixed(1)}s';
+        buffer.writeln('${i + 1}. ${m.label ?? 'flagged moment'} ($at)');
+      }
+    }
+    buffer.writeln(
+      '\nThe attached video is the whole round, sampled at '
+      '${_fps(fps)} frames per second. Watch it through. The rules are rigid '
+      'and can mistake a deliberate style choice or a defensive move (a slip, '
+      'a low lead hand in a shell) for an error — use the motion around each '
+      'flagged point to confirm or correct what they saw, in your own words, '
+      'and call out anything important they missed.',
+    );
+    return VideoVisionRequest(
       systemPrompt: _system,
-      userPrompt: prompt.toString().trim(),
-      images: images,
+      userPrompt: buffer.toString().trim(),
+      videoPath: videoPath,
+      fps: fps,
     );
   }
+
+  static String _fps(double fps) =>
+      fps == fps.roundToDouble() ? fps.toStringAsFixed(0) : fps.toStringAsFixed(1);
 
   // ---------------------------------------------------------------------------
   // Advanced structured path (brief §17 input, §18 output).

@@ -7,14 +7,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 
-import '../../analysis/analysis_mode.dart';
 import '../../analysis/pose_estimation.dart';
 import '../../analysis/pose_only_adapter.dart';
 import '../../analysis/round_analysis.dart';
 import '../../domain/round_clip.dart';
 import '../../domain/user_profile.dart';
 import '../../services/ai/ai_settings_store.dart';
-import '../../services/ai/coach_vision_model.dart';
 import '../../services/ai/coaching_prompt.dart';
 import '../../services/ai/vision_model.dart';
 import '../../services/analysis_store.dart';
@@ -24,6 +22,7 @@ import '../../services/debug_log.dart';
 import '../../services/frame_grabber.dart';
 import '../../services/pose_estimator.dart';
 import '../../services/profile_store.dart';
+import '../../services/round_coach.dart';
 import '../format.dart';
 import '../theme.dart';
 import '../widgets/skeleton_painter.dart';
@@ -368,8 +367,8 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
 
   /// TEMP (debug): mirror the live session's AI step here so the review screen
   /// reflects the selected analysis mode and shows where coaching comes from.
-  /// Offline pose+rules stays the base; in an AI mode with a configured
-  /// endpoint we grab the same frames the session would and call the model.
+  /// Offline pose+rules stays the base; in an AI mode with a configured model
+  /// we run the same [RoundCoach] step the session would.
   Future<void> _maybeEnrichWithAi(
     PoseAnalysisResult result,
     RoundAnalysis analysis,
@@ -389,44 +388,29 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
       setSource('offline rules (mode=${mode.value})');
       return;
     }
-    final visionModel = resolveCoachVisionModel(config: config);
-    if (visionModel == null) {
+    final coach = resolveRoundCoach(mode: mode, config: config);
+    if (!coach.canCoach(mode)) {
       setSource('offline (no AI: sign in, or set a custom endpoint)');
       return;
     }
     setSource('AI (${mode.value}) running…');
     try {
       final drill = profile.toDrill(sessionType: widget.clip.phase.sessionType);
-      final bursts = mode == AnalysisMode.keyframe
-          ? CoachingPrompt.keyframeBursts(
-              analysis,
-              durationMs: result.sequence.durationMs,
-            )
-          : const <KeyframeBurst>[];
-      final timestamps = mode == AnalysisMode.keyframe
-          ? <double>[for (final b in bursts) ...b.timestamps]
-          : CoachingPrompt.sampledTimestamps(result.sequence.durationMs);
-      if (timestamps.isEmpty) {
-        setSource('offline (mode=${mode.value}: no frames to send)');
-        return;
-      }
-      final images = await PluginFrameGrabber().grab(
-        widget.clip.path,
-        timestamps,
+      final coaching = await coach.coach(
+        mode: mode,
+        videoPath: widget.clip.path,
+        analysis: analysis,
+        drill: drill,
+        durationMs: result.sequence.durationMs,
       );
-      if (images.isEmpty) {
-        setSource('offline (frame grab returned 0 of ${timestamps.length})');
+      if (coaching == null) {
+        setSource('offline (mode=${mode.value}: nothing to send)');
         return;
       }
-      final request = mode == AnalysisMode.keyframe
-          ? CoachingPrompt.keyframeRequest(analysis, drill, bursts, images)
-          : CoachingPrompt.fullFrameRequest(drill, images);
-      final coaching = await visionModel.complete(request);
       if (!mounted) return;
       setState(() {
-        _analysis = analysis.withModelCoaching(coaching.trim());
-        _source = 'AI · ${visionModel.label} · ${mode.value} · ${images.length} '
-            'frames';
+        _analysis = analysis.withModelCoaching(coaching.text);
+        _source = 'AI · ${coaching.source}';
       });
     } on VisionModelException catch (error) {
       setSource('AI failed: ${error.message}');

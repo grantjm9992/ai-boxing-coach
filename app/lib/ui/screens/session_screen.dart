@@ -12,14 +12,13 @@ import '../../engine/coach_cue.dart';
 import '../../engine/session_engine.dart';
 import '../../services/ai/ai_quota_service.dart';
 import '../../services/ai/ai_settings_store.dart';
-import '../../services/ai/coach_vision_model.dart';
 import '../../services/camera_round_recorder.dart';
 import '../../services/clip_store.dart';
 import '../../services/coach_voice.dart';
 import '../../services/debug_log.dart';
 import '../../services/device_coach_voice.dart';
-import '../../services/frame_grabber.dart';
 import '../../services/round_analyzer.dart';
+import '../../services/round_coach.dart';
 import '../../services/profile_store.dart';
 import '../../services/round_recorder.dart';
 import '../../services/sync/backfill_queue.dart';
@@ -178,21 +177,11 @@ class _SessionScreenState extends State<SessionScreen> {
     final config = await const AiSettingsStore().load();
     if (!mounted) return;
     _profile = profile;
-    // Only build an AI-backed analyzer when the mode wants it and it's set up;
-    // otherwise stay offline.
-    if (_analyzer == null) {
-      final visionModel = profile.analysisMode.usesAi
-          ? resolveCoachVisionModel(config: config)
-          : null;
-      if (visionModel != null) {
-        _analyzer = RoundAnalyzer(
-          visionModel: visionModel,
-          frameGrabber: PluginFrameGrabber(),
-        );
-      } else {
-        _analyzer = RoundAnalyzer();
-      }
-    }
+    // AI models only when the mode wants them and they're set up; otherwise the
+    // analyzer stays offline.
+    _analyzer ??= RoundAnalyzer.withCoach(
+      resolveRoundCoach(mode: profile.analysisMode, config: config),
+    );
     // Fetch the weekly AI allowance for the on-screen hint, but only on the
     // hosted path (a custom endpoint isn't metered).
     if (profile.analysisMode.usesAi && !config.useCustomEndpoint) {

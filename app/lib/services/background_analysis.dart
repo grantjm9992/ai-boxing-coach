@@ -4,11 +4,10 @@ import '../analysis/drill.dart';
 import '../analysis/round_analysis.dart';
 import '../domain/round_clip.dart';
 import 'ai/ai_settings_store.dart';
-import 'ai/coach_vision_model.dart';
 import 'debug_log.dart';
-import 'frame_grabber.dart';
 import 'profile_store.dart';
 import 'round_analyzer.dart';
+import 'round_coach.dart';
 import 'sync/backfill_queue.dart';
 
 /// Runs a round's analysis off the critical path so the user can start the next
@@ -81,11 +80,9 @@ class BackgroundAnalysis {
   Future<RoundAnalyzer> _buildAnalyzer() async {
     final profile = await const ProfileStore().load();
     final config = await const AiSettingsStore().load();
-    final visionModel =
-        profile.analysisMode.usesAi ? resolveCoachVisionModel(config: config) : null;
-    return visionModel != null
-        ? RoundAnalyzer(visionModel: visionModel, frameGrabber: PluginFrameGrabber())
-        : RoundAnalyzer();
+    return RoundAnalyzer.withCoach(
+      resolveRoundCoach(mode: profile.analysisMode, config: config),
+    );
   }
 
   void _mark(String key, bool active) {
