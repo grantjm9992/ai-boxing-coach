@@ -17,11 +17,12 @@ Chosen in the profile, applied to every technical round
 | --- | --- | --- | --- |
 | **Offline** | `offline` | Pose + rules on-device. The default and the whole of v0.5. | Free, offline, private. |
 | **Pose + AI on key moments** | `keyframe` | Offline first, then a model reviews the handful of frames the rules flagged (plus the pose read as text). | A few frames per round. |
-| **Full AI review** | `full_frame` | A vision model watches frames sampled across the whole round. | Richest, most expensive. |
+| **Full AI review** | `full_frame` | Offline first, then the whole round's video goes to Gemini at 30 fps with the flagged moments, for the model to confirm or correct. | Richest, most expensive. |
 
-`AnalysisMode.usesAi` is true for anything but offline. `full_frame` is
-`available == false` — parked behind a "Coming soon" badge until the self-hosted
-vision endpoint lands. Its pipeline is kept intact, just not selectable.
+`AnalysisMode.usesAi` is true for anything but offline. Both AI modes show the
+**same review UX**: the highlighted moments (frames + labels) always come from
+the on-device rules; the mode only changes what the model is shown before it
+writes the coaching.
 
 ## The vision-model seam
 
@@ -79,7 +80,17 @@ which frames get sent are unit-tested without a model.
 
 - **keyframe** — grabs the flagged-moment frames via `FrameGrabber` and sends
   them with the pose read as text;
-- **full_frame** — grabs frames sampled across the whole round.
+- **full_frame** — sends the round's video file to a `VideoVisionModel`
+  (`ai/video_vision_model.dart`) at `kFullReviewFps` (30), with the rules'
+  flagged points in the prompt. The hosted implementation, `CoachVideoModel`,
+  uploads the video straight to Gemini's Files API through a proxy-issued
+  upload URL, then asks the proxy to run it (see [AI_PROXY.md](AI_PROXY.md)).
+  With no video model — signed out, or AI routed to a custom OpenAI-compatible
+  endpoint, which can't take a video — it falls back to the keyframe read.
+
+The AI step lives in `RoundCoach` (`services/round_coach.dart`), shared by the
+background pipeline and the review screen's re-run; `resolveRoundCoach` builds
+it from the profile's mode and the AI settings.
 
 The model's coaching is attached to the `RoundAnalysis` as `modelCoaching`. If
 there's no model configured, or the call throws, the AI modes fall back to the
@@ -108,7 +119,6 @@ the mode is `full_frame`.
 
 ## Roadmap note
 
-Per the project's backend plan, full AI review + the structured advanced path are
-parked for a self-hosted Qwen vision endpoint; because the client is
-OpenAI-compatible, bringing them online is a config change plus flipping
-`AnalysisMode.fullFrame.available` and `FeatureFlags.advancedAiAnalysis`.
+Full AI review now runs on the hosted Gemini proxy. The structured advanced path
+is still behind `FeatureFlags.advancedAiAnalysis`; when that flag is on it takes
+precedence for `full_frame` rounds.

@@ -33,6 +33,26 @@ supabase functions deploy analyze
 ```
 Leave JWT verification **on** (the default) so only signed-in users can call it.
 
+### 4. Full AI review (video) — optional secrets
+Full AI review calls the **native** Gemini API (the OpenAI-compatible endpoint
+can't set a per-video frame rate), so it needs a Gemini key even if `AI_BASE_URL`
+points elsewhere:
+```bash
+supabase secrets set \
+  GEMINI_API_KEY="<Gemini key>" \
+  AI_VIDEO_MODEL="gemini-2.5-flash" \
+  AI_VIDEO_MAX_FPS="30" \
+  AI_VIDEO_MAX_BYTES="524288000" \
+  AI_VIDEO_MEDIA_RESOLUTION="MEDIA_RESOLUTION_LOW"
+```
+- `GEMINI_API_KEY` defaults to `AI_API_KEY`; `AI_VIDEO_MODEL` to `AI_MODEL`.
+- `AI_VIDEO_MAX_FPS` is the server-side cap on the fps the app asks for (30).
+- `AI_VIDEO_MAX_BYTES` caps the upload (default 500 MB).
+- `AI_VIDEO_MEDIA_RESOLUTION` is optional; unset uses Gemini's default
+  (~258 tokens/frame), `MEDIA_RESOLUTION_LOW` is ~66.
+
+Redeploy after changing code: `supabase functions deploy analyze`.
+
 ## How the app targets it
 `OpenAiCompatibleVisionModel` appends `/chat/completions` to its base URL, so the
 app points at:
@@ -41,6 +61,28 @@ app points at:
 ```
 with the user's `session.accessToken` as the bearer. See
 `app/lib/services/ai/coach_vision_model.dart`.
+
+## Full AI review flow (`/video/*`)
+The round video (often 100+ MB) never passes through the function:
+
+1. `POST …/analyze/video/upload` `{bytes, mimeType}` — checks the user has
+   allowance left, opens a Gemini Files API resumable upload tagged with the
+   user's id, and returns `{uploadUrl}`. Costs no quota.
+2. The app streams the file to `uploadUrl` (self-authorising — no key on the
+   device) and gets back `{file: {name: "files/…"}}`.
+3. `POST …/analyze/video/generate` `{fileName, fps, systemPrompt, userPrompt,
+   maxTokens?, temperature?}` — reserves one analysis, waits for the file to be
+   `ACTIVE`, checks it belongs to the caller, runs `generateContent` with
+   `videoMetadata.fps` (clamped to `AI_VIDEO_MAX_FPS`), deletes the upload and
+   returns `{text, finishReason, usage, fps}`. Any failure refunds the analysis.
+
+App side: `CoachVideoModel` (`app/lib/services/ai/coach_video_model.dart`).
+Unit tests for the Gemini helpers: `deno test supabase/functions/analyze/video_test.ts`.
+
+**Cost:** one Full AI review is one weekly analysis, but costs far more tokens
+than a key-moment one — roughly frames × tokens-per-frame (≈258 at default
+resolution, ≈66 at `MEDIA_RESOLUTION_LOW`). A 3-minute round at 30 fps is
+~5,400 frames: ≈1.4 M tokens at default resolution, ≈0.36 M at low.
 
 ## Behaviour
 - **Reserve → call model → refund on failure**, so a failed/timed-out model call

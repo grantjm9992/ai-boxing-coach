@@ -11,6 +11,14 @@ Feature areas referenced below have their own deep-dive docs — see
 ## [Unreleased]
 
 ### Added
+- **Full AI review is live.** Picking it in the profile sends the whole round's
+  video to Gemini at 30 fps (native API, `videoMetadata.fps`), with the rules'
+  flagged moments in the prompt. Same review UX as key-moment mode — the same
+  highlighted moments with frames and labels — with coaching written from the
+  full motion. The video uploads straight to Google via a proxy-issued upload
+  URL (new `analyze` routes `/video/upload` + `/video/generate`); one weekly
+  analysis per round, refunded on failure. Falls back to key-moment coaching
+  when signed out or using a custom endpoint.
 - **Accordion home page + timed standalone rounds.**
   - The home page is now three accordions — **Workouts & sessions**, **Shadow
     boxing**, **Combination drills** — instead of a flat template list. Secondary

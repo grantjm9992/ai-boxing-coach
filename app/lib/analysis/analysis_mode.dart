@@ -15,13 +15,15 @@ enum AnalysisMode {
         'sharper feedback. A few frames per round.',
   ),
 
-  /// A vision model watches sampled frames across the whole round (~2–5 fps).
-  /// The richest and the most expensive; needs a configured endpoint.
+  /// [offline] first, then the whole round's video goes to the hosted model
+  /// (Gemini, 30 fps) along with the flagged moments, for it to confirm or
+  /// correct with the full motion in view. Same review UX as [keyframe]; the
+  /// richest read and the most expensive.
   fullFrame(
     'full_frame',
     'Full AI review',
-    'A vision model watches the whole round (sampled). Richest feedback, '
-        'highest cost — needs a model endpoint.',
+    'Rules run on-device; an AI model watches the whole round video at 30 fps '
+        'to review the flagged moments. Richest feedback, slowest.',
   );
 
   const AnalysisMode(this.value, this.label, this.blurb);
@@ -33,10 +35,9 @@ enum AnalysisMode {
   /// True if the mode calls an AI model at all.
   bool get usesAi => this != AnalysisMode.offline;
 
-  /// Whether this mode can currently be chosen. Full AI review is parked until
-  /// the self-hosted vision endpoint lands — it's offered again then, so the
-  /// pipeline for it is kept intact, just not selectable in the profile.
-  bool get available => this != AnalysisMode.fullFrame;
+  /// Whether this mode can currently be chosen. All are; kept so a mode can be
+  /// parked again (shown as "Coming soon") without touching the profile UI.
+  bool get available => true;
 
   static AnalysisMode fromValue(String? value) => AnalysisMode.values.firstWhere(
     (m) => m.value == value,

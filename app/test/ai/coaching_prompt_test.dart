@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:boxing_coach/analysis/drill.dart';
 import 'package:boxing_coach/analysis/round_analysis.dart';
 import 'package:boxing_coach/services/ai/coaching_prompt.dart';
+import 'package:boxing_coach/services/ai/video_vision_model.dart';
 import 'package:boxing_coach/services/ai/vision_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -147,12 +148,25 @@ void main() {
     expect(req.images, hasLength(1));
   });
 
-  test('fullFrameRequest mentions the frame count', () {
-    final images = <VisionImage>[
-      for (var i = 0; i < 5; i++) VisionImage(bytes: Uint8List.fromList(<int>[0, 0, 0])),
-    ];
-    final req = CoachingPrompt.fullFrameRequest(const DrillContext(), images);
-    expect(req.userPrompt, contains('5 frames'));
-    expect(req.images, hasLength(5));
+  test('fullVideoRequest lists the flagged points and asks for 30 fps', () {
+    final req = CoachingPrompt.fullVideoRequest(
+      analysis(),
+      const DrillContext(),
+      videoPath: '/clips/round.mp4',
+    );
+    expect(req.videoPath, '/clips/round.mp4');
+    expect(req.fps, 30);
+    expect(req.userPrompt, contains('Flagged points, in order:'));
+    expect(req.userPrompt, contains('Hand drops.'));
+    expect(req.userPrompt, contains('Flat-footed.'));
+    expect(req.userPrompt, contains('sampled at 30 frames per second'));
+    expect(req.userPrompt, contains('orthodox stance'));
+  });
+
+  test('VideoVisionRequest infers the mime type from the extension', () {
+    const mp4 = VideoVisionRequest(systemPrompt: '', userPrompt: '', videoPath: 'a.mp4');
+    const mov = VideoVisionRequest(systemPrompt: '', userPrompt: '', videoPath: 'a.MOV');
+    expect(mp4.mimeType, 'video/mp4');
+    expect(mov.mimeType, 'video/quicktime');
   });
 }
