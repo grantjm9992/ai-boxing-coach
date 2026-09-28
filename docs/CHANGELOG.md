@@ -10,6 +10,23 @@ Feature areas referenced below have their own deep-dive docs — see
 
 ## [Unreleased]
 
+### Fixed
+- **Round analysis no longer dies when the phone locks.** Pose estimation on a
+  2–3 minute round takes a few minutes; if the screen auto-locked meanwhile,
+  Android throttled the app, the native pose stream went quiet and the 45 s
+  stall watchdog failed the round (`TimeoutException … No stream event`), and
+  the app lost network (so a Full AI upload couldn't have run either).
+  - The screen now stays on while any analysis runs (background analysis and
+    the review screen's re-run), via a reference-counted `KeepAwake` shared
+    with the live session so neither switches the other's keep-awake off.
+  - The stall watchdog only counts silence while the app has been in the
+    foreground for the whole window (`AppForeground`), so a pause is waited
+    out instead of failing the round.
+  - The debug log now records lifecycle changes, keep-awake on/off, and pose
+    progress every 10%, so a stalled run shows where and why.
+- Cloud rounds analysed with AI are recorded with the chosen mode
+  (`keyframe` / `full_frame`) instead of always `offline`.
+
 ### Added
 - **Full AI review is live.** Picking it in the profile sends the whole round's
   video to Gemini at 30 fps (native API, `videoMetadata.fps`), with the rules'

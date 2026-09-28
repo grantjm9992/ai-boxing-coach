@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../analysis/analysis_mode.dart';
 import '../analysis/drill.dart';
 import '../analysis/round_analysis.dart';
 import '../domain/round_clip.dart';
 import 'ai/ai_settings_store.dart';
 import 'debug_log.dart';
+import 'keep_awake.dart';
 import 'profile_store.dart';
 import 'round_analyzer.dart';
 import 'round_coach.dart';
@@ -49,18 +51,26 @@ class BackgroundAnalysis {
   }) async {
     final key = keyFor(clip);
     _mark(key, true);
+    // Pose + AI take minutes; if the phone auto-locks meanwhile, the OS
+    // throttles the app and cuts its network, stalling the run.
+    final releaseAwake = KeepAwake.instance.acquire('analysing $key');
     RoundAnalysis? analysis;
+    AnalysisMode? mode;
     try {
       final built = analyzer ?? await _buildAnalyzer();
       final profile = await const ProfileStore().load();
-      analysis =
-          await built.analyse(clip, drill: drill, mode: profile.analysisMode);
+      mode = profile.analysisMode;
+      analysis = await built.analyse(clip, drill: drill, mode: mode);
 
       final q = queue ?? BackfillQueue.instance;
       await q.enqueueRound(
         clip,
         title: label,
-        mode: analysis?.aiReport != null ? 'keyframe' : 'offline',
+        // The chosen AI mode when the round got AI coaching; offline when
+        // the AI step didn't run or produced nothing.
+        mode: analysis?.modelCoaching != null && mode != null
+            ? mode.value
+            : AnalysisMode.offline.value,
       );
       if (finalizeRollup != null) {
         await q.enqueueFinalize(clip.sessionId,
@@ -70,6 +80,7 @@ class BackgroundAnalysis {
     } on Object catch (error) {
       DebugLog.instance.log('background analysis failed: $error', tag: 'bg');
     } finally {
+      releaseAwake();
       _mark(key, false);
     }
     _toast(analysis != null

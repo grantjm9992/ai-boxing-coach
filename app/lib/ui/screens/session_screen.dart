@@ -1,6 +1,5 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../analysis/round_analysis.dart';
 import '../../domain/round_clip.dart';
@@ -17,6 +16,7 @@ import '../../services/clip_store.dart';
 import '../../services/coach_voice.dart';
 import '../../services/debug_log.dart';
 import '../../services/device_coach_voice.dart';
+import '../../services/keep_awake.dart';
 import '../../services/round_analyzer.dart';
 import '../../services/round_coach.dart';
 import '../../services/profile_store.dart';
@@ -149,6 +149,10 @@ class _SessionScreenState extends State<SessionScreen> {
 
   bool _navigatedToSummary = false;
 
+  /// Releases this screen's hold on the screen keep-awake (shared with any
+  /// background analysis still running).
+  void Function() _releaseAwake = () {};
+
   /// Set when the session ends. After that, each late-landing analysis re-saves
   /// the history rollup (AI rounds often finish well after the screen is gone),
   /// so the entry becomes openable once any round has actually been analysed.
@@ -158,7 +162,7 @@ class _SessionScreenState extends State<SessionScreen> {
   void initState() {
     super.initState();
     _engine.addListener(_onEngineChanged);
-    WakelockPlus.enable().ignore();
+    _releaseAwake = KeepAwake.instance.acquire('session');
     // Load the profile + AI settings so rounds are analysed against the
     // athlete's stance/style/school in their chosen mode. Injected in tests.
     if (widget.analyzer != null) _analyzer = widget.analyzer;
@@ -477,7 +481,7 @@ class _SessionScreenState extends State<SessionScreen> {
     _recording.finish().ignore();
     _recorder.dispose().ignore();
     _voice.dispose().ignore();
-    WakelockPlus.disable().ignore();
+    _releaseAwake();
     super.dispose();
   }
 
