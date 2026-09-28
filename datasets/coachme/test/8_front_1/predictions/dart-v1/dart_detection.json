@@ -1,0 +1,48 @@
+{
+  "analysisVersion": "2.0.0",
+  "sessionType": "TECHNICAL_WORK",
+  "overallSummary": "Clean round — 1 punches thrown and nothing to correct. Keep it there.",
+  "combinations": [],
+  "combinationAnalyses": [],
+  "lowConfidenceObservations": [],
+  "aiReport": null,
+  "specificObservations": [
+    {
+      "ruleId": "guard_return",
+      "code": "",
+      "category": "defence",
+      "severity": "positive",
+      "coachingText": "Clean guard return all round — hands came straight back to guard.",
+      "confidence": 1.0,
+      "timestampMs": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight": []
+    }
+  ],
+  "positiveNotes": [
+    "Clean guard return all round — hands came straight back to guard."
+  ],
+  "correctionPriorities": [],
+  "metrics": {
+    "punchesThrown": 1,
+    "guardReturnRate": 1.0,
+    "punchMix": {
+      "jab": 1
+    },
+    "values": {
+      "body_scale": 0.2281,
+      "combinations_detected": 0.0,
+      "output_per_min": 44.776,
+      "mobility": 0.868,
+      "ground_coverage": 0.066,
+      "torso_lean_deg": 2.68,
+      "body_shot_ratio": 0.0,
+      "jab_ratio": 1.0,
+      "punch_variety": 1.0
+    }
+  },
+  "flaggedMoments": [],
+  "modelCoaching": null
+}

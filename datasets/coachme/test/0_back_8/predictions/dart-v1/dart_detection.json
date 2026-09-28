@@ -1,0 +1,93 @@
+{
+  "analysisVersion": "2.0.0",
+  "sessionType": "TECHNICAL_WORK",
+  "overallSummary": "Clean round — 2 punches thrown and nothing to correct. Keep it there.",
+  "combinations": [
+    {
+      "startMs": 180.0,
+      "endMs": 860.0,
+      "sequence": [
+        0,
+        2
+      ],
+      "types": [
+        "unknown",
+        "straight"
+      ],
+      "confidence": 0.5,
+      "punchIndices": [
+        0,
+        1
+      ]
+    }
+  ],
+  "combinationAnalyses": [
+    {
+      "combination": {
+        "startMs": 180.0,
+        "endMs": 860.0,
+        "sequence": [
+          0,
+          2
+        ],
+        "types": [
+          "unknown",
+          "straight"
+        ],
+        "confidence": 0.5,
+        "punchIndices": [
+          0,
+          1
+        ]
+      },
+      "score": 100,
+      "issues": [],
+      "metrics": {
+        "worst_end_hip_offset": 0.2962526227562631
+      }
+    }
+  ],
+  "lowConfidenceObservations": [],
+  "aiReport": null,
+  "specificObservations": [
+    {
+      "ruleId": "guard_return",
+      "code": "",
+      "category": "defence",
+      "severity": "positive",
+      "coachingText": "Clean guard return all round — hands came straight back to guard.",
+      "confidence": 1.0,
+      "timestampMs": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight": []
+    }
+  ],
+  "positiveNotes": [
+    "Clean guard return all round — hands came straight back to guard."
+  ],
+  "correctionPriorities": [],
+  "metrics": {
+    "punchesThrown": 2,
+    "guardReturnRate": 1.0,
+    "punchMix": {
+      "punch": 1,
+      "cross": 1
+    },
+    "values": {
+      "body_scale": 0.2199,
+      "combinations_detected": 1.0,
+      "combination_execution_score": 100.0,
+      "output_per_min": 96.774,
+      "mobility": 0.89,
+      "ground_coverage": 0.027,
+      "torso_lean_deg": 9.375,
+      "body_shot_ratio": 0.0,
+      "jab_ratio": 0.0,
+      "punch_variety": 2.0
+    }
+  },
+  "flaggedMoments": [],
+  "modelCoaching": null
+}

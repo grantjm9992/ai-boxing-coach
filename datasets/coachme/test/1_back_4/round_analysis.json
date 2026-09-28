@@ -1,0 +1,80 @@
+{
+  "analysisVersion": "2.0.0",
+  "sessionType": "TECHNICAL_WORK",
+  "overallSummary": "1 punches thrown. Main thing to fix: You're squared up on the rear straight — punching with the arm. Turn the hip and shoulder over; let the rotation drive the shot.",
+  "combinations": [],
+  "combinationAnalyses": [],
+  "lowConfidenceObservations": [],
+  "aiReport": null,
+  "specificObservations": [
+    {
+      "ruleId": "hip_rotation",
+      "code": "ROT_001",
+      "category": "offence_straight",
+      "severity": "moderate",
+      "coachingText": "You're squared up on the rear straight — punching with the arm. Turn the hip and shoulder over; let the rotation drive the shot.",
+      "confidence": 1.0,
+      "timestampMs": 40.0,
+      "metrics": {
+        "shoulder_drive": 0.0206286185816266
+      },
+      "highlight": [
+        12
+      ]
+    },
+    {
+      "ruleId": "guard_return",
+      "code": "",
+      "category": "defence",
+      "severity": "positive",
+      "coachingText": "Clean guard return all round — hands came straight back to guard.",
+      "confidence": 1.0,
+      "timestampMs": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight": []
+    }
+  ],
+  "positiveNotes": [
+    "Clean guard return all round — hands came straight back to guard."
+  ],
+  "correctionPriorities": [
+    {
+      "priority": 1,
+      "category": "offence_straight",
+      "description": "You're squared up on the rear straight — punching with the arm. Turn the hip and shoulder over; let the rotation drive the shot.",
+      "suggestedDrill": "Rear-hand rotation drill: throw the cross slow, exaggerating the hip/shoulder turn.",
+      "exampleTimestampMs": 40.0,
+      "highlight": [
+        12
+      ]
+    }
+  ],
+  "metrics": {
+    "punchesThrown": 1,
+    "guardReturnRate": 1.0,
+    "punchMix": {
+      "cross": 1
+    },
+    "values": {
+      "body_scale": 0.2004,
+      "combinations_detected": 0.0,
+      "output_per_min": 37.037,
+      "mobility": 0.824,
+      "ground_coverage": 0.115,
+      "torso_lean_deg": 6.458,
+      "body_shot_ratio": 0.0,
+      "jab_ratio": 0.0,
+      "punch_variety": 1.0
+    }
+  },
+  "flaggedMoments": [
+    {
+      "timestampMs": 40.0,
+      "reason": "You're squared up on the rear straight — punching with the arm. Turn the hip and shoulder over; let the rotation drive the shot.",
+      "severity": "moderate"
+    }
+  ],
+  "modelCoaching": null
+}

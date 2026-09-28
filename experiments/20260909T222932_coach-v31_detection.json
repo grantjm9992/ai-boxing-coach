@@ -1,0 +1,109 @@
+{
+  "experiment_id": "20260909T222932_coach-v31_detection",
+  "timestamp": "2026-09-09T22:29:32",
+  "git_commit": "1d230f0",
+  "dataset": "../datasets/development",
+  "version": "coach-v31",
+  "layer": "detection",
+  "min_confidence": null,
+  "clip_count": 3,
+  "skipped": [],
+  "metrics": {
+    "overall": {
+      "tp": 1,
+      "fp": 14,
+      "fn": 1,
+      "precision": 0.0667,
+      "recall": 0.5,
+      "f1": 0.1176
+    },
+    "weighted": {
+      "precision": 0.0233,
+      "recall": 0.25,
+      "f1": 0.0426
+    },
+    "severity_accuracy": 0.0,
+    "hallucination_rate": 0.3333,
+    "major_recall": null,
+    "priority_hit_rate": 0.0
+  },
+  "by_category": {
+    "guard": {
+      "tp": 1,
+      "fp": 5,
+      "fn": 1,
+      "precision": 0.1667,
+      "recall": 0.5,
+      "f1": 0.25
+    },
+    "recovery": {
+      "tp": 0,
+      "fp": 6,
+      "fn": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "rotation": {
+      "tp": 0,
+      "fp": 3,
+      "fn": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    }
+  },
+  "by_severity": {
+    "minor": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "moderate": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    }
+  },
+  "per_clip": [
+    {
+      "video_id": "clip",
+      "tp": 0,
+      "fp": 3,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": false
+    },
+    {
+      "video_id": "clip_bivol",
+      "tp": 0,
+      "fp": 4,
+      "fn": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "clip_bivol_2",
+      "tp": 1,
+      "fp": 7,
+      "fn": 0,
+      "precision": 0.125,
+      "recall": 1.0,
+      "f1": 0.2222,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    }
+  ]
+}

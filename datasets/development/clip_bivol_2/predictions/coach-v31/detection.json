@@ -1,0 +1,198 @@
+{
+  "overall_summary": "19 punches thrown. Main thing to fix: Your rear hand is slow getting back to guard. The return should be as fast as the punch went out. plus 7 other point(s)",
+  "specific_observations": [
+    {
+      "rule_id": "guard_return",
+      "category": "defence",
+      "severity": "moderate",
+      "coaching_text": "Your rear hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "timestamp_ms": 3066.666666666667,
+      "metrics": {
+        "peak_reach": 1.2899636947380355
+      },
+      "highlight_landmarks": [
+        16
+      ]
+    },
+    {
+      "rule_id": "guard_return",
+      "category": "defence",
+      "severity": "moderate",
+      "coaching_text": "Your rear hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "timestamp_ms": 4400.0,
+      "metrics": {
+        "peak_reach": 2.002415212146639
+      },
+      "highlight_landmarks": [
+        16
+      ]
+    },
+    {
+      "rule_id": "guard_return",
+      "category": "defence",
+      "severity": "moderate",
+      "coaching_text": "Your lead hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "timestamp_ms": 3333.3333333333335,
+      "metrics": {
+        "peak_reach": 2.1855438774805123
+      },
+      "highlight_landmarks": [
+        15
+      ]
+    },
+    {
+      "rule_id": "guard_return",
+      "category": "defence",
+      "severity": "moderate",
+      "coaching_text": "Your rear hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "timestamp_ms": 6200.0,
+      "metrics": {
+        "peak_reach": 1.226600814765596
+      },
+      "highlight_landmarks": [
+        16
+      ]
+    },
+    {
+      "rule_id": "guard_return",
+      "category": "defence",
+      "severity": "moderate",
+      "coaching_text": "Your rear hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "timestamp_ms": 7000.0,
+      "metrics": {
+        "peak_reach": 1.3169995843505957
+      },
+      "highlight_landmarks": [
+        16
+      ]
+    },
+    {
+      "rule_id": "guard_return",
+      "category": "defence",
+      "severity": "moderate",
+      "coaching_text": "Your rear hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "timestamp_ms": 8600.0,
+      "metrics": {
+        "peak_reach": 1.7002021731333983
+      },
+      "highlight_landmarks": [
+        16
+      ]
+    },
+    {
+      "rule_id": "hands_up",
+      "category": "defence",
+      "severity": "moderate",
+      "coaching_text": "Your lead hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "timestamp_ms": 133.33333333333334,
+      "metrics": {
+        "down_fraction": 0.883
+      },
+      "highlight_landmarks": [
+        15
+      ]
+    },
+    {
+      "rule_id": "hands_up",
+      "category": "defence",
+      "severity": "moderate",
+      "coaching_text": "Your rear hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "timestamp_ms": 133.33333333333334,
+      "metrics": {
+        "down_fraction": 0.901
+      },
+      "highlight_landmarks": [
+        16
+      ]
+    },
+    {
+      "rule_id": "footwork",
+      "category": "footwork",
+      "severity": "positive",
+      "coaching_text": "Good movement \u2014 you're staying light on your feet, not rooted.",
+      "timestamp_ms": null,
+      "metrics": {
+        "travel_per_second": 5.835
+      },
+      "highlight_landmarks": []
+    }
+  ],
+  "positive_notes": [
+    "Good movement \u2014 you're staying light on your feet, not rooted."
+  ],
+  "correction_priorities": [
+    {
+      "priority": 1,
+      "category": "defence",
+      "description": "Your rear hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "suggested_drill": "Jab\u2013return shadow drill: throw the jab, snap the hand back to your cheek before resetting.",
+      "example_timestamp_ms": 3066.666666666667,
+      "highlight_landmarks": [
+        16
+      ],
+      "still_path": null
+    }
+  ],
+  "metrics": {
+    "punches_thrown": 19,
+    "guard_return_rate": 0.684,
+    "punch_mix": {
+      "rear hook": 5,
+      "jab": 8,
+      "punch": 2,
+      "cross": 4
+    },
+    "values": {
+      "body_scale": 0.1629,
+      "output_per_min": 78.802,
+      "mobility": 5.835,
+      "ground_coverage": 0.015,
+      "torso_lean_deg": 9.455,
+      "body_shot_ratio": 0.105,
+      "jab_ratio": 0.421,
+      "punch_variety": 4.0
+    }
+  },
+  "flagged_moments": [
+    {
+      "timestamp_ms": 133.33333333333334,
+      "reason": "Your lead hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "severity": "moderate"
+    },
+    {
+      "timestamp_ms": 133.33333333333334,
+      "reason": "Your rear hand keeps drifting down between punches. Glue it to your cheek \u2014 you're open to the counter.",
+      "severity": "moderate"
+    },
+    {
+      "timestamp_ms": 3066.666666666667,
+      "reason": "Your rear hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "severity": "moderate"
+    },
+    {
+      "timestamp_ms": 3333.3333333333335,
+      "reason": "Your lead hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "severity": "moderate"
+    },
+    {
+      "timestamp_ms": 4400.0,
+      "reason": "Your rear hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "severity": "moderate"
+    },
+    {
+      "timestamp_ms": 6200.0,
+      "reason": "Your rear hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "severity": "moderate"
+    },
+    {
+      "timestamp_ms": 7000.0,
+      "reason": "Your rear hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "severity": "moderate"
+    },
+    {
+      "timestamp_ms": 8600.0,
+      "reason": "Your rear hand is slow getting back to guard. The return should be as fast as the punch went out.",
+      "severity": "moderate"
+    }
+  ]
+}

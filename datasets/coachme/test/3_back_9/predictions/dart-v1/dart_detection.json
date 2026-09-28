@@ -1,0 +1,100 @@
+{
+  "analysisVersion": "2.0.0",
+  "sessionType": "TECHNICAL_WORK",
+  "overallSummary": "Clean round — 2 punches thrown and nothing to correct. Keep it there.",
+  "combinations": [
+    {
+      "startMs": 200.0,
+      "endMs": 740.0,
+      "sequence": [
+        2,
+        0
+      ],
+      "types": [
+        "straight",
+        "unknown"
+      ],
+      "confidence": 0.5,
+      "punchIndices": [
+        0,
+        1
+      ]
+    }
+  ],
+  "combinationAnalyses": [
+    {
+      "combination": {
+        "startMs": 200.0,
+        "endMs": 740.0,
+        "sequence": [
+          2,
+          0
+        ],
+        "types": [
+          "straight",
+          "unknown"
+        ],
+        "confidence": 0.5,
+        "punchIndices": [
+          0,
+          1
+        ]
+      },
+      "score": 85,
+      "issues": [
+        {
+          "code": "REC_002",
+          "severity": "moderate",
+          "confidence": 0.75,
+          "timestampMs": 240.0
+        }
+      ],
+      "metrics": {
+        "worst_end_hip_offset": 0.09712002534346911
+      }
+    }
+  ],
+  "lowConfidenceObservations": [],
+  "aiReport": null,
+  "specificObservations": [
+    {
+      "ruleId": "guard_return",
+      "code": "",
+      "category": "defence",
+      "severity": "positive",
+      "coachingText": "Clean guard return all round — hands came straight back to guard.",
+      "confidence": 1.0,
+      "timestampMs": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight": []
+    }
+  ],
+  "positiveNotes": [
+    "Clean guard return all round — hands came straight back to guard."
+  ],
+  "correctionPriorities": [],
+  "metrics": {
+    "punchesThrown": 2,
+    "guardReturnRate": 1.0,
+    "punchMix": {
+      "cross": 1,
+      "punch": 1
+    },
+    "values": {
+      "body_scale": 0.2152,
+      "combinations_detected": 1.0,
+      "combination_execution_score": 85.0,
+      "output_per_min": 101.695,
+      "mobility": 1.005,
+      "ground_coverage": 0.01,
+      "torso_lean_deg": 3.094,
+      "body_shot_ratio": 0.0,
+      "jab_ratio": 0.0,
+      "punch_variety": 2.0
+    }
+  },
+  "flaggedMoments": [],
+  "modelCoaching": null
+}

@@ -1,0 +1,532 @@
+{
+  "experiment_id": "20260910T212009_dart-v1_dart_detection",
+  "timestamp": "2026-09-10T21:20:09",
+  "git_commit": "4216547",
+  "dataset": "../datasets/coachme/test",
+  "version": "dart-v1",
+  "layer": "dart_detection",
+  "min_confidence": null,
+  "clip_count": 39,
+  "skipped": [
+    "9_front_11 (status=draft)",
+    "9_front_7 (status=draft)"
+  ],
+  "metrics": {
+    "overall": {
+      "tp": 5,
+      "fp": 16,
+      "fn": 88,
+      "precision": 0.2381,
+      "recall": 0.0538,
+      "f1": 0.0877
+    },
+    "weighted": {
+      "precision": 0.2381,
+      "recall": 0.0538,
+      "f1": 0.0877
+    },
+    "severity_accuracy": 1.0,
+    "hallucination_rate": 0.0,
+    "major_recall": null,
+    "priority_hit_rate": null
+  },
+  "by_category": {
+    "balance": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 8,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "body_position": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 13,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "footwork": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 9,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "guard": {
+      "tp": 2,
+      "fp": 15,
+      "fn": 13,
+      "precision": 0.1176,
+      "recall": 0.1333,
+      "f1": 0.125
+    },
+    "lean": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "rotation": {
+      "tp": 3,
+      "fp": 1,
+      "fn": 18,
+      "precision": 0.75,
+      "recall": 0.1429,
+      "f1": 0.24
+    },
+    "tension": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 22,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    }
+  },
+  "by_severity": {
+    "moderate": {
+      "tp": 5,
+      "fp": 0,
+      "fn": 88,
+      "precision": 1.0,
+      "recall": 0.0538,
+      "f1": 0.102
+    }
+  },
+  "per_clip": [
+    {
+      "video_id": "0_back_10",
+      "tp": 0,
+      "fp": 2,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "0_back_6",
+      "tp": 0,
+      "fp": 1,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "0_back_7",
+      "tp": 0,
+      "fp": 1,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "0_back_8",
+      "tp": 0,
+      "fp": 0,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "1_back_10",
+      "tp": 0,
+      "fp": 0,
+      "fn": 4,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "1_back_11",
+      "tp": 0,
+      "fp": 0,
+      "fn": 4,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "1_back_4",
+      "tp": 1,
+      "fp": 0,
+      "fn": 2,
+      "precision": 1.0,
+      "recall": 0.3333,
+      "f1": 0.5,
+      "severity_accuracy": 1.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "1_back_6",
+      "tp": 0,
+      "fp": 0,
+      "fn": 3,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "1_front_3",
+      "tp": 0,
+      "fp": 0,
+      "fn": 3,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "1_front_7",
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "1_front_8",
+      "tp": 0,
+      "fp": 1,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "2_back_8",
+      "tp": 0,
+      "fp": 1,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "2_front_3",
+      "tp": 0,
+      "fp": 0,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "2_front_4",
+      "tp": 1,
+      "fp": 1,
+      "fn": 1,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "severity_accuracy": 1.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "2_front_5",
+      "tp": 0,
+      "fp": 0,
+      "fn": 3,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "2_front_7",
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "3_back_1",
+      "tp": 0,
+      "fp": 1,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "3_back_8",
+      "tp": 0,
+      "fp": 1,
+      "fn": 3,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "3_back_9",
+      "tp": 0,
+      "fp": 0,
+      "fn": 4,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "4_back_3",
+      "tp": 0,
+      "fp": 0,
+      "fn": 5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "4_back_4",
+      "tp": 0,
+      "fp": 0,
+      "fn": 3,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "5_back_4",
+      "tp": 0,
+      "fp": 1,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "5_back_5",
+      "tp": 0,
+      "fp": 1,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "5_front_10",
+      "tp": 0,
+      "fp": 0,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "6_back_6",
+      "tp": 1,
+      "fp": 1,
+      "fn": 3,
+      "precision": 0.5,
+      "recall": 0.25,
+      "f1": 0.3333,
+      "severity_accuracy": 1.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "6_front_6",
+      "tp": 0,
+      "fp": 0,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "7_back_1",
+      "tp": 0,
+      "fp": 1,
+      "fn": 3,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "7_back_7",
+      "tp": 1,
+      "fp": 1,
+      "fn": 1,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "severity_accuracy": 1.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "7_back_8",
+      "tp": 0,
+      "fp": 1,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "7_front_10",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "severity_accuracy": 1.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "8_back_1",
+      "tp": 0,
+      "fp": 0,
+      "fn": 3,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "8_back_3",
+      "tp": 0,
+      "fp": 0,
+      "fn": 4,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "8_back_8",
+      "tp": 0,
+      "fp": 0,
+      "fn": 4,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "8_front_1",
+      "tp": 0,
+      "fp": 0,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "9_back_10",
+      "tp": 0,
+      "fp": 0,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "9_back_5",
+      "tp": 0,
+      "fp": 0,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "9_back_6",
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "9_back_8",
+      "tp": 0,
+      "fp": 1,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    },
+    {
+      "video_id": "9_front_6",
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "severity_accuracy": 0.0,
+      "priority_top1_hit": null
+    }
+  ]
+}

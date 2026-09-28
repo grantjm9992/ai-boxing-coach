@@ -1015,3 +1015,10 @@ Not:
 > **A generic vision model with “boxing coach” in the prompt.**
 
 That distinction is the competitive advantage this version should create.
+
+
+
+- Hand getting pack to position should be more nuanced. It shouldn't just be how quickly it gets back, but it should be respective to the speed at which the punch is thrown, because maybe someone is being slow and deliberate with their punches. It should also take into account whether the user stays within range or moves.
+- Video analysis is slow, it should go in the background and run asynchronously. Maybe we can show a toast notification in the app when it's finished. When I do 1 shadow boxing round, I shouldn't have to wait until it's finished before starting the next one. 
+- There should also be an ability to run the analysis again (when the video is found locally). A failed analysis shouldn't mean that it's failed forever. I think this is already there for full sessions (or it was, at least) - It should be possible in shadow boxing or drill sessions too
+- The shadow boxing summary screen should look exactly the same as the summary screen for the full session, there are still discrepancies and missing features

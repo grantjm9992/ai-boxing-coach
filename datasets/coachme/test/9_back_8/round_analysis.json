@@ -1,0 +1,80 @@
+{
+  "analysisVersion": "2.0.0",
+  "sessionType": "TECHNICAL_WORK",
+  "overallSummary": "1 punches thrown. Main thing to fix: Your lead hand keeps drifting down between punches. Glue it to your cheek — you're open to the counter.",
+  "combinations": [],
+  "combinationAnalyses": [],
+  "lowConfidenceObservations": [],
+  "aiReport": null,
+  "specificObservations": [
+    {
+      "ruleId": "hands_up",
+      "code": "GUARD_001",
+      "category": "defence",
+      "severity": "moderate",
+      "coachingText": "Your lead hand keeps drifting down between punches. Glue it to your cheek — you're open to the counter.",
+      "confidence": 1.0,
+      "timestampMs": 160.0,
+      "metrics": {
+        "down_fraction": 0.7272727272727273
+      },
+      "highlight": [
+        15
+      ]
+    },
+    {
+      "ruleId": "guard_return",
+      "code": "",
+      "category": "defence",
+      "severity": "positive",
+      "coachingText": "Clean guard return all round — hands came straight back to guard.",
+      "confidence": 1.0,
+      "timestampMs": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight": []
+    }
+  ],
+  "positiveNotes": [
+    "Clean guard return all round — hands came straight back to guard."
+  ],
+  "correctionPriorities": [
+    {
+      "priority": 1,
+      "category": "defence",
+      "description": "Your lead hand keeps drifting down between punches. Glue it to your cheek — you're open to the counter.",
+      "suggestedDrill": "Jab–return shadow drill: throw the jab, snap the hand back to your cheek before resetting.",
+      "exampleTimestampMs": 160.0,
+      "highlight": [
+        15
+      ]
+    }
+  ],
+  "metrics": {
+    "punchesThrown": 1,
+    "guardReturnRate": 1.0,
+    "punchMix": {
+      "cross": 1
+    },
+    "values": {
+      "body_scale": 0.1978,
+      "combinations_detected": 0.0,
+      "output_per_min": 51.724,
+      "mobility": 0.769,
+      "ground_coverage": 0.035,
+      "torso_lean_deg": 16.885,
+      "body_shot_ratio": 0.0,
+      "jab_ratio": 0.0,
+      "punch_variety": 1.0
+    }
+  },
+  "flaggedMoments": [
+    {
+      "timestampMs": 160.0,
+      "reason": "Your lead hand keeps drifting down between punches. Glue it to your cheek — you're open to the counter.",
+      "severity": "moderate"
+    }
+  ],
+  "modelCoaching": null
+}

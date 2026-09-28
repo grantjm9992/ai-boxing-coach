@@ -1,0 +1,80 @@
+{
+  "analysisVersion": "2.0.0",
+  "sessionType": "TECHNICAL_WORK",
+  "overallSummary": "1 punches thrown. Main thing to fix: Your rear hand keeps drifting down between punches. Glue it to your cheek — you're open to the counter.",
+  "combinations": [],
+  "combinationAnalyses": [],
+  "lowConfidenceObservations": [],
+  "aiReport": null,
+  "specificObservations": [
+    {
+      "ruleId": "hands_up",
+      "code": "GUARD_002",
+      "category": "defence",
+      "severity": "minor",
+      "coachingText": "Your rear hand keeps drifting down between punches. Glue it to your cheek — you're open to the counter.",
+      "confidence": 1.0,
+      "timestampMs": 140.0,
+      "metrics": {
+        "down_fraction": 0.27586206896551724
+      },
+      "highlight": [
+        16
+      ]
+    },
+    {
+      "ruleId": "guard_return",
+      "code": "",
+      "category": "defence",
+      "severity": "positive",
+      "coachingText": "Clean guard return all round — hands came straight back to guard.",
+      "confidence": 1.0,
+      "timestampMs": null,
+      "metrics": {
+        "guard_return_rate": 1.0
+      },
+      "highlight": []
+    }
+  ],
+  "positiveNotes": [
+    "Clean guard return all round — hands came straight back to guard."
+  ],
+  "correctionPriorities": [
+    {
+      "priority": 1,
+      "category": "defence",
+      "description": "Your rear hand keeps drifting down between punches. Glue it to your cheek — you're open to the counter.",
+      "suggestedDrill": "Jab–return shadow drill: throw the jab, snap the hand back to your cheek before resetting.",
+      "exampleTimestampMs": 140.0,
+      "highlight": [
+        16
+      ]
+    }
+  ],
+  "metrics": {
+    "punchesThrown": 1,
+    "guardReturnRate": 1.0,
+    "punchMix": {
+      "cross": 1
+    },
+    "values": {
+      "body_scale": 0.222,
+      "combinations_detected": 0.0,
+      "output_per_min": 44.118,
+      "mobility": 0.867,
+      "ground_coverage": 0.014,
+      "torso_lean_deg": 8.396,
+      "body_shot_ratio": 0.0,
+      "jab_ratio": 0.0,
+      "punch_variety": 1.0
+    }
+  },
+  "flaggedMoments": [
+    {
+      "timestampMs": 140.0,
+      "reason": "Your rear hand keeps drifting down between punches. Glue it to your cheek — you're open to the counter.",
+      "severity": "minor"
+    }
+  ],
+  "modelCoaching": null
+}
