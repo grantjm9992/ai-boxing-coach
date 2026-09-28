@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:boxing_coach/analysis/drill.dart';
 import 'package:boxing_coach/analysis/round_analysis.dart';
+import 'package:boxing_coach/analysis/school.dart';
 import 'package:boxing_coach/services/ai/coaching_prompt.dart';
 import 'package:boxing_coach/services/ai/video_vision_model.dart';
 import 'package:boxing_coach/services/ai/vision_model.dart';
@@ -148,19 +149,84 @@ void main() {
     expect(req.images, hasLength(1));
   });
 
-  test('fullVideoRequest lists the flagged points and asks for Gemini\'s max 24 fps', () {
+  test('fullVideoRequest sends the pose measurements, style, school and flags '
+      'at Gemini\'s max 24 fps, asking for JSON', () {
     final req = CoachingPrompt.fullVideoRequest(
       analysis(),
-      const DrillContext(),
+      const DrillContext(style: Style.phillyShell, school: School.mexican),
       videoPath: '/clips/round.mp4',
+      durationSeconds: 120,
     );
     expect(req.videoPath, '/clips/round.mp4');
     expect(req.fps, 24);
-    expect(req.userPrompt, contains('Flagged points, in order:'));
+    expect(req.responseSchema, CoachingPrompt.fullVideoResponseSchema);
+    // Pose analysis payload.
+    expect(req.userPrompt, contains('"detected_issues"'));
+    expect(req.userPrompt, contains('"metrics"'));
+    // Style and school, with what they mean.
+    expect(req.userPrompt, contains('Guard style — Philly shell'));
+    expect(req.userPrompt, contains('School — Mexican'));
+    // The rules' flags as candidates.
     expect(req.userPrompt, contains('Hand drops.'));
     expect(req.userPrompt, contains('Flat-footed.'));
     expect(req.userPrompt, contains('sampled at 24 frames per second'));
-    expect(req.userPrompt, contains('orthodox stance'));
+    // The checklist and the cap.
+    expect(req.systemPrompt, contains('Chin'));
+    expect(req.systemPrompt, contains('Rotation'));
+    expect(req.systemPrompt, contains('up to 7'));
+  });
+
+  test('the response schema caps findings at 7 and requires timestamps', () {
+    final issues = CoachingPrompt.fullVideoResponseSchema['properties']!
+        as Map<String, Object?>;
+    final priority = issues['priority_issues']! as Map<String, Object?>;
+    expect(priority['maxItems'], 7);
+    final item = priority['items']! as Map<String, Object?>;
+    expect(item['required'], containsAll(<String>['timestamps', 'confidence']));
+  });
+
+  test('two different corrections at the same instant are both moments', () {
+    final a = RoundAnalysis(
+      overallSummary: 's',
+      correctionPriorities: const <Correction>[
+        Correction(
+          priority: 1,
+          category: SkillCategory.defence,
+          description: 'Lead hand drops.',
+          exampleTimestampMs: 1000,
+        ),
+        Correction(
+          priority: 2,
+          category: SkillCategory.defence,
+          description: 'Chin lifts.',
+          exampleTimestampMs: 1000,
+        ),
+      ],
+    );
+    expect(CoachingPrompt.keyframeMoments(a), hasLength(2));
+  });
+
+  test('the moment cap keeps the most important, shown in time order', () {
+    final a = RoundAnalysis(
+      overallSummary: 's',
+      correctionPriorities: <Correction>[
+        for (var i = 0; i < 9; i++)
+          Correction(
+            priority: i + 1,
+            category: SkillCategory.defence,
+            description: 'c$i',
+            // Later priorities earlier in the round.
+            exampleTimestampMs: (9 - i) * 1000.0,
+          ),
+      ],
+    );
+    final moments = CoachingPrompt.keyframeMoments(a);
+    expect(moments, hasLength(7));
+    expect(moments.map((m) => m.label), isNot(contains('c7')));
+    expect(moments.map((m) => m.label), isNot(contains('c8')));
+    for (var i = 1; i < moments.length; i++) {
+      expect(moments[i].timestampMs, greaterThan(moments[i - 1].timestampMs));
+    }
   });
 
   test('VideoVisionRequest infers the mime type from the extension', () {

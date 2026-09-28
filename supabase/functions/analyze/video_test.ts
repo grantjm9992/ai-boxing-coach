@@ -84,6 +84,22 @@ Deno.test("buildGenerateBody passes a media resolution when set", () => {
   );
 });
 
+Deno.test("buildGenerateBody asks for JSON when a schema is given", () => {
+  const schema = { type: "OBJECT", properties: { summary: { type: "STRING" } } };
+  const body = buildGenerateBody({
+    file,
+    fps: 24,
+    systemPrompt: "",
+    userPrompt: "x",
+    maxTokens: 4096,
+    temperature: 0.2,
+    responseSchema: schema,
+  });
+  const config = body.generationConfig as Record<string, unknown>;
+  assertEquals(config.responseMimeType, "application/json");
+  assertEquals(config.responseSchema, schema);
+});
+
 Deno.test("startUpload returns Google's upload URL", async () => {
   const stub = stubFetch(() =>
     new Response("{}", { headers: { "x-goog-upload-url": "https://upload/xyz" } })

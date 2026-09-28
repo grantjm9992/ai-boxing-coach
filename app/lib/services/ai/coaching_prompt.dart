@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import '../../analysis/ai_review.dart';
 import '../../analysis/drill.dart';
 import '../../analysis/round_analysis.dart';
+import '../../analysis/schools.dart';
+import '../../analysis/style_profiles.dart';
 import 'video_vision_model.dart';
 import 'vision_model.dart';
 
@@ -42,39 +45,51 @@ class CoachingPrompt {
       'hedging, no numbered essays. Confirm what the fighter is doing well and '
       'give at most two concrete corrections they can act on next round.';
 
-  /// The flagged moments worth sending in keyframe mode — a correction's example
-  /// instant, or a bare flagged moment — each with its label where we have one.
-  /// Deduped by time (a correction's label wins over a bare flag), sorted, and
-  /// capped at [max].
+  /// The round's moments — each correction's example instant, then any bare
+  /// flagged moment at an instant no correction covers — with their labels.
+  /// The most important [max] are kept (corrections in priority order before
+  /// bare flags), then returned in time order for display. Distinct corrections
+  /// that share an instant are both kept; only an identical label at the same
+  /// instant is a duplicate.
   static List<KeyframeMoment> keyframeMoments(
     RoundAnalysis analysis, {
-    int max = 6,
+    int max = kMaxFindings,
   }) {
-    final byTime = <double, String?>{};
-    for (final c in analysis.correctionPriorities) {
+    final moments = <KeyframeMoment>[];
+    final correctionTimes = <double>{};
+    bool isDuplicate(double t, String? label) =>
+        moments.any((m) => m.timestampMs == t && m.label == label);
+
+    final corrections = List<Correction>.of(analysis.correctionPriorities)
+      ..sort((a, b) => a.priority.compareTo(b.priority));
+    for (final c in corrections) {
       final t = c.exampleTimestampMs;
-      if (t != null) byTime.putIfAbsent(t, () => c.description);
+      if (t == null || isDuplicate(t, c.description)) continue;
+      correctionTimes.add(t);
+      moments.add(KeyframeMoment(timestampMs: t, label: c.description));
     }
     // A flagged moment carries its own specific reason (the observation's coach
     // text) — use it as the label so the review/history strips read e.g. "Rear
-    // hand drifts down", not a bare "Flagged moment". A correction's example
-    // instant, added above, still wins for the same timestamp.
+    // hand drifts down", not a bare "Flagged moment". A correction at the same
+    // instant already covers it.
     for (final f in analysis.flaggedMoments) {
+      if (correctionTimes.contains(f.timestampMs)) continue;
       final reason = f.reason.trim();
-      byTime.putIfAbsent(f.timestampMs, () => reason.isEmpty ? null : reason);
+      final label = reason.isEmpty ? null : reason;
+      if (isDuplicate(f.timestampMs, label)) continue;
+      moments.add(KeyframeMoment(timestampMs: f.timestampMs, label: label));
     }
-    final entries = byTime.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-    final capped = entries.length <= max ? entries : entries.sublist(0, max);
-    return <KeyframeMoment>[
-      for (final e in capped) KeyframeMoment(timestampMs: e.key, label: e.value),
-    ];
+    final kept = moments.length <= max ? moments : moments.sublist(0, max);
+    return kept..sort((a, b) => a.timestampMs.compareTo(b.timestampMs));
   }
 
   /// The single representative timestamp (ms) per flagged moment. Deduped,
   /// sorted, capped at [max]. This is the one-frame-per-error set used for the
   /// stored history keyframes.
-  static List<double> keyframeTimestamps(RoundAnalysis analysis, {int max = 6}) =>
+  static List<double> keyframeTimestamps(
+    RoundAnalysis analysis, {
+    int max = kMaxFindings,
+  }) =>
       <double>[for (final m in keyframeMoments(analysis, max: max)) m.timestampMs];
 
   /// Keyframe mode as a burst of frames around each flagged moment: the moment
@@ -87,7 +102,7 @@ class CoachingPrompt {
     required double durationMs,
     int context = 3,
     double spacingMs = 100,
-    int maxMoments = 6,
+    int maxMoments = kMaxFindings,
   }) {
     return <KeyframeBurst>[
       for (final m in keyframeMoments(analysis, max: maxMoments))
@@ -179,42 +194,203 @@ class CoachingPrompt {
   }
 
   /// Full AI review: the whole round's video, sampled by the provider at
-  /// [fps], alongside what the on-device rules flagged — so the model confirms
-  /// or corrects those same moments (the ones the review screen highlights)
-  /// with the full motion in view, and can tell style apart from error.
+  /// [fps], with the on-device pose measurements (the same payload as the
+  /// structured path: punches, combinations, metrics, detected and
+  /// low-confidence issues), the fighter's style and school, and the rules'
+  /// flagged points as candidates to confirm or reject. The model returns a
+  /// JSON report (enforced by [fullVideoResponseSchema]) with up to
+  /// [kMaxFindings] timestamped, confidence-scored findings; parse it with
+  /// `AiCoachReport.tryParse` and fold it in with `AiReview.apply`.
   static VideoVisionRequest fullVideoRequest(
     RoundAnalysis analysis,
     DrillContext drill, {
     required String videoPath,
     double fps = kFullReviewFps,
+    double? durationSeconds,
   }) {
+    final input = structuredInput(
+      analysis,
+      drill,
+      durationSeconds: durationSeconds,
+    );
     final moments = keyframeMoments(analysis);
+    final length = durationSeconds == null
+        ? ''
+        : ' (${durationSeconds.toStringAsFixed(0)} s)';
     final buffer = StringBuffer()
       ..writeln(_context(drill))
-      ..writeln('Our on-device rules analysed the round and found:')
-      ..writeln(analysis.overallSummary);
+      ..writeln(_styleAndSchool(drill))
+      ..writeln(
+        '\nThe attached video is the whole round$length, sampled at '
+        '${_fps(fps)} frames per second. Timestamps are seconds from the start '
+        'of the video.',
+      )
+      ..writeln('\nOn-device pose analysis of the round (JSON):')
+      ..writeln(const JsonEncoder.withIndent('  ').convert(input));
     if (moments.isNotEmpty) {
-      buffer.writeln('\nFlagged points, in order:');
+      buffer.writeln('\nPoints the pose rules flagged — confirm or reject each:');
       for (var i = 0; i < moments.length; i++) {
         final m = moments[i];
-        final at = '~${(m.timestampMs / 1000).toStringAsFixed(1)}s';
-        buffer.writeln('${i + 1}. ${m.label ?? 'flagged moment'} ($at)');
+        final at = (m.timestampMs / 1000).toStringAsFixed(1);
+        buffer.writeln('${i + 1}. ${m.label ?? 'flagged moment'} (at ${at}s)');
       }
     }
     buffer.writeln(
-      '\nThe attached video is the whole round, sampled at '
-      '${_fps(fps)} frames per second. Watch it through. The rules are rigid '
-      'and can mistake a deliberate style choice or a defensive move (a slip, '
-      'a low lead hand in a shell) for an error — use the motion around each '
-      'flagged point to confirm or correct what they saw, in your own words, '
-      'and call out anything important they missed.',
+      '\nWatch the whole round, work through every area of the checklist, and '
+      'return only the JSON report.',
     );
     return VideoVisionRequest(
-      systemPrompt: _system,
+      systemPrompt: _fullVideoSystem,
       userPrompt: buffer.toString().trim(),
       videoPath: videoPath,
       fps: fps,
+      responseSchema: fullVideoResponseSchema,
+      // A thinking model reasons over a long video before it writes; leave room
+      // for both and for up to seven findings.
+      maxTokens: 8192,
+      temperature: 0.2,
     );
+  }
+
+  static const String _fullVideoSystem =
+      'You are an elite boxing coach reviewing one full round on video. You also '
+      'get measurements from an on-device pose engine. That engine is rigid: it '
+      'can mistake a deliberate style choice or a defensive move (a slip, a '
+      'roll, a low lead hand in a shell) for a fault, and it cannot see some '
+      'things at all (chin position, tension, telegraphing). Treat its '
+      'measurements and flags as leads, not verdicts: confirm or reject each '
+      'against the video, and find what it missed.\n'
+      '\n'
+      'Work through every area, whether or not the engine flagged it:\n'
+      '- Guard: lead and rear hand height, elbows in, hands returning to the '
+      'face, the other hand dropping while one punches.\n'
+      '- Chin: tucked behind the lead shoulder, not lifting on punches or '
+      'movement.\n'
+      '- Punch mechanics: full extension without locking out or over-reaching, '
+      'snapping back on the same line, no winding up or telegraphing.\n'
+      '- Rotation: hips and shoulders turning through straights and hooks, the '
+      'rear heel pivoting, rotation recovered after the punch.\n'
+      '- Balance and weight: centred after punches and combinations, no '
+      'falling in, no corrective steps.\n'
+      '- Stance and footwork: width, not squaring up, feet never crossing, '
+      'moving on the balls of the feet, neither foot lagging.\n'
+      '- Posture: lean, head past the front knee, knee bend, staying upright '
+      'enough to see.\n'
+      '- Head movement: getting off the centre line, especially after '
+      'punching.\n'
+      '- Relaxation: shoulders and arms loose between punches.\n'
+      '- Combinations and rhythm: flow between punches, balance through the '
+      'combination.\n'
+      '\n'
+      'Judge against the fighter\'s chosen guard style and school: what is '
+      'correct for a Philly shell or a peek-a-boo is a fault in a textbook high '
+      'guard, and the reverse.\n'
+      '\n'
+      'Report every distinct fault you can clearly see in the video, worst '
+      'first, up to $kMaxFindings. Do not pad the list: fewer findings is the '
+      'right answer for a cleaner round, and a fault you cannot point to in '
+      'the video must not be reported. For each finding give 1–3 timestamps '
+      '(seconds from the start of the video) where it is clearest, and a '
+      'calibrated confidence: 0.9 or more seen clearly and repeatedly, about '
+      '0.7 seen clearly once, below 0.5 unsure. Use a code from this list, or '
+      '"OTHER" if none fits:\n'
+      '$_taxonomy\n'
+      '\n'
+      'Write to the fighter in the second person, in a direct coach\'s voice. '
+      '"summary" is your spoken read of the round, 3–6 sentences: what is '
+      'working, then the one or two things that matter most. "strengths" are '
+      'up to 4 short lines on what is genuinely good. For each finding, '
+      '"observation" is one sentence on what you saw and "correction" is one '
+      'short, actionable cue. Respond with JSON only.';
+
+  /// The canonical fault codes (annotations/taxonomy/codes.json) the model may
+  /// use for findings, with their meaning.
+  static const String _taxonomy =
+      'GUARD_001 lead hand low; GUARD_002 rear hand low; GUARD_003 lead drops '
+      'during rear punch; GUARD_004 rear drops during lead punch; GUARD_005 '
+      'slow guard recovery after punch; GUARD_006 both hands low; GUARD_007 '
+      'chin exposed / not tucked; ROT_001 insufficient rotation; ROT_002 '
+      'over-rotation; ROT_003 rotation too early; ROT_004 rotation too late; '
+      'ROT_005 rotation not recovered; BAL_001 off balance after punch; '
+      'BAL_002 off balance after combination; BAL_003 weight too far forward; '
+      'BAL_004 weight too far back; BAL_005 corrective step needed; FOOT_001 '
+      'feet crossing; FOOT_002 stance too narrow; FOOT_003 stance too wide; '
+      'FOOT_004 feet too square; FOOT_005 rear foot lagging; FOOT_006 lead '
+      'foot lagging; FOOT_007 stance not recovered; FOOT_008 balance lost '
+      'after step; FOOT_009 flat-footed / not moving; LEAN_001 leaning '
+      'forward; LEAN_002 leaning back; LEAN_003 leaning left; LEAN_004 '
+      'leaning right; POS_001 head too far forward; POS_002 head over front '
+      'knee; POS_003 too upright; POS_004 position not recovered; POS_005 off '
+      'centre after punch; POS_006 insufficient knee bend; REC_001 slow '
+      'retraction; REC_002 hand not returned; REC_003 overextended; HEAD_001 '
+      'head static on the centre line; TENSE_001 upper body tense / rigid.';
+
+  /// Gemini `responseSchema` for the Full AI review — the §18 report shape,
+  /// with findings capped at [kMaxFindings] and each required to carry its
+  /// timestamps and confidence.
+  static const Map<String, Object?> fullVideoResponseSchema = <String, Object?>{
+    'type': 'OBJECT',
+    'properties': <String, Object?>{
+      'summary': <String, Object?>{'type': 'STRING'},
+      'strengths': <String, Object?>{
+        'type': 'ARRAY',
+        'items': <String, Object?>{'type': 'STRING'},
+        'maxItems': 4,
+      },
+      'priority_issues': <String, Object?>{
+        'type': 'ARRAY',
+        'maxItems': kMaxFindings,
+        'items': <String, Object?>{
+          'type': 'OBJECT',
+          'properties': <String, Object?>{
+            'code': <String, Object?>{'type': 'STRING'},
+            'severity': <String, Object?>{
+              'type': 'STRING',
+              'enum': <String>['HIGH', 'MEDIUM', 'LOW'],
+            },
+            'confidence': <String, Object?>{'type': 'NUMBER'},
+            'timestamps': <String, Object?>{
+              'type': 'ARRAY',
+              'items': <String, Object?>{'type': 'NUMBER'},
+              'minItems': 1,
+              'maxItems': 3,
+            },
+            'observation': <String, Object?>{'type': 'STRING'},
+            'correction': <String, Object?>{'type': 'STRING'},
+            'why_it_matters': <String, Object?>{'type': 'STRING'},
+            'suggested_drill': <String, Object?>{'type': 'STRING'},
+          },
+          'required': <String>[
+            'code',
+            'severity',
+            'confidence',
+            'timestamps',
+            'observation',
+            'correction',
+          ],
+        },
+      },
+      'next_session_focus': <String, Object?>{
+        'type': 'ARRAY',
+        'items': <String, Object?>{'type': 'STRING'},
+        'maxItems': 3,
+      },
+    },
+    'required': <String>['summary', 'strengths', 'priority_issues'],
+  };
+
+  /// What the fighter's guard style and school mean, so the model judges
+  /// against them rather than against a textbook high guard.
+  static String _styleAndSchool(DrillContext drill) {
+    final style = profileForStyle(drill.style);
+    final buffer = StringBuffer()
+      ..write('Guard style — ${style.label}: ${style.summary}');
+    final school = drill.school;
+    if (school != null) {
+      final profile = schoolProfileFor(school);
+      buffer.write('\nSchool — ${profile.label}: ${profile.summary}');
+    }
+    return buffer.toString();
   }
 
   static String _fps(double fps) =>

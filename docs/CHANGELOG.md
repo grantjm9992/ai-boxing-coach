@@ -10,6 +10,27 @@ Feature areas referenced below have their own deep-dive docs — see
 
 ## [Unreleased]
 
+### Changed
+- **Full AI review returns up to 7 findings, each with its own moment.** The
+  model now gets the on-device pose measurements (punches, combinations,
+  metrics, detected and low-confidence issues), the guard style and school
+  with what they mean, and a checklist of every technique area (guard, chin,
+  punch extension and retraction, rotation, balance, footwork, posture, head
+  movement, tension, combinations) alongside the video. It answers with JSON
+  (Gemini `responseSchema`): a spoken summary, strengths, and up to 7
+  timestamped findings with calibrated confidence. Findings at confidence
+  ≥ 0.6 become the round's corrections and moments (review screen, synced
+  keyframes, History); its strengths replace the rules' positive notes, which
+  could contradict it. Nothing is invented to fill the list.
+- Moments: the cap is 7, the most important are kept (then shown in time
+  order), and two different corrections at the same instant are both shown.
+
+### Added
+- **Analysis progress card.** While a round is analysed, the review screen
+  shows each stage — tracking your movement (with % and time left), uploading
+  (Full AI, with %), AI coach reviewing, saving — plus elapsed time, and
+  History shows a live badge on the session.
+
 ### Fixed
 - **Full AI review used an fps Gemini rejects.** `videoMetadata.fps` must be
   `0 < fps <= 24`; the app asked for 30 and every review failed with

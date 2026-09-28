@@ -8,6 +8,7 @@ import 'package:boxing_coach/domain/session_phase.dart';
 import 'package:boxing_coach/services/ai/coaching_prompt.dart';
 import 'package:boxing_coach/services/ai/video_vision_model.dart';
 import 'package:boxing_coach/services/ai/vision_model.dart';
+import 'package:boxing_coach/services/analysis_progress.dart';
 import 'package:boxing_coach/services/analysis_store.dart';
 import 'package:boxing_coach/services/frame_grabber.dart';
 import 'package:boxing_coach/services/pose_estimator.dart';
@@ -115,9 +116,41 @@ void main() {
     expect(model.requests.single.images, isNotEmpty);
   });
 
-  test('full AI review sends the whole video at 24 fps with the flagged points',
-      () async {
-    final video = FakeVideoVisionModel(response: 'Full: rear hand stays home.');
+  test('full AI review sends the video + pose measurements and shows its '
+      'confident findings as the moments', () async {
+    final video = FakeVideoVisionModel(
+      response: jsonEncode(<String, Object?>{
+        'summary': 'Good rhythm. Keep that lead glove home.',
+        'strengths': <String>['Light on your feet'],
+        'priority_issues': <Object?>[
+          <String, Object?>{
+            'code': 'GUARD_003',
+            'severity': 'HIGH',
+            'confidence': 0.9,
+            'timestamps': <double>[0.5],
+            'observation': 'Your lead hand drops when you throw the cross.',
+            'correction': 'Keep the lead glove on your temple.',
+          },
+          <String, Object?>{
+            'code': 'GUARD_007',
+            'severity': 'MEDIUM',
+            'confidence': 0.75,
+            'timestamps': <double>[0.2],
+            'observation': 'Your chin lifts on the jab.',
+            'correction': 'Tuck it behind your lead shoulder.',
+          },
+          <String, Object?>{
+            // Below the confidence bar: not shown.
+            'code': 'ROT_001',
+            'severity': 'LOW',
+            'confidence': 0.4,
+            'timestamps': <double>[0.3],
+            'observation': 'Maybe not turning the hip.',
+            'correction': 'Turn the hip.',
+          },
+        ],
+      }),
+    );
     final fullAnalyzer = RoundAnalyzer(
       estimator: _FakeEstimator(sequence),
       store: store,
@@ -126,23 +159,60 @@ void main() {
       videoModel: video,
     );
 
-    final analysis =
-        await fullAnalyzer.analyse(clip, mode: AnalysisMode.fullFrame);
+    final stages = <AnalysisStage>[];
+    final analysis = await fullAnalyzer.analyse(
+      clip,
+      mode: AnalysisMode.fullFrame,
+      onProgress: (stage, _) {
+        if (stages.isEmpty || stages.last != stage) stages.add(stage);
+      },
+    );
 
-    expect(analysis!.modelCoaching, 'Full: rear hand stays home.');
     expect(video.requests, hasLength(1));
     final request = video.requests.single;
     expect(request.videoPath, clip.path);
     expect(request.fps, 24);
-    expect(request.mimeType, 'video/mp4');
-    // The same rule-flagged moments the review screen highlights are in the
-    // prompt, so the model reviews those exact points.
-    expect(request.userPrompt, contains('Flagged points'));
+    expect(request.responseSchema, isNotNull);
+    // The pose measurements and the rules' flags go with the video.
+    expect(request.userPrompt, contains('"detected_issues"'));
+    expect(request.userPrompt, contains('Guard style'));
     // No frames grabbed and no image-model call: the video replaces them.
     expect(grabber.calls, isEmpty);
     expect(model.requests, isEmpty);
-    // The highlighted errors come from the rules, exactly as in key-moment mode.
-    expect(analysis.flaggedMoments, isNotEmpty);
+
+    // The confident findings are the round's corrections — and so its moments.
+    expect(analysis!.modelCoaching, 'Good rhythm. Keep that lead glove home.');
+    expect(analysis.correctionPriorities, hasLength(2));
+    expect(analysis.correctionPriorities.first.description,
+        contains('Keep the lead glove on your temple.'));
+    expect(analysis.positiveNotes, <String>['Light on your feet']);
+    expect(CoachingPrompt.keyframeMoments(analysis), hasLength(2));
+    expect(analysis.aiReport, isNotNull);
+
+    expect(stages, <AnalysisStage>[
+      AnalysisStage.tracking,
+      AnalysisStage.uploading,
+      AnalysisStage.reviewing,
+      AnalysisStage.saving,
+    ]);
+  });
+
+  test('full AI review keeps the rules analysis when the reply is not the '
+      'expected JSON', () async {
+    final video = FakeVideoVisionModel(response: 'Nice round, keep working.');
+    final fullAnalyzer = RoundAnalyzer(
+      estimator: _FakeEstimator(sequence),
+      store: store,
+      videoModel: video,
+    );
+
+    final analysis =
+        await fullAnalyzer.analyse(clip, mode: AnalysisMode.fullFrame);
+
+    expect(analysis, isNotNull);
+    expect(analysis!.modelCoaching, isNull);
+    expect(analysis.aiReport, isNull);
+    expect(analysis.correctionPriorities, isNotEmpty); // the rules' guard drop
   });
 
   test('full AI review with no video model falls back to key moments', () async {

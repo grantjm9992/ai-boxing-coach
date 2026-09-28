@@ -5,6 +5,7 @@ import '../analysis/drill.dart';
 import '../analysis/round_analysis.dart';
 import '../domain/round_clip.dart';
 import 'ai/ai_settings_store.dart';
+import 'analysis_progress.dart';
 import 'debug_log.dart';
 import 'keep_awake.dart';
 import 'profile_store.dart';
@@ -34,6 +35,22 @@ class BackgroundAnalysis {
   /// show "Analysing…" instead of offering a redundant re-run.
   final ValueNotifier<Set<String>> running = ValueNotifier<Set<String>>(<String>{});
 
+  /// Where each running analysis is (stage + fraction), keyed like [running],
+  /// for the progress card and History badge.
+  final ValueNotifier<Map<String, AnalysisProgress>> progress =
+      ValueNotifier<Map<String, AnalysisProgress>>(<String, AnalysisProgress>{});
+
+  /// The running analysis of [clip], or null when it isn't running.
+  AnalysisProgress? progressFor(RoundClip clip) => progress.value[keyFor(clip)];
+
+  /// The running analysis of any round in [sessionId], or null.
+  AnalysisProgress? progressForSession(String sessionId) {
+    for (final entry in progress.value.entries) {
+      if (entry.key.startsWith('$sessionId/')) return entry.value;
+    }
+    return null;
+  }
+
   static String keyFor(RoundClip clip) => '${clip.sessionId}/${clip.segmentIndex}';
 
   bool isRunning(RoundClip clip) => running.value.contains(keyFor(clip));
@@ -60,7 +77,18 @@ class BackgroundAnalysis {
       final built = analyzer ?? await _buildAnalyzer();
       final profile = await const ProfileStore().load();
       mode = profile.analysisMode;
-      analysis = await built.analyse(clip, drill: drill, mode: mode);
+      _setProgress(key, AnalysisProgress.start(mode));
+      analysis = await built.analyse(
+        clip,
+        drill: drill,
+        mode: mode,
+        onProgress: (stage, fraction) {
+          final current = progress.value[key];
+          if (current != null) {
+            _setProgress(key, current.advance(stage, fraction));
+          }
+        },
+      );
 
       final q = queue ?? BackfillQueue.instance;
       await q.enqueueRound(
@@ -81,6 +109,7 @@ class BackgroundAnalysis {
       DebugLog.instance.log('background analysis failed: $error', tag: 'bg');
     } finally {
       releaseAwake();
+      _setProgress(key, null);
       _mark(key, false);
     }
     _toast(analysis != null
@@ -94,6 +123,16 @@ class BackgroundAnalysis {
     return RoundAnalyzer.withCoach(
       resolveRoundCoach(mode: profile.analysisMode, config: config),
     );
+  }
+
+  void _setProgress(String key, AnalysisProgress? value) {
+    final next = Map<String, AnalysisProgress>.of(progress.value);
+    if (value == null) {
+      next.remove(key);
+    } else {
+      next[key] = value;
+    }
+    progress.value = next;
   }
 
   void _mark(String key, bool active) {

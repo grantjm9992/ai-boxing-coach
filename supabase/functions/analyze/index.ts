@@ -228,7 +228,8 @@ async function handleVideoUpload(
 
 // ---------------------------------------------------------------------------
 // /video/generate — body: { fileName, fps, systemPrompt, userPrompt,
-// maxTokens?, temperature? }. Returns { text, finishReason?, usage? }.
+// maxTokens?, temperature?, responseMimeType?, responseSchema? }. Returns
+// { text, finishReason?, usage? }; text is JSON when a schema was sent.
 // ---------------------------------------------------------------------------
 
 async function handleVideoGenerate(
@@ -258,6 +259,13 @@ async function handleVideoGenerate(
     AI_VIDEO_MAX_FPS,
   );
   const maxTokens = clampInt(body.maxTokens, 256, 8192, 2048);
+  // Structured output: the app sends the JSON schema it expects back.
+  const wantsJson = body.responseMimeType === "application/json" &&
+    body.responseSchema != null && typeof body.responseSchema === "object" &&
+    !Array.isArray(body.responseSchema);
+  const responseSchema = wantsJson
+    ? body.responseSchema as Record<string, unknown>
+    : undefined;
   const temperature = clampNumber(body.temperature, 0, 1, 0.4);
 
   const reservation = await reserveQuota(supabase);
@@ -284,6 +292,7 @@ async function handleVideoGenerate(
       maxTokens,
       temperature,
       mediaResolution: AI_VIDEO_MEDIA_RESOLUTION || undefined,
+      responseSchema,
     });
     await deleteFile(GEMINI_API_KEY, fileName);
     return json(200, { ...result, fps }, { "X-AI-Remaining": String(reservation.remaining) });

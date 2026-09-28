@@ -52,7 +52,10 @@ class CoachVideoModel implements VideoVisionModel {
   String get label => 'AI Coach (full video)';
 
   @override
-  Future<String> completeVideo(VideoVisionRequest request) async {
+  Future<String> completeVideo(
+    VideoVisionRequest request, {
+    VideoReviewProgress? onProgress,
+  }) async {
     final token = _accessToken();
     if (token == null || token.isEmpty) {
       throw const VisionModelException('Sign in to get AI coaching.');
@@ -60,8 +63,16 @@ class CoachVideoModel implements VideoVisionModel {
     final client = _client ?? http.Client();
     try {
       final bytes = await _fileLength(request.videoPath);
+      onProgress?.call(VideoReviewPhase.uploading, 0);
       final uploadUrl = await _startUpload(client, token, bytes, request.mimeType);
-      final fileName = await _upload(client, uploadUrl, request.videoPath, bytes);
+      final fileName = await _upload(
+        client,
+        uploadUrl,
+        request.videoPath,
+        bytes,
+        onFraction: (f) => onProgress?.call(VideoReviewPhase.uploading, f),
+      );
+      onProgress?.call(VideoReviewPhase.reviewing, null);
       return await _generate(client, token, fileName, request);
     } finally {
       if (_client == null) client.close();
@@ -91,8 +102,9 @@ class CoachVideoModel implements VideoVisionModel {
     http.Client client,
     String uploadUrl,
     String path,
-    int bytes,
-  ) async {
+    int bytes, {
+    void Function(double fraction)? onFraction,
+  }) async {
     final request = http.StreamedRequest('POST', Uri.parse(uploadUrl))
       ..contentLength = bytes
       ..headers.addAll(<String, String>{
@@ -106,7 +118,19 @@ class CoachVideoModel implements VideoVisionModel {
 
     final http.Response response;
     try {
-      await request.sink.addStream(_openRead(path));
+      var sent = 0;
+      var reported = -1;
+      await request.sink.addStream(_openRead(path).map((chunk) {
+        sent += chunk.length;
+        // Whole percents only — a 100+ MB file is thousands of chunks.
+        final percent =
+            bytes > 0 ? (sent * 100 ~/ bytes).clamp(0, 100).toInt() : 100;
+        if (percent != reported) {
+          reported = percent;
+          onFraction?.call(percent / 100);
+        }
+        return chunk;
+      }));
       await request.sink.close();
       response = await http.Response.fromStream(await sending);
     } on Object catch (error) {
@@ -139,6 +163,10 @@ class CoachVideoModel implements VideoVisionModel {
       'userPrompt': request.userPrompt,
       'maxTokens': request.maxTokens,
       'temperature': request.temperature,
+      if (request.responseSchema != null) ...<String, Object?>{
+        'responseMimeType': 'application/json',
+        'responseSchema': request.responseSchema,
+      },
     };
     for (var attempt = 0; ; attempt++) {
       try {

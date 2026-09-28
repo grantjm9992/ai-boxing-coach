@@ -15,6 +15,8 @@ import '../../domain/user_profile.dart';
 import '../../services/ai/ai_settings_store.dart';
 import '../../services/ai/coaching_prompt.dart';
 import '../../services/ai/vision_model.dart';
+import '../../analysis/analysis_mode.dart';
+import '../../services/analysis_progress.dart';
 import '../../services/analysis_store.dart';
 import '../../services/background_analysis.dart';
 import '../../services/clip_store.dart';
@@ -26,6 +28,7 @@ import '../../services/profile_store.dart';
 import '../../services/round_coach.dart';
 import '../format.dart';
 import '../theme.dart';
+import '../widgets/analysis_progress_card.dart';
 import '../widgets/skeleton_painter.dart';
 
 /// The list of technical rounds recorded this session, and — per round — a
@@ -204,6 +207,9 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
 
   _AnalysisState _state = _AnalysisState.idle;
   double _progress = 0;
+
+  /// When the current on-screen run started, for the progress card's clock.
+  DateTime? _runStartedAt;
   String? _error;
   PoseAnalysisResult? _result;
   RoundAnalysis? _analysis;
@@ -287,7 +293,11 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
   Future<void> _loadMoments(RoundAnalysis analysis, double durationMs) async {
     final bursts =
         CoachingPrompt.keyframeBursts(analysis, durationMs: durationMs);
-    if (bursts.isEmpty) return;
+    if (!mounted) return;
+    if (bursts.isEmpty) {
+      setState(() => _moments = const <_ReviewMoment>[]);
+      return;
+    }
     setState(() => _loadingMoments = true);
     try {
       // One grab for the whole round; keep each burst's length so we can slice
@@ -336,6 +346,7 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
       _state = _AnalysisState.running;
       _progress = 0;
       _error = null;
+      _runStartedAt = DateTime.now();
     });
     // Re-analysis takes minutes on a long round; don't let the screen lock.
     final releaseAwake = KeepAwake.instance.acquire('re-analysing round');
@@ -413,10 +424,18 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
         return;
       }
       if (!mounted) return;
+      final enriched = coaching.applyTo(
+        analysis,
+        durationMs: result.sequence.durationMs,
+      );
       setState(() {
-        _analysis = analysis.withModelCoaching(coaching.text);
+        _analysis = enriched;
         _source = 'AI · ${coaching.source}';
       });
+      // A Full AI review replaces the moments with its own findings.
+      if (coaching.report != null) {
+        unawaited(_loadMoments(enriched, result.sequence.durationMs));
+      }
     } on VisionModelException catch (error) {
       setSource('AI failed: ${error.message}');
     } on Object catch (error) {
@@ -537,20 +556,28 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
           label: const Text('Analyse pose'),
         );
       case _AnalysisState.running:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              'Analysing… ${(_progress * 100).round()}%',
-              style: const TextStyle(color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value: _progress == 0 ? null : _progress,
-              backgroundColor: AppTheme.surfaceAlt,
-              color: AppTheme.accent,
-            ),
-          ],
+        // Background analysis publishes its stage; an on-screen re-run only
+        // has the pose fraction.
+        return ValueListenableBuilder<Map<String, AnalysisProgress>>(
+          valueListenable: BackgroundAnalysis.instance.progress,
+          builder: (context, _, _) {
+            final background =
+                BackgroundAnalysis.instance.progressFor(widget.clip);
+            if (background != null) {
+              return AnalysisProgressCard(progress: background);
+            }
+            final started = _runStartedAt ?? DateTime.now();
+            return AnalysisProgressCard(
+              showLeaveHint: false,
+              progress: AnalysisProgress(
+                mode: AnalysisMode.offline,
+                stage: AnalysisStage.tracking,
+                fraction: _progress,
+                startedAt: started,
+                stageStartedAt: started,
+              ),
+            );
+          },
         );
       case _AnalysisState.failed:
         return Text(

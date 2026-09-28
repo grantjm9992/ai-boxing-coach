@@ -1,3 +1,5 @@
+import '../analysis/ai_coach_report.dart';
+import '../analysis/ai_review.dart';
 import '../analysis/analysis_mode.dart';
 import '../analysis/drill.dart';
 import '../analysis/round_analysis.dart';
@@ -7,25 +9,43 @@ import 'ai/coaching_prompt.dart';
 import 'ai/video_vision_model.dart';
 import 'ai/vision_model.dart';
 import 'ai/vision_model_config.dart';
+import 'analysis_progress.dart';
 import 'frame_grabber.dart';
 
-/// The coaching text an AI mode produced, and where it came from (shown by the
-/// review screen's SOURCE badge).
+/// What an AI mode produced, and where it came from (shown by the review
+/// screen's SOURCE badge): free-text coaching (key moments), or a structured
+/// report whose findings become the round's moments (Full AI review).
 class RoundCoaching {
-  const RoundCoaching({required this.text, required this.source});
+  const RoundCoaching({required this.text, required this.source, this.report});
 
   final String text;
   final String source;
+
+  /// The Full AI review's structured report; null for free-text coaching.
+  final AiCoachReport? report;
+
+  /// [rules] with this coaching applied: a report's confident findings replace
+  /// the rules' corrections and moments; free text is attached as coaching.
+  RoundAnalysis applyTo(RoundAnalysis rules, {required double durationMs}) {
+    final structured = report;
+    if (structured == null) return rules.withModelCoaching(text);
+    return AiReview.apply(
+      rules,
+      structured,
+      durationSeconds: durationMs > 0 ? durationMs / 1000 : null,
+    );
+  }
 }
 
 /// The AI step of round analysis: given the rules' [RoundAnalysis], ask a model
-/// for the coach's read. The rules' flagged moments are what the review screen
-/// highlights in every mode — this only decides what the model is shown:
-///  - [AnalysisMode.keyframe] — a burst of frames around each flagged moment;
-///  - [AnalysisMode.fullFrame] — the whole round's video at
-///    [kFullReviewFps], via [videoModel]. With no video model (signed out, or
-///    AI routed to a custom endpoint) it falls back to the key-moment read, so
-///    the user still gets coaching.
+/// for the coach's read:
+///  - [AnalysisMode.keyframe] — a burst of frames around each rule-flagged
+///    moment; the model's free-text read is attached, the rules' moments stay;
+///  - [AnalysisMode.fullFrame] — the whole round's video at [kFullReviewFps]
+///    with the pose measurements, via [videoModel]; the model returns up to
+///    seven timestamped findings, which become the round's moments. With no
+///    video model (signed out, or AI routed to a custom endpoint) it falls back
+///    to the key-moment read, so the user still gets coaching.
 ///
 /// Shared by the background pipeline ([RoundAnalyzer]) and the review screen's
 /// re-run, so both treat a mode identically.
@@ -52,12 +72,14 @@ class RoundCoach {
     required RoundAnalysis analysis,
     required DrillContext drill,
     required double durationMs,
+    AnalysisProgressCallback? onProgress,
   }) async {
     if (!mode.usesAi) return null;
     if (mode == AnalysisMode.fullFrame && videoModel != null) {
-      return _fullVideo(videoPath, analysis, drill);
+      return _fullVideo(videoPath, analysis, drill, durationMs, onProgress);
     }
     if (_canUseFrames) {
+      onProgress?.call(AnalysisStage.reviewing, null);
       return _keyMoments(videoPath, analysis, drill, durationMs);
     }
     return null;
@@ -67,18 +89,45 @@ class RoundCoach {
     String videoPath,
     RoundAnalysis analysis,
     DrillContext drill,
+    double durationMs,
+    AnalysisProgressCallback? onProgress,
   ) async {
     final model = videoModel!;
     final request = CoachingPrompt.fullVideoRequest(
       analysis,
       drill,
       videoPath: videoPath,
+      durationSeconds: durationMs > 0 ? durationMs / 1000 : null,
     );
-    final text = (await model.completeVideo(request)).trim();
-    if (text.isEmpty) return null;
+    final progress = onProgress;
+    final raw = await model.completeVideo(
+      request,
+      onProgress: progress == null
+          ? null
+          : (VideoReviewPhase phase, double? fraction) => progress(
+                phase == VideoReviewPhase.uploading
+                    ? AnalysisStage.uploading
+                    : AnalysisStage.reviewing,
+                fraction,
+              ),
+    );
+    // Structured or nothing (brief §18): an unschematic reply is rejected, not
+    // shown as prose — the round keeps its rules analysis.
+    final parsed = AiCoachReport.tryParse(raw);
+    if (parsed == null) {
+      throw const VisionModelException(
+        'The AI review came back in an unexpected format.',
+      );
+    }
+    final shown = AiReview.shownFindings(
+      parsed,
+      durationSeconds: durationMs > 0 ? durationMs / 1000 : null,
+    ).length;
     return RoundCoaching(
-      text: text,
-      source: '${model.label} · full video @ ${request.fps.round()} fps',
+      text: parsed.summary,
+      report: parsed,
+      source: '${model.label} · full video @ ${request.fps.round()} fps · '
+          '$shown of ${parsed.priorityIssues.length} findings shown',
     );
   }
 

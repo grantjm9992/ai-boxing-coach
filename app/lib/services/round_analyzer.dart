@@ -11,6 +11,7 @@ import 'analytics.dart';
 import 'ai/coaching_prompt.dart';
 import 'ai/video_vision_model.dart';
 import 'ai/vision_model.dart';
+import 'analysis_progress.dart';
 import 'analysis_store.dart';
 import 'frame_grabber.dart';
 import 'pose_estimator.dart';
@@ -65,6 +66,7 @@ class RoundAnalyzer {
     RoundClip clip, {
     DrillContext? drill,
     AnalysisMode mode = AnalysisMode.offline,
+    AnalysisProgressCallback? onProgress,
   }) async {
     _analytics.log(AnalyticsEvent.analysisStarted,
         <String, Object?>{'mode': mode.value});
@@ -74,6 +76,7 @@ class RoundAnalyzer {
       // internally, so here we just consume progress.
       await for (final progress in _estimator.analyse(clip.path)) {
         if (progress.result != null) result = progress.result;
+        onProgress?.call(AnalysisStage.tracking, progress.fraction);
       }
       if (result == null) {
         _analytics.log(AnalyticsEvent.analysisFailed,
@@ -108,11 +111,17 @@ class RoundAnalyzer {
           analysis,
           resolvedDrill,
           result.sequence.durationMs,
+          onProgress,
         );
         if (coaching != null) {
-          analysis = analysis.withModelCoaching(coaching.text);
+          analysis = coaching.applyTo(
+            analysis,
+            durationMs: result.sequence.durationMs,
+          );
         }
       }
+
+      onProgress?.call(AnalysisStage.saving, null);
 
       await _store.save(
         clip.sessionId,
@@ -139,6 +148,7 @@ class RoundAnalyzer {
     RoundAnalysis analysis,
     DrillContext drill,
     double durationMs,
+    AnalysisProgressCallback? onProgress,
   ) async {
     try {
       return await _coach.coach(
@@ -147,6 +157,7 @@ class RoundAnalyzer {
         analysis: analysis,
         drill: drill,
         durationMs: durationMs,
+        onProgress: onProgress,
       );
     } on VisionModelException catch (error) {
       debugPrint('AI coaching unavailable: ${error.message}');

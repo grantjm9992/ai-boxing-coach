@@ -16,14 +16,14 @@ enum AnalysisMode {
   ),
 
   /// [offline] first, then the whole round's video goes to the hosted model
-  /// (Gemini, 24 fps — its maximum) along with the flagged moments, for it to confirm or
-  /// correct with the full motion in view. Same review UX as [keyframe]; the
-  /// richest read and the most expensive.
+  /// (Gemini, 24 fps — its maximum) with the pose measurements, style, school
+  /// and the rules' flags. It returns up to seven timestamped findings, which
+  /// become the round's moments. The richest read and the most expensive.
   fullFrame(
     'full_frame',
     'Full AI review',
-    'Rules run on-device; an AI model watches the whole round video at 24 fps '
-        'to review the flagged moments. Richest feedback, slowest.',
+    'Rules run on-device; an AI model watches the whole round at 24 fps with '
+        'your pose data and flags up to 7 moments. Richest feedback, slowest.',
   );
 
   const AnalysisMode(this.value, this.label, this.blurb);

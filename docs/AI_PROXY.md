@@ -76,6 +76,9 @@ The round video (often 100+ MB) never passes through the function:
    `ACTIVE`, checks it belongs to the caller, runs `generateContent` with
    `videoMetadata.fps` (clamped to `AI_VIDEO_MAX_FPS`), deletes the upload and
    returns `{text, finishReason, usage, fps}`. Any failure refunds the analysis.
+   When the body carries `responseMimeType: "application/json"` and a
+   `responseSchema`, both go into `generationConfig`, so Gemini must answer
+   with JSON of that shape (Full AI review's findings report).
 
 App side: `CoachVideoModel` (`app/lib/services/ai/coach_video_model.dart`).
 Unit tests for the Gemini helpers: `deno test supabase/functions/analyze/video_test.ts`.

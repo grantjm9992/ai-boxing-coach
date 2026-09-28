@@ -46,6 +46,8 @@ export interface VideoGenerateInput {
   maxTokens: number;
   temperature: number;
   mediaResolution?: string;
+  /** When set, Gemini must answer with JSON matching this schema. */
+  responseSchema?: Record<string, unknown>;
 }
 
 export interface VideoGenerateResult {
@@ -148,6 +150,9 @@ export function buildGenerateBody(input: VideoGenerateInput) {
       maxOutputTokens: input.maxTokens,
       temperature: input.temperature,
       ...(input.mediaResolution ? { mediaResolution: input.mediaResolution } : {}),
+      ...(input.responseSchema
+        ? { responseMimeType: "application/json", responseSchema: input.responseSchema }
+        : {}),
     },
   };
 }

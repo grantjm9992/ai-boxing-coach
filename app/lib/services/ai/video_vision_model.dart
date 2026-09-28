@@ -24,6 +24,7 @@ class VideoVisionRequest {
     // headroom so the coaching text itself isn't cut off.
     this.maxTokens = 2048,
     this.temperature = 0.4,
+    this.responseSchema,
   });
 
   final String systemPrompt;
@@ -32,6 +33,10 @@ class VideoVisionRequest {
   final double fps;
   final int maxTokens;
   final double temperature;
+
+  /// When set, the model must answer with JSON matching this schema (Gemini
+  /// `responseSchema`, OpenAPI subset); when null it answers in free text.
+  final Map<String, Object?>? responseSchema;
 
   /// The upload mime type, from the file extension (the recorder writes .mp4;
   /// .mov covers imported iOS clips).
@@ -46,8 +51,23 @@ abstract class VideoVisionModel {
   /// Human-readable name of the configured model, for the UI.
   String get label;
 
-  Future<String> completeVideo(VideoVisionRequest request);
+  /// Runs [request]. [onProgress] reports the phases the caller can show
+  /// while it waits: the upload (with its fraction) and the model's review.
+  Future<String> completeVideo(
+    VideoVisionRequest request, {
+    VideoReviewProgress? onProgress,
+  });
 }
+
+/// Where a video review is: sending the video, or the model watching it.
+enum VideoReviewPhase { uploading, reviewing }
+
+/// Progress callback for [VideoVisionModel.completeVideo]; [fraction] is 0..1
+/// while uploading and null once the model is reviewing.
+typedef VideoReviewProgress = void Function(
+  VideoReviewPhase phase,
+  double? fraction,
+);
 
 /// Records requests and returns canned text. The test double.
 class FakeVideoVisionModel implements VideoVisionModel {
@@ -60,8 +80,13 @@ class FakeVideoVisionModel implements VideoVisionModel {
   String get label => 'Fake video model';
 
   @override
-  Future<String> completeVideo(VideoVisionRequest request) async {
+  Future<String> completeVideo(
+    VideoVisionRequest request, {
+    VideoReviewProgress? onProgress,
+  }) async {
     requests.add(request);
+    onProgress?.call(VideoReviewPhase.uploading, 1);
+    onProgress?.call(VideoReviewPhase.reviewing, null);
     return response;
   }
 }
