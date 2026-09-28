@@ -7,6 +7,7 @@ import 'package:pose_landmarker/pose_landmarker.dart';
 
 import '../analysis/pose.dart';
 import '../analysis/pose_estimation.dart';
+import 'app_foreground.dart';
 import 'debug_log.dart';
 
 /// Progress of a pose-estimation run, and — when done — its result.
@@ -64,6 +65,10 @@ class MediaPipePoseEstimator implements PoseEstimator {
   // process-wide so only one touches native at a time.
   static Future<void> _gate = Future<void>.value();
 
+  /// How long the native stream may stay silent (in the foreground) before the
+  /// run is failed.
+  static const Duration stallLimit = Duration(seconds: 45);
+
   @override
   Stream<PoseAnalysisProgress> analyse(
     String videoPath, {
@@ -100,10 +105,13 @@ class MediaPipePoseEstimator implements PoseEstimator {
         ? 1000.0 / sampleEvery.inMilliseconds
         : 30.0;
 
-    // Timeout guards against a native stream that stalls without erroring or
-    // closing. Per-event (resets each update), and applied here — not around
+    // Stall watchdog: fails a native stream that goes quiet without erroring
+    // or closing. Per-event (resets each update), and applied here — not around
     // the serialisation wait above — so a run queued behind another isn't
-    // killed while waiting its turn.
+    // killed while waiting its turn. Silence only counts while the app has been
+    // in the foreground for the whole window: when the screen locks or the app
+    // is backgrounded, Android may throttle or freeze the work, and that's a
+    // pause to wait out, not a failure.
     final stream = _landmarker
         .estimate(
           videoPath,
@@ -111,13 +119,30 @@ class MediaPipePoseEstimator implements PoseEstimator {
           sampleEvery: sampleEvery,
           model: model,
         )
-        .timeout(const Duration(seconds: 45));
+        .timeout(stallLimit, onTimeout: (sink) {
+          if (AppForeground.instance.foregroundFor() < stallLimit) {
+            trace('no update for ${stallLimit.inSeconds}s while the app was '
+                'in the background — waiting');
+            return;
+          }
+          sink.addError(TimeoutException(
+            'Pose estimation stalled: no update in ${stallLimit.inSeconds}s',
+            stallLimit,
+          ));
+          sink.close();
+        });
     trace('estimate stream opened for $videoPath');
 
     var updates = 0;
+    var lastDecile = 0;
     await for (final progress in stream) {
       updates++;
       if (updates == 1) trace('first update (frac=${progress.fraction})');
+      final decile = (progress.fraction * 10).floor();
+      if (decile > lastDecile && decile < 10) {
+        lastDecile = decile;
+        trace('${decile * 10}% (${stopwatch.elapsed.inSeconds}s)');
+      }
       final rawFrames = progress.frames;
       if (rawFrames == null) {
         yield PoseAnalysisProgress(fraction: progress.fraction);
