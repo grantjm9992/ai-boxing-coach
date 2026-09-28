@@ -25,5 +25,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(DurationSelector), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Start'), findsOneWidget);
+    // Recording is not the only way in: an already-filmed round can be imported.
+    expect(
+      find.widgetWithText(OutlinedButton, 'Import a video'),
+      findsOneWidget,
+    );
   });
 }

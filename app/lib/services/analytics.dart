@@ -9,6 +9,7 @@ enum AnalyticsEvent {
   analysisCompleted('analysis_completed'),
   analysisFailed('analysis_failed'),
   shadowBoxingStarted('shadow_boxing_started'),
+  shadowVideoImported('shadow_video_imported'),
   technicalRoundStarted('technical_round_started'),
   combinationSelected('combination_selected'),
   combinationAttemptDetected('combination_attempt_detected'),

@@ -9,11 +9,16 @@ import 'skill_category.dart';
 /// A shadow round isn't built from exercises with category weights, so its time
 /// is attributed with a fixed profile of what shadow boxing trains. Pure and
 /// testable — no I/O.
+///
+/// [templateName] and [roundTitle] default to a recorded round's labels; an
+/// imported video overrides them so History says where the round came from.
 SessionRecord shadowSessionRecord(
   ra.RoundAnalysis? analysis, {
   required double durationMs,
   required String sessionId,
   required DateTime completedAt,
+  String templateName = 'Shadow boxing',
+  String roundTitle = 'Shadow round',
 }) {
   final workSeconds = (durationMs / 1000).round();
 
@@ -38,7 +43,7 @@ SessionRecord shadowSessionRecord(
       : null;
   final round = RoundSummary(
     segmentIndex: 0,
-    title: 'Shadow round',
+    title: roundTitle,
     roundNumber: 1,
     summary: analysis?.overallSummary ?? 'Analysing…',
     topCorrection: correction,
@@ -48,7 +53,7 @@ SessionRecord shadowSessionRecord(
 
   return SessionRecord(
     sessionId: sessionId,
-    templateName: 'Shadow boxing',
+    templateName: templateName,
     completedAt: completedAt,
     totalSeconds: workSeconds,
     workSeconds: workSeconds,

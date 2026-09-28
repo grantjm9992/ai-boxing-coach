@@ -6,6 +6,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>AI Boxing Coach records your round from the camera so it can analyse your technique. Video is processed on your device.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AI Boxing Coach lets you import a round you have already filmed, so it can analyse your technique from that video.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

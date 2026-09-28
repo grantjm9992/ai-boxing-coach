@@ -49,9 +49,17 @@ class ClipStore {
   /// A fresh, unused file path to record the given round into. The name encodes
   /// the session and segment so it is legible on disk and collision-free within
   /// a session.
-  Future<String> allocatePath(String sessionId, int segmentIndex) async {
+  ///
+  /// [extension] defaults to the recorder's `mp4`; an imported round passes its
+  /// own so the file keeps the type it arrived as (a `.mov` from an iPhone must
+  /// not be uploaded to Full AI review labelled `video/mp4`).
+  Future<String> allocatePath(
+    String sessionId,
+    int segmentIndex, {
+    String extension = 'mp4',
+  }) async {
     final dir = await clipsDir();
-    return '${dir.path}/${sessionId}_seg$segmentIndex.mp4';
+    return '${dir.path}/${sessionId}_seg$segmentIndex.$extension';
   }
 
   /// Records a finished clip in the index. If a clip already exists for the same

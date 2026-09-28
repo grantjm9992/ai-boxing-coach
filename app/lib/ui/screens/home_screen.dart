@@ -198,6 +198,14 @@ class _ShadowSectionState extends State<_ShadowSection> {
           icon: const Icon(Icons.play_arrow),
           label: const Text('Start'),
         ),
+        const SizedBox(height: 8),
+        // Already filmed a round? Import it and it gets the same treatment —
+        // same analysis (at the profile's mode), same review, same History.
+        OutlinedButton.icon(
+          onPressed: () => importShadowRound(context),
+          icon: const Icon(Icons.video_library_outlined),
+          label: const Text('Import a video'),
+        ),
       ],
     );
   }
