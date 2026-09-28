@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'services/app_foreground.dart';
 import 'services/auth/auth_service.dart';
 import 'services/background_analysis.dart';
 import 'services/clip_store.dart';
@@ -15,6 +16,9 @@ Future<void> main() async {
   // On-device diagnostic log first, so it captures everything below (it also
   // routes debugPrint through itself).
   await DebugLog.instance.init();
+  // Lifecycle tracking for the pose stall watchdog (and lifecycle lines in the
+  // debug log, so a stalled run shows whether the app left the foreground).
+  AppForeground.instance.start();
   // A boxing timer is held in one hand or propped on the floor; rotating it
   // mid-round helps nobody.
   SystemChrome.setPreferredOrientations(<DeviceOrientation>[

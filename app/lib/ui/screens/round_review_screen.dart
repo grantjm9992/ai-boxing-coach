@@ -20,6 +20,7 @@ import '../../services/background_analysis.dart';
 import '../../services/clip_store.dart';
 import '../../services/debug_log.dart';
 import '../../services/frame_grabber.dart';
+import '../../services/keep_awake.dart';
 import '../../services/pose_estimator.dart';
 import '../../services/profile_store.dart';
 import '../../services/round_coach.dart';
@@ -336,6 +337,8 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
       _progress = 0;
       _error = null;
     });
+    // Re-analysis takes minutes on a long round; don't let the screen lock.
+    final releaseAwake = KeepAwake.instance.acquire('re-analysing round');
     try {
       await for (final progress in _estimator.analyse(widget.clip.path)) {
         if (!mounted) return;
@@ -362,6 +365,8 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
         _state = _AnalysisState.failed;
         _error = '$error';
       });
+    } finally {
+      releaseAwake();
     }
   }
 
