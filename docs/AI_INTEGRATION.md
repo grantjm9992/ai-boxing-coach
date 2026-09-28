@@ -17,7 +17,7 @@ Chosen in the profile, applied to every technical round
 | --- | --- | --- | --- |
 | **Offline** | `offline` | Pose + rules on-device. The default and the whole of v0.5. | Free, offline, private. |
 | **Pose + AI on key moments** | `keyframe` | Offline first, then a model reviews the handful of frames the rules flagged (plus the pose read as text). | A few frames per round. |
-| **Full AI review** | `full_frame` | Offline first, then the whole round's video goes to Gemini at 30 fps with the flagged moments, for the model to confirm or correct. | Richest, most expensive. |
+| **Full AI review** | `full_frame` | Offline first, then the whole round's video goes to Gemini at 24 fps (Gemini's maximum) with the flagged moments, for the model to confirm or correct. | Richest, most expensive. |
 
 `AnalysisMode.usesAi` is true for anything but offline. Both AI modes show the
 **same review UX**: the highlighted moments (frames + labels) always come from
@@ -81,7 +81,7 @@ which frames get sent are unit-tested without a model.
 - **keyframe** — grabs the flagged-moment frames via `FrameGrabber` and sends
   them with the pose read as text;
 - **full_frame** — sends the round's video file to a `VideoVisionModel`
-  (`ai/video_vision_model.dart`) at `kFullReviewFps` (30), with the rules'
+  (`ai/video_vision_model.dart`) at `kFullReviewFps` (24, Gemini's maximum), with the rules'
   flagged points in the prompt. The hosted implementation, `CoachVideoModel`,
   uploads the video straight to Gemini's Files API through a proxy-issued
   upload URL, then asks the proxy to run it (see [AI_PROXY.md](AI_PROXY.md)).

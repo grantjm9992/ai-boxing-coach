@@ -148,18 +148,18 @@ void main() {
     expect(req.images, hasLength(1));
   });
 
-  test('fullVideoRequest lists the flagged points and asks for 30 fps', () {
+  test('fullVideoRequest lists the flagged points and asks for Gemini\'s max 24 fps', () {
     final req = CoachingPrompt.fullVideoRequest(
       analysis(),
       const DrillContext(),
       videoPath: '/clips/round.mp4',
     );
     expect(req.videoPath, '/clips/round.mp4');
-    expect(req.fps, 30);
+    expect(req.fps, 24);
     expect(req.userPrompt, contains('Flagged points, in order:'));
     expect(req.userPrompt, contains('Hand drops.'));
     expect(req.userPrompt, contains('Flat-footed.'));
-    expect(req.userPrompt, contains('sampled at 30 frames per second'));
+    expect(req.userPrompt, contains('sampled at 24 frames per second'));
     expect(req.userPrompt, contains('orthodox stance'));
   });
 

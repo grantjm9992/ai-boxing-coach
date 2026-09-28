@@ -51,7 +51,7 @@ const file = {
 Deno.test("buildGenerateBody sends the video with its fps and the prompts", () => {
   const body = buildGenerateBody({
     file,
-    fps: 30,
+    fps: 24,
     systemPrompt: "sys",
     userPrompt: "watch this",
     maxTokens: 2048,
@@ -60,7 +60,7 @@ Deno.test("buildGenerateBody sends the video with its fps and the prompts", () =
   const parts = body.contents[0].parts;
   assertEquals(parts[0], {
     file_data: { mime_type: "video/mp4", file_uri: file.uri },
-    video_metadata: { fps: 30 },
+    video_metadata: { fps: 24 },
   });
   assertEquals(parts[1], { text: "watch this" });
   assertEquals(body.system_instruction.parts[0].text, "sys");
