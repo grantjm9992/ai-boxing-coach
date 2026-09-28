@@ -134,4 +134,39 @@ void main() {
     expect(await modelWith(client).completeVideo(request), 'Done.');
     expect(generateCalls, 3);
   });
+
+  test('reports upload progress, then reviewing, and asks for JSON when the '
+      'request has a schema', () async {
+    final seen = <http.Request>[];
+    final client = MockClient((req) async {
+      seen.add(req);
+      final url = req.url.toString();
+      if (url == '$base/video/upload') {
+        return http.Response(jsonEncode(<String, Object?>{'uploadUrl': uploadUrl}), 200);
+      }
+      if (url == uploadUrl) {
+        return http.Response('{"file":{"name":"files/abc123"}}', 200);
+      }
+      return http.Response('{"text":"{\\"summary\\":\\"ok\\"}"}', 200);
+    });
+    final phases = <(VideoReviewPhase, double?)>[];
+
+    await modelWith(client).completeVideo(
+      const VideoVisionRequest(
+        systemPrompt: 's',
+        userPrompt: 'u',
+        videoPath: '/clips/round.mp4',
+        responseSchema: <String, Object?>{'type': 'OBJECT'},
+      ),
+      onProgress: (phase, fraction) => phases.add((phase, fraction)),
+    );
+
+    expect(phases.first, (VideoReviewPhase.uploading, 0.0));
+    expect(phases, contains((VideoReviewPhase.uploading, 1.0)));
+    expect(phases.last, (VideoReviewPhase.reviewing, null));
+
+    final generate = jsonDecode(seen.last.body) as Map<String, Object?>;
+    expect(generate['responseMimeType'], 'application/json');
+    expect(generate['responseSchema'], <String, Object?>{'type': 'OBJECT'});
+  });
 }

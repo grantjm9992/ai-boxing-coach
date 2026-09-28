@@ -5,11 +5,14 @@ import 'package:flutter/material.dart';
 import '../../domain/round_clip.dart';
 import '../../domain/session_record.dart';
 import '../../domain/skill_category.dart';
+import '../../services/analysis_progress.dart';
+import '../../services/background_analysis.dart';
 import '../../services/clip_store.dart';
 import '../../services/session_history_store.dart';
 import '../../services/sync/history_reader.dart';
 import '../format.dart';
 import '../theme.dart';
+import '../widgets/analysis_progress_card.dart';
 import '../widgets/category_widgets.dart';
 import 'round_review_screen.dart' show saveClipVideo;
 
@@ -144,12 +147,33 @@ class _SessionTile extends StatelessWidget {
         child: ListTile(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text(session.templateName),
-          subtitle: Text(
-            '${_date(session.completedAt)} · '
-            '${TimeFormat.minutes(Duration(seconds: session.totalSeconds))} · '
-            '${session.roundCount} rounds'
-            '${analysed > 0 ? ' · $analysed analysed' : ''}',
-            style: const TextStyle(color: AppTheme.textSecondary),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                '${_date(session.completedAt)} · '
+                '${TimeFormat.minutes(Duration(seconds: session.totalSeconds))} · '
+                '${session.roundCount} rounds'
+                '${analysed > 0 ? ' · $analysed analysed' : ''}',
+                style: const TextStyle(color: AppTheme.textSecondary),
+              ),
+              // Still being analysed in the background: say where it's at.
+              ValueListenableBuilder<Map<String, AnalysisProgress>>(
+                valueListenable: BackgroundAnalysis.instance.progress,
+                builder: (context, _, _) {
+                  final running = BackgroundAnalysis.instance
+                      .progressForSession(session.sessionId);
+                  if (running == null) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: AnalysisProgressBadge(progress: running),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           trailing: session.rounds.any((r) => r.summary != null)
               ? const Icon(Icons.chevron_right, color: AppTheme.textSecondary)

@@ -81,8 +81,20 @@ which frames get sent are unit-tested without a model.
 - **keyframe** — grabs the flagged-moment frames via `FrameGrabber` and sends
   them with the pose read as text;
 - **full_frame** — sends the round's video file to a `VideoVisionModel`
-  (`ai/video_vision_model.dart`) at `kFullReviewFps` (24, Gemini's maximum), with the rules'
-  flagged points in the prompt. The hosted implementation, `CoachVideoModel`,
+  (`ai/video_vision_model.dart`) at `kFullReviewFps` (24, Gemini's maximum),
+  with the pose measurements (`CoachingPrompt.structuredInput`: punches,
+  combinations, metrics, detected and low-confidence issues), the guard style
+  and school with what they mean, a technique checklist (guard, chin, punch
+  extension and retraction, rotation, balance, footwork, posture, head
+  movement, tension, combinations) and the rules' flags as candidates. The
+  model must answer with JSON (`fullVideoResponseSchema`, enforced by Gemini's
+  `responseSchema`): a spoken summary, strengths, and up to 7 findings, each
+  with a taxonomy code, severity, calibrated confidence and 1–3 timestamps.
+  `AiReview.apply` keeps findings with confidence ≥ `kMinFindingConfidence`
+  (0.6) and an in-round timestamp, and they replace the rules' corrections —
+  so they become the moments on the review screen, in synced keyframes and in
+  History. An unschematic reply is rejected and the round keeps its rules
+  analysis. The hosted implementation, `CoachVideoModel`,
   uploads the video straight to Gemini's Files API through a proxy-issued
   upload URL, then asks the proxy to run it (see [AI_PROXY.md](AI_PROXY.md)).
   With no video model — signed out, or AI routed to a custom OpenAI-compatible
