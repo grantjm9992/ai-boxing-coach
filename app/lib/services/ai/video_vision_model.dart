@@ -5,8 +5,13 @@
 
 /// Frame rate Full AI review asks the model to sample the round at. Punches are
 /// over in a fraction of a second, so anything much lower misses the return to
-/// guard. The server clamps this (AI_VIDEO_MAX_FPS) as a cost guard.
-const double kFullReviewFps = 30;
+/// guard. 24 is Gemini's maximum (`0 < fps <= 24`; higher is rejected with
+/// FIELD_INVALID). The server clamps to [kGeminiMaxFps] too, and to
+/// AI_VIDEO_MAX_FPS as a cost guard.
+const double kFullReviewFps = kGeminiMaxFps;
+
+/// The highest `videoMetadata.fps` the Gemini API accepts.
+const double kGeminiMaxFps = 24;
 
 /// One request: instructions + prompt + the round's video file.
 class VideoVisionRequest {

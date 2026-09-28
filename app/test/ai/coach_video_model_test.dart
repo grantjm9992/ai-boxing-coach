@@ -71,7 +71,7 @@ void main() {
 
     final generate = jsonDecode(seen[2].body) as Map<String, Object?>;
     expect(generate['fileName'], 'files/abc123');
-    expect(generate['fps'], 30);
+    expect(generate['fps'], 24);
     expect(generate['userPrompt'], 'Watch the round.');
   });
 

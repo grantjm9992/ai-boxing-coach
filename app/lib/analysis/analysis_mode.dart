@@ -16,13 +16,13 @@ enum AnalysisMode {
   ),
 
   /// [offline] first, then the whole round's video goes to the hosted model
-  /// (Gemini, 30 fps) along with the flagged moments, for it to confirm or
+  /// (Gemini, 24 fps — its maximum) along with the flagged moments, for it to confirm or
   /// correct with the full motion in view. Same review UX as [keyframe]; the
   /// richest read and the most expensive.
   fullFrame(
     'full_frame',
     'Full AI review',
-    'Rules run on-device; an AI model watches the whole round video at 30 fps '
+    'Rules run on-device; an AI model watches the whole round video at 24 fps '
         'to review the flagged moments. Richest feedback, slowest.',
   );
 

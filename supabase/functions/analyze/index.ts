@@ -48,8 +48,13 @@ const WEEKLY_LIMIT = Number(Deno.env.get("AI_WEEKLY_LIMIT") ?? "3");
 // takes a whole video with a frame rate). Its key defaults to AI_API_KEY.
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? AI_API_KEY;
 const AI_VIDEO_MODEL = Deno.env.get("AI_VIDEO_MODEL") ?? AI_MODEL;
+// Gemini rejects videoMetadata.fps above 24 (FIELD_INVALID).
+const GEMINI_MAX_FPS = 24;
 // Cost guards: the server, not the app, has the final say.
-const AI_VIDEO_MAX_FPS = Number(Deno.env.get("AI_VIDEO_MAX_FPS") ?? "30");
+const AI_VIDEO_MAX_FPS = Math.min(
+  Number(Deno.env.get("AI_VIDEO_MAX_FPS") ?? String(GEMINI_MAX_FPS)) || GEMINI_MAX_FPS,
+  GEMINI_MAX_FPS,
+);
 const AI_VIDEO_MAX_BYTES = Number(
   Deno.env.get("AI_VIDEO_MAX_BYTES") ?? String(500 * 1024 * 1024),
 );

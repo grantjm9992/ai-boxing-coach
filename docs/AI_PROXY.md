@@ -41,12 +41,13 @@ points elsewhere:
 supabase secrets set \
   GEMINI_API_KEY="<Gemini key>" \
   AI_VIDEO_MODEL="gemini-2.5-flash" \
-  AI_VIDEO_MAX_FPS="30" \
+  AI_VIDEO_MAX_FPS="24" \
   AI_VIDEO_MAX_BYTES="524288000" \
   AI_VIDEO_MEDIA_RESOLUTION="MEDIA_RESOLUTION_LOW"
 ```
 - `GEMINI_API_KEY` defaults to `AI_API_KEY`; `AI_VIDEO_MODEL` to `AI_MODEL`.
-- `AI_VIDEO_MAX_FPS` is the server-side cap on the fps the app asks for (30).
+- `AI_VIDEO_MAX_FPS` is the server-side cap on the fps the app asks for
+  (default and maximum 24 — Gemini rejects anything higher).
 - `AI_VIDEO_MAX_BYTES` caps the upload (default 500 MB).
 - `AI_VIDEO_MEDIA_RESOLUTION` is optional; unset uses Gemini's default
   (~258 tokens/frame), `MEDIA_RESOLUTION_LOW` is ~66.
@@ -81,8 +82,8 @@ Unit tests for the Gemini helpers: `deno test supabase/functions/analyze/video_t
 
 **Cost:** one Full AI review is one weekly analysis, but costs far more tokens
 than a key-moment one — roughly frames × tokens-per-frame (≈258 at default
-resolution, ≈66 at `MEDIA_RESOLUTION_LOW`). A 3-minute round at 30 fps is
-~5,400 frames: ≈1.4 M tokens at default resolution, ≈0.36 M at low.
+resolution, ≈66 at `MEDIA_RESOLUTION_LOW`). A 3-minute round at 24 fps is
+~4,300 frames: ≈1.1 M tokens at default resolution, ≈0.29 M at low.
 
 ## Behaviour
 - **Reserve → call model → refund on failure**, so a failed/timed-out model call

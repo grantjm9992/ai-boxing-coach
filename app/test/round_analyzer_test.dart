@@ -115,7 +115,7 @@ void main() {
     expect(model.requests.single.images, isNotEmpty);
   });
 
-  test('full AI review sends the whole video at 30 fps with the flagged points',
+  test('full AI review sends the whole video at 24 fps with the flagged points',
       () async {
     final video = FakeVideoVisionModel(response: 'Full: rear hand stays home.');
     final fullAnalyzer = RoundAnalyzer(
@@ -133,7 +133,7 @@ void main() {
     expect(video.requests, hasLength(1));
     final request = video.requests.single;
     expect(request.videoPath, clip.path);
-    expect(request.fps, 30);
+    expect(request.fps, 24);
     expect(request.mimeType, 'video/mp4');
     // The same rule-flagged moments the review screen highlights are in the
     // prompt, so the model reviews those exact points.

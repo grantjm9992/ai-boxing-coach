@@ -11,6 +11,10 @@ Feature areas referenced below have their own deep-dive docs — see
 ## [Unreleased]
 
 ### Fixed
+- **Full AI review used an fps Gemini rejects.** `videoMetadata.fps` must be
+  `0 < fps <= 24`; the app asked for 30 and every review failed with
+  `FIELD_INVALID`. It now asks for 24 (Gemini's maximum), and the proxy clamps
+  to 24 whatever `AI_VIDEO_MAX_FPS` says.
 - **Round analysis no longer dies when the phone locks.** Pose estimation on a
   2–3 minute round takes a few minutes; if the screen auto-locked meanwhile,
   Android throttled the app, the native pose stream went quiet and the 45 s
@@ -29,7 +33,7 @@ Feature areas referenced below have their own deep-dive docs — see
 
 ### Added
 - **Full AI review is live.** Picking it in the profile sends the whole round's
-  video to Gemini at 30 fps (native API, `videoMetadata.fps`), with the rules'
+  video to Gemini at 24 fps, its maximum (native API, `videoMetadata.fps`), with the rules'
   flagged moments in the prompt. Same review UX as key-moment mode — the same
   highlighted moments with frames and labels — with coaching written from the
   full motion. The video uploads straight to Google via a proxy-issued upload
