@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import '../domain/feature_flags.dart';
+import 'checkpoint_evaluation.dart';
+import 'checkpoints.dart';
 import 'combination.dart';
 import 'combination_analysis.dart';
 import 'context.dart';
@@ -57,7 +59,33 @@ class PoseOnlyAdapter {
       drill: drill,
       styleProfile: resolveProfile(drill.style, drill.school),
     );
-    final allObservations = _engine.run(context);
+    // A drill with a target (combination / technical work) is graded against
+    // its technique checkpoints first; see checkpoints.dart.
+    final target = drill.targetSequence;
+    final checkpoints = target == null || target.isEmpty
+        ? const <DrillCheckpoint>[]
+        : Checkpoints.forSequence(target);
+    final checkpointResults = evaluateCheckpoints(
+      context.sequence,
+      context.punches,
+      drill.stance,
+      context.bodyScale,
+      checkpoints,
+    );
+    final tallies = tallyCheckpoints(checkpoints, checkpointResults);
+    final checkpointFaults = _checkpointFaults(tallies);
+    // A failed checkpoint supersedes the general rule's report of the same
+    // fault: same miss, judged against the drill's standard.
+    final supersededCodes = <String>{
+      for (final o in checkpointFaults) o.code,
+    };
+
+    final allObservations = <Observation>[
+      ...checkpointFaults,
+      for (final o in _engine.run(context))
+        if (!(o.severity.isFault && supersededCodes.contains(o.code))) o,
+      ..._checkpointPositives(tallies),
+    ];
     final observations = allObservations
         .where((o) => o.confidence >= minReportedConfidence)
         .toList();
@@ -83,6 +111,7 @@ class PoseOnlyAdapter {
           combo,
           context.drill.stance,
           context.bodyScale,
+          checkpointResults: checkpointResults,
         ),
     ];
 
@@ -97,6 +126,7 @@ class PoseOnlyAdapter {
       combinationAnalyses: comboAnalyses,
       lowConfidenceObservations: lowConfidence,
       sessionType: drill.sessionType,
+      checkpointTallies: tallies,
     );
   }
 
@@ -125,9 +155,13 @@ class PoseOnlyAdapter {
     final corrections = <Correction>[];
     var priority = 1;
     for (final obs in faults) {
-      // already sorted worst-first
-      if (seen.contains(obs.category.value)) continue;
-      seen.add(obs.category.value);
+      // Already sorted worst-first, drill checkpoints ahead of general faults.
+      // Each failed checkpoint is its own correction; general faults keep one
+      // per category.
+      if (obs.ruleId != checkpointRuleId) {
+        if (seen.contains(obs.category.value)) continue;
+        seen.add(obs.category.value);
+      }
       corrections.add(
         Correction(
           priority: priority,
@@ -206,6 +240,70 @@ class PoseOnlyAdapter {
     ]..sort((a, b) => a.timestampMs.compareTo(b.timestampMs));
     return moments;
   }
+
+  /// Rule id carried by checkpoint observations.
+  static const String checkpointRuleId = 'checkpoint';
+
+  /// One fault per checkpoint that failed on any graded rep, worst fail rate
+  /// first. Severity scales with how often it failed: most reps → major.
+  List<Observation> _checkpointFaults(List<CheckpointTally> tallies) {
+    final faults = <Observation>[
+      for (final t in tallies)
+        if (t.failed > 0)
+          Observation(
+            ruleId: checkpointRuleId,
+            code: t.checkpoint.checkpoint.faultCode,
+            category: _categoryForPunch(t.checkpoint.punchNumber),
+            severity: _severityForFailRate(t.failed / t.graded),
+            coachingText: '${t.checkpoint.checkpoint.failCue} '
+                '(${t.failed} of ${t.graded} reps.)',
+            confidence: t.confidence,
+            timestampMs: t.firstFailureMs,
+            metrics: <String, double>{
+              'fail_rate': _round(t.failed / t.graded, 3),
+              'reps_graded': t.graded.toDouble(),
+            },
+          ),
+    ]..sort((a, b) {
+        final bySeverity = b.severity.rank.compareTo(a.severity.rank);
+        if (bySeverity != 0) return bySeverity;
+        return (b.metrics['fail_rate'] ?? 0).compareTo(a.metrics['fail_rate'] ?? 0);
+      });
+    return faults;
+  }
+
+  /// Checkpoints held on nearly every graded rep (at least three) — worth
+  /// telling the fighter, in the drill's own terms.
+  List<Observation> _checkpointPositives(List<CheckpointTally> tallies) {
+    return <Observation>[
+      for (final t in tallies)
+        if (t.graded >= 3 && (t.passRate ?? 0) >= 0.8)
+          Observation(
+            ruleId: checkpointRuleId,
+            code: t.checkpoint.checkpoint.faultCode,
+            category: _categoryForPunch(t.checkpoint.punchNumber),
+            severity: Severity.positive,
+            coachingText: '${t.checkpoint.punchName}: '
+                '${t.checkpoint.checkpoint.label.toLowerCase()} — '
+                '${t.passed} of ${t.graded} reps.',
+            confidence: t.confidence,
+          ),
+    ];
+  }
+
+  static Severity _severityForFailRate(double rate) {
+    if (rate >= 0.5) return Severity.major;
+    if (rate >= 0.25) return Severity.moderate;
+    return Severity.minor;
+  }
+
+  static SkillCategory _categoryForPunch(int number) => switch (number) {
+    1 => SkillCategory.jab,
+    2 => SkillCategory.straight,
+    3 || 4 => SkillCategory.hooks,
+    5 || 6 => SkillCategory.uppercuts,
+    _ => SkillCategory.combinations,
+  };
 
   static double _round(double value, int places) {
     final factor = math.pow(10, places).toDouble();

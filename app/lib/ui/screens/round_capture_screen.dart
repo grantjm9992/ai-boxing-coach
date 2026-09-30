@@ -58,6 +58,7 @@ class RoundCaptureScreen extends StatefulWidget {
     this.maxDuration,
     this.focus = const <String>{},
     this.notes = '',
+    this.targetSequence,
     this.recorder,
     this.estimator,
     this.analyseOverride,
@@ -95,6 +96,11 @@ class RoundCaptureScreen extends StatefulWidget {
 
   final Set<String> focus;
   final String notes;
+
+  /// The punches a combination/technical drill is working — graded against
+  /// their technique checkpoints (DrillContext.targetSequence). Null for free
+  /// work like shadow boxing.
+  final List<int>? targetSequence;
 
   final RoundRecorder? recorder;
   final PoseEstimator? estimator;
@@ -271,6 +277,7 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
       sessionType: widget.sessionType,
       focus: widget.focus,
       notes: widget.notes,
+      targetSequence: widget.targetSequence,
     );
   }
 
@@ -334,6 +341,7 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
       roundNumber: 1,
       durationMs: durationMs.round(),
       title: widget.title,
+      targetSequence: widget.targetSequence,
     );
     await clipStore.add(clip);
 

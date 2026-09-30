@@ -1,6 +1,6 @@
 {
   "_doc": "Canonical boxing-fault taxonomy — the single source of truth for evaluation. See README.md in this directory for why it exists and how the two engines are reconciled. Codes are identity, not display text: once shipped, a code's meaning must not drift. Add codes; never renumber or repurpose. Keep in sync with app/lib/analysis/error_codes.dart (Dart) and the rule `id`s in src/boxing_coach/analysis/rules/ (Python).",
-  "version": 2,
+  "version": 3,
 
   "severities": {
     "major": {"weight": 5},
@@ -19,7 +19,8 @@
     "recovery": "Punch retraction / hand return",
     "head_movement": "Slipping and off-line head movement",
     "defence": "Defensive posture during/after exchanges",
-    "tension": "Muscular tension / lack of relaxation"
+    "tension": "Muscular tension / lack of relaxation",
+    "mechanics": "Punch shape: height, plane and arm angle"
   },
 
   "codes": {
@@ -30,6 +31,7 @@
     "GUARD_005": {"category": "guard", "label": "Slow guard recovery after punch", "default_severity": "moderate", "dart": "guardSlowRecovery", "python": ["guard_return"]},
     "GUARD_006": {"category": "guard", "label": "Both hands low", "default_severity": "major", "dart": "guardBothHandsLow", "python": ["hands_up"]},
     "GUARD_007": {"category": "guard", "label": "Chin exposed / not tucked", "default_severity": "moderate", "dart": "guardChinExposed", "python": []},
+    "GUARD_008": {"category": "guard", "label": "Elbows flared out from the body", "default_severity": "minor", "dart": "guardElbowsOut", "python": []},
 
     "ROT_001": {"category": "rotation", "label": "Insufficient rotation", "default_severity": "moderate", "dart": "rotInsufficient", "python": ["hip_rotation"]},
     "ROT_002": {"category": "rotation", "label": "Over-rotation", "default_severity": "moderate", "dart": "rotOver", "python": ["hip_rotation"]},
@@ -70,7 +72,11 @@
     "REC_003": {"category": "recovery", "label": "Overextended", "default_severity": "moderate", "dart": "recOverextended", "python": []},
 
     "HEAD_001": {"category": "head_movement", "label": "Head static / on centre line", "default_severity": "minor", "dart": "headStatic", "python": ["head_movement"]},
-    "TENSE_001": {"category": "tension", "label": "Upper body too tense / rigid", "default_severity": "minor", "dart": "tenseUpperBody", "python": []}
+    "TENSE_001": {"category": "tension", "label": "Upper body too tense / rigid", "default_severity": "minor", "dart": "tenseUpperBody", "python": []},
+
+    "PUNCH_001": {"category": "mechanics", "label": "Head-level punch landing below shoulder height", "default_severity": "moderate", "dart": "punchBelowShoulder", "python": []},
+    "PUNCH_002": {"category": "mechanics", "label": "Hook arm not bent near 90 degrees", "default_severity": "minor", "dart": "punchHookArmAngle", "python": []},
+    "PUNCH_003": {"category": "mechanics", "label": "Hook thrown downward, not level at shoulder height", "default_severity": "moderate", "dart": "punchHookNotLevel", "python": []}
   },
 
   "python_rules": {

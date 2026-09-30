@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'checkpoint_evaluation.dart';
+import 'checkpoints.dart';
 import 'combination.dart';
 import 'error_codes.dart';
 import 'features.dart';
@@ -24,7 +26,12 @@ class CombinationIssue {
     required this.severity,
     required this.confidence,
     this.timestampMs,
+    this.checkpointId,
   });
+
+  /// Set when this issue is a failed drill checkpoint — it then weighs
+  /// [kCheckpointPenaltyWeight]× in the score.
+  final String? checkpointId;
 
   final String code;
   final Severity severity;
@@ -36,6 +43,7 @@ class CombinationIssue {
     'severity': severity.value,
     'confidence': confidence,
     'timestampMs': timestampMs,
+    if (checkpointId != null) 'checkpointId': checkpointId,
   };
 
   factory CombinationIssue.fromJson(Map<String, Object?> json) =>
@@ -44,6 +52,7 @@ class CombinationIssue {
         severity: Severity.fromValue(json['severity'] as String),
         confidence: (json['confidence'] as num?)?.toDouble() ?? 1.0,
         timestampMs: (json['timestampMs'] as num?)?.toDouble(),
+        checkpointId: json['checkpointId'] as String?,
       );
 }
 
@@ -115,6 +124,10 @@ class CombinationExecutionConfig {
   final double balanceConfidence;
 }
 
+/// How much more a failed drill checkpoint costs than a general fault of the
+/// same severity: it's what the drill is for.
+const double kCheckpointPenaltyWeight = 1.5;
+
 /// Penalty applied to the 0–100 score per issue severity.
 int _penalty(Severity s) => switch (s) {
   Severity.major => 25,
@@ -132,6 +145,7 @@ CombinationAnalysis analyzeCombination(
   Stance stance,
   double bodyScale, {
   CombinationExecutionConfig config = const CombinationExecutionConfig(),
+  List<CheckpointResult> checkpointResults = const <CheckpointResult>[],
 }) {
   final comboPunches = <PunchEvent>[
     for (final i in combo.punchIndices)
@@ -236,9 +250,42 @@ CombinationAnalysis analyzeCombination(
     }
   }
 
+  // (E) Drill checkpoints on this combination's punches. A failed checkpoint
+  // supersedes a general issue of the same fault at the same instant (it's
+  // the same miss, judged against the drill's standard), and weighs more.
+  final inCombo = combo.punchIndices.toSet();
+  for (final r in checkpointResults) {
+    if (!inCombo.contains(r.punchIndex) || !r.failed) continue;
+    final code = _checkpointCode(r.checkpointId, r.punchNumber);
+    if (code == null) continue;
+    issues.removeWhere(
+      (i) =>
+          i.checkpointId == null &&
+          i.code == code &&
+          i.timestampMs == r.timestampMs,
+    );
+    issues.add(CombinationIssue(
+      code: code,
+      severity: Severity.moderate,
+      confidence: r.confidence,
+      timestampMs: r.timestampMs,
+      checkpointId: r.checkpointId,
+    ));
+  }
+  final checkpointsHere =
+      checkpointResults.where((r) => inCombo.contains(r.punchIndex));
+  final graded =
+      checkpointsHere.where((r) => r.status != CheckpointStatus.unmeasured);
+  if (graded.isNotEmpty) {
+    metrics['checkpoints_passed'] =
+        graded.where((r) => r.passed).length.toDouble();
+    metrics['checkpoints_graded'] = graded.length.toDouble();
+  }
+
   var score = 100;
   for (final issue in issues) {
-    score -= _penalty(issue.severity);
+    final weight = issue.checkpointId == null ? 1.0 : kCheckpointPenaltyWeight;
+    score -= (_penalty(issue.severity) * weight).round();
   }
   score = score.clamp(0, 100);
 
@@ -248,4 +295,12 @@ CombinationAnalysis analyzeCombination(
     issues: issues,
     metrics: metrics,
   );
+}
+
+/// The taxonomy code of checkpoint [id] on punch [number], if it's known.
+String? _checkpointCode(String id, int number) {
+  for (final c in Checkpoints.forPunch(number)) {
+    if (c.id == id) return c.faultCode;
+  }
+  return null;
 }

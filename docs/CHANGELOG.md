@@ -10,6 +10,21 @@ Feature areas referenced below have their own deep-dive docs — see
 
 ## [Unreleased]
 
+### Added
+- **Technique checkpoints for combination and technical drills.** Each punch
+  has the specific things a drill looks for — e.g. for a 1-2-3: the jab snaps
+  back; the cross rotates fully at shoulder height or higher with the lead
+  hand home and elbows in; the lead hook is level at shoulder height with the
+  arm at ~90°, full hip rotation and the rear hand home. They're graded
+  on-device where the pose allows (snap-back, rotation, punch height, guard
+  hand at the face, hook plane, hook arm angle) and by the AI review from the
+  video otherwise, and they outweigh general faults: 1.5× in the combination
+  score, first in the corrections and moments, first in the AI's findings.
+  The combination screen lists them punch by punch, and the drill result shows
+  each checkpoint's pass rate. Technical exercises (jab mechanics, one-two,
+  hook/uppercut mechanics, stepping/double jab, check hook) carry their punch
+  target so session rounds are graded the same way. See COMBINATIONS.md.
+
 ### Changed
 - **Full AI review returns up to 7 findings, each with its own moment.** The
   model now gets the on-device pose measurements (punches, combinations,

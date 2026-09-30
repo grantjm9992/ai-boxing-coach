@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'ai_coach_report.dart';
+import 'checkpoint_evaluation.dart';
 import 'combination.dart';
 import 'combination_analysis.dart';
 import 'landmarks.dart';
@@ -244,7 +245,13 @@ class RoundAnalysis {
     this.aiReport,
     this.analysisVersion = currentAnalysisVersion,
     this.sessionType = SessionType.freeTraining,
+    this.checkpointTallies = const <CheckpointTally>[],
   });
+
+  /// How the drill's technique checkpoints went, one tally per checkpoint, in
+  /// the drill's order. Empty unless the round was a combination/technical
+  /// drill with a target (DrillContext.targetSequence).
+  final List<CheckpointTally> checkpointTallies;
 
   /// Observations the analyzers weren't confident enough to show the user
   /// directly (below the report threshold). Kept so the AI reasoning layer can
@@ -301,6 +308,7 @@ class RoundAnalysis {
     aiReport: aiReport,
     analysisVersion: analysisVersion,
     sessionType: sessionType,
+    checkpointTallies: checkpointTallies,
   );
 
   /// Same round with a structured AI report attached (advanced path, §18).
@@ -318,6 +326,7 @@ class RoundAnalysis {
     aiReport: report,
     analysisVersion: analysisVersion,
     sessionType: sessionType,
+    checkpointTallies: checkpointTallies,
   );
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -338,6 +347,7 @@ class RoundAnalysis {
     'metrics': metrics.toJson(),
     'flaggedMoments': flaggedMoments.map((f) => f.toJson()).toList(),
     'modelCoaching': modelCoaching,
+    'checkpointTallies': checkpointTallies.map((t) => t.toJson()).toList(),
   };
 
   factory RoundAnalysis.fromJson(Map<String, Object?> json) => RoundAnalysis(
@@ -380,6 +390,11 @@ class RoundAnalysis {
     flaggedMoments: <FlaggedMoment>[
       for (final f in (json['flaggedMoments'] as List<Object?>? ?? const []))
         FlaggedMoment.fromJson((f as Map).cast<String, Object?>()),
+    ],
+    checkpointTallies: <CheckpointTally>[
+      for (final t
+          in (json['checkpointTallies'] as List<Object?>? ?? const []))
+        ?CheckpointTally.fromJson((t as Map).cast<String, Object?>()),
     ],
   );
 }

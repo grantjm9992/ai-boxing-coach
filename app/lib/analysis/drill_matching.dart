@@ -1,3 +1,4 @@
+import 'checkpoint_evaluation.dart';
 import 'combination_analysis.dart';
 
 /// Combination-drill evaluation (brief §15): comparing what the user was asked
@@ -35,10 +36,17 @@ class DrillAttempt {
 
 /// The result of a whole drill round.
 class DrillResult {
-  const DrillResult({required this.expected, required this.attempts});
+  const DrillResult({
+    required this.expected,
+    required this.attempts,
+    this.checkpoints = const <CheckpointTally>[],
+  });
 
   final List<int> expected;
   final List<DrillAttempt> attempts;
+
+  /// How each of the drill's technique checkpoints went across the round.
+  final List<CheckpointTally> checkpoints;
 
   int get totalAttempts => attempts.length;
 
@@ -71,10 +79,12 @@ bool _sameSequence(List<int> a, List<int> b) {
 /// Builds a [DrillResult] for [expected] from the round's combination analyses.
 DrillResult evaluateDrill(
   List<int> expected,
-  List<CombinationAnalysis> analyses,
-) {
+  List<CombinationAnalysis> analyses, {
+  List<CheckpointTally> checkpoints = const <CheckpointTally>[],
+}) {
   return DrillResult(
     expected: expected,
+    checkpoints: checkpoints,
     attempts: <DrillAttempt>[
       for (final analysis in analyses)
         DrillAttempt(

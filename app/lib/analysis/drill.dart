@@ -28,6 +28,7 @@ class DrillContext {
     this.sessionType = SessionType.freeTraining,
     this.focus = const <String>{},
     this.notes = '',
+    this.targetSequence,
   });
 
   final Stance stance;
@@ -44,6 +45,13 @@ class DrillContext {
   /// Free-form focus tags, e.g. {"jab", "defence"}. Empty = run every rule.
   final Set<String> focus;
   final String notes;
+
+  /// The punches this drill is working, as numbers (1 jab … 6 rear uppercut),
+  /// e.g. `[1, 2, 3]` for a 1-2-3 combination or `[1]` for jab mechanics.
+  /// When set, the round is graded against those punches' technique
+  /// checkpoints (checkpoints.dart), which outweigh general faults. Null for
+  /// free work (shadow boxing, sessions without a punch target).
+  final List<int>? targetSequence;
 
   /// True if this drill targets any of [tags] (or has no focus set).
   bool isFocusedOn(Set<String> tags) =>

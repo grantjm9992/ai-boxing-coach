@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import '../../analysis/ai_review.dart';
+import '../../analysis/checkpoints.dart';
 import '../../analysis/drill.dart';
 import '../../analysis/round_analysis.dart';
 import '../../analysis/schools.dart';
@@ -161,8 +162,15 @@ class CoachingPrompt {
     List<VisionImage> images,
   ) {
     final perBurst = bursts.isEmpty ? 0 : bursts.first.timestamps.length;
-    final buffer = StringBuffer()
-      ..writeln(_context(drill))
+    final brief = drillBrief(drill);
+    final buffer = StringBuffer()..writeln(_context(drill));
+    if (brief.isNotEmpty) {
+      buffer.writeln(
+        '$brief\nJudge the drill against these checkpoints first — they '
+        'matter more than anything else in the round.\n',
+      );
+    }
+    buffer
       ..writeln('Our on-device rules analysed the round and found:')
       ..writeln(analysis.overallSummary);
     if (bursts.isNotEmpty) {
@@ -217,9 +225,12 @@ class CoachingPrompt {
     final length = durationSeconds == null
         ? ''
         : ' (${durationSeconds.toStringAsFixed(0)} s)';
+    final brief = drillBrief(drill);
     final buffer = StringBuffer()
       ..writeln(_context(drill))
-      ..writeln(_styleAndSchool(drill))
+      ..writeln(_styleAndSchool(drill));
+    if (brief.isNotEmpty) buffer.writeln('\n$brief');
+    buffer
       ..writeln(
         '\nThe attached video is the whole round$length, sampled at '
         '${_fps(fps)} frames per second. Timestamps are seconds from the start '
@@ -282,6 +293,16 @@ class CoachingPrompt {
       '- Combinations and rhythm: flow between punches, balance through the '
       'combination.\n'
       '\n'
+      'When the input has a "drill_target", the round is a drill of that '
+      'combination or punch, and its checkpoints are what the drill is for. '
+      'Grade every checkpoint on every rep you can see — the on-device results '
+      'are a lead, and checkpoints it could not measure are yours to judge. '
+      'Checkpoint failures carry the most weight: report each one you can see '
+      'as a finding with its checkpoint id in "checkpoint", rank them above '
+      'general faults of the same severity, and open the summary with how the '
+      'drill\'s checkpoints went. Leave "checkpoint" empty for general '
+      'findings.\n'
+      '\n'
       'Judge against the fighter\'s chosen guard style and school: what is '
       'correct for a Philly shell or a peek-a-boo is a fault in a textbook high '
       'guard, and the reverse.\n'
@@ -309,7 +330,8 @@ class CoachingPrompt {
       'GUARD_001 lead hand low; GUARD_002 rear hand low; GUARD_003 lead drops '
       'during rear punch; GUARD_004 rear drops during lead punch; GUARD_005 '
       'slow guard recovery after punch; GUARD_006 both hands low; GUARD_007 '
-      'chin exposed / not tucked; ROT_001 insufficient rotation; ROT_002 '
+      'chin exposed / not tucked; GUARD_008 elbows flared out; ROT_001 '
+      'insufficient rotation; ROT_002 '
       'over-rotation; ROT_003 rotation too early; ROT_004 rotation too late; '
       'ROT_005 rotation not recovered; BAL_001 off balance after punch; '
       'BAL_002 off balance after combination; BAL_003 weight too far forward; '
@@ -323,7 +345,10 @@ class CoachingPrompt {
       'knee; POS_003 too upright; POS_004 position not recovered; POS_005 off '
       'centre after punch; POS_006 insufficient knee bend; REC_001 slow '
       'retraction; REC_002 hand not returned; REC_003 overextended; HEAD_001 '
-      'head static on the centre line; TENSE_001 upper body tense / rigid.';
+      'head static on the centre line; TENSE_001 upper body tense / rigid; '
+      'PUNCH_001 head-level punch landing below shoulder height; PUNCH_002 '
+      'hook arm not bent near 90 degrees; PUNCH_003 hook thrown downward, '
+      'not level at shoulder height.';
 
   /// Gemini `responseSchema` for the Full AI review — the §18 report shape,
   /// with findings capped at [kMaxFindings] and each required to carry its
@@ -359,6 +384,7 @@ class CoachingPrompt {
             'correction': <String, Object?>{'type': 'STRING'},
             'why_it_matters': <String, Object?>{'type': 'STRING'},
             'suggested_drill': <String, Object?>{'type': 'STRING'},
+            'checkpoint': <String, Object?>{'type': 'STRING'},
           },
           'required': <String>[
             'code',
@@ -443,6 +469,8 @@ class CoachingPrompt {
         'style': drill.style.value,
         if (drill.school != null) 'school': drill.school!.value,
       },
+      if (drill.targetSequence case final target? when target.isNotEmpty)
+        'drill_target': drillTarget(analysis, target),
       'capture_quality': const <String, Object?>{},
       'punches': <String, Object?>{
         'count': analysis.metrics.punchesThrown,
@@ -486,6 +514,52 @@ class CoachingPrompt {
         for (final o in analysis.lowConfidenceObservations) issue(o),
       ],
     };
+  }
+
+  /// The drill's target and technique checkpoints, with how the on-device
+  /// engine graded each — the part of the input the model must weigh first.
+  static Map<String, Object?> drillTarget(
+    RoundAnalysis analysis,
+    List<int> target,
+  ) {
+    return <String, Object?>{
+      'sequence': target,
+      'punches': <String>[for (final n in target) Checkpoints.punchLabel(n)],
+      'checkpoints': <Object?>[
+        for (final dc in Checkpoints.forSequence(target)) dc.toJson(),
+      ],
+      'on_device_results': <Object?>[
+        for (final t in analysis.checkpointTallies)
+          <String, Object?>{
+            'id': t.checkpoint.id,
+            'passed': t.passed,
+            'failed': t.failed,
+            'not_measurable': t.unmeasured,
+          },
+      ],
+    };
+  }
+
+  /// A readable version of the drill's checkpoints for the prompt text, punch
+  /// by punch. Empty when the round has no target.
+  static String drillBrief(DrillContext drill) {
+    final target = drill.targetSequence;
+    if (target == null || target.isEmpty) return '';
+    final names = <String>[for (final n in target) Checkpoints.punchLabel(n)];
+    final buffer = StringBuffer()
+      ..writeln(
+        'This round is a drill of ${target.join('-')} '
+        '(${names.join(', ')}). What it is looking for, punch by punch:',
+      );
+    String? current;
+    for (final dc in Checkpoints.forSequence(target)) {
+      if (dc.punchName != current) {
+        current = dc.punchName;
+        buffer.writeln('$current:');
+      }
+      buffer.writeln('- [${dc.id}] ${dc.checkpoint.detail}');
+    }
+    return buffer.toString().trimRight();
   }
 
   /// The advanced request: structured measurements (+ optional frames) in,

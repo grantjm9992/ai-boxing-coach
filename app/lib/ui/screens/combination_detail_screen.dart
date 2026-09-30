@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../analysis/session_type.dart';
+import '../../analysis/checkpoint_evaluation.dart';
+import '../../analysis/checkpoints.dart';
 import '../../analysis/drill_matching.dart';
+import '../../analysis/session_type.dart';
 import '../../data/combination_library.dart';
 import '../../services/analytics.dart';
 import '../../services/clip_store.dart';
@@ -73,6 +75,8 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
           maxDuration: _duration,
           focus: const <String>{'combinations'},
           notes: combo.numberLabel,
+          // Graded against this combination's technique checkpoints.
+          targetSequence: combo.numbers,
           // Keep the clip + persist the (pose-only) analysis so the drill round
           // can be watched back and re-analysed, like a session round.
           clipStore: _clipStore,
@@ -85,6 +89,7 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
     final result = evaluateDrill(
       combo.numbers,
       capture.analysis?.combinationAnalyses ?? const [],
+      checkpoints: capture.analysis?.checkpointTallies ?? const [],
     );
     for (final attempt in result.attempts) {
       AnalyticsScope.instance.log(AnalyticsEvent.combinationAttemptDetected,
@@ -134,6 +139,12 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
               height: 1.4,
             ),
           ),
+          if (combo.checkpoints.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 24),
+            const _SectionHeader('What the coach is looking for'),
+            const SizedBox(height: 8),
+            _CheckpointList(checkpoints: combo.checkpoints),
+          ],
           if (combo.coachingPoints.isNotEmpty) ...<Widget>[
             const SizedBox(height: 24),
             const _SectionHeader('Coaching points'),
@@ -295,10 +306,103 @@ class _DrillResultView extends StatelessWidget {
                   '${avg == null ? '' : ' · avg technique ${avg.round()}/100'}.',
           style: const TextStyle(color: AppTheme.textPrimary, fontSize: 15),
         ),
+        if (result.checkpoints.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 16),
+          const _SectionHeader('Checkpoints'),
+          const SizedBox(height: 8),
+          for (final tally in result.checkpoints) _CheckpointRow(tally: tally),
+        ],
         const SizedBox(height: 12),
         for (var i = 0; i < result.attempts.length; i++)
           _AttemptRow(index: i + 1, attempt: result.attempts[i]),
       ],
+    );
+  }
+}
+
+/// Colour for a checkpoint held on some reps but not most.
+const Color _partial = Color(0xFFE0A33A);
+
+/// The drill's checkpoints grouped by punch, as the standard to aim for.
+class _CheckpointList extends StatelessWidget {
+  const _CheckpointList({required this.checkpoints});
+
+  final List<DrillCheckpoint> checkpoints;
+
+  @override
+  Widget build(BuildContext context) {
+    final children = <Widget>[];
+    String? punch;
+    for (final dc in checkpoints) {
+      if (dc.punchName != punch) {
+        punch = dc.punchName;
+        children.add(Padding(
+          padding: EdgeInsets.only(top: children.isEmpty ? 0 : 10, bottom: 6),
+          child: Text(
+            punch,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ));
+      }
+      children.add(_Bullet(
+        dc.checkpoint.label,
+        detail: dc.checkpoint.detail,
+        tag: dc.checkpoint.measurable ? null : 'AI review',
+      ));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+}
+
+/// One checkpoint's result across the drill round: passed/graded reps, or a
+/// note that the AI review grades it from the video.
+class _CheckpointRow extends StatelessWidget {
+  const _CheckpointRow({required this.tally});
+
+  final CheckpointTally tally;
+
+  @override
+  Widget build(BuildContext context) {
+    final rate = tally.passRate;
+    final (IconData icon, Color color) = switch (rate) {
+      null => (Icons.videocam_outlined, AppTheme.textSecondary),
+      final double r when r >= 0.8 => (Icons.check_circle, AppTheme.rest),
+      final double r when r >= 0.5 => (Icons.error_outline, _partial),
+      _ => (Icons.cancel, AppTheme.accent),
+    };
+    final trailing = rate == null
+        ? (tally.checkpoint.checkpoint.measurable ? 'Not seen' : 'AI review')
+        : '${tally.passed}/${tally.graded}';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '${tally.checkpoint.punchName} · ${tally.checkpoint.checkpoint.label}',
+              style: const TextStyle(color: AppTheme.textPrimary, height: 1.3),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            trailing,
+            style: TextStyle(
+              color: rate == null ? AppTheme.textSecondary : color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -357,9 +461,15 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _Bullet extends StatelessWidget {
-  const _Bullet(this.text);
+  const _Bullet(this.text, {this.detail, this.tag});
 
   final String text;
+
+  /// A second, quieter line under [text].
+  final String? detail;
+
+  /// A small pill after [text] (e.g. "AI review").
+  final String? tag;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -372,13 +482,55 @@ class _Bullet extends StatelessWidget {
           child: Icon(Icons.circle, size: 6, color: AppTheme.accent),
         ),
         Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 15,
-              height: 1.35,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text.rich(
+                TextSpan(
+                  text: text,
+                  children: <InlineSpan>[
+                    if (tag != null)
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceAlt,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            tag!,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 15,
+                  height: 1.35,
+                ),
+              ),
+              if (detail != null) ...<Widget>[
+                const SizedBox(height: 2),
+                Text(
+                  detail!,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ],

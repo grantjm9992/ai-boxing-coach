@@ -628,6 +628,7 @@ class ExerciseLibrary {
           'Isolated jab. Push off the back foot, hand goes first, '
           'returns on the same line.',
       phase: SessionPhase.technical,
+      targetSequence: <int>[1],
       defaultDurationSeconds: 180,
       difficulty: 2,
       categoryWeights: <SkillCategory, double>{
@@ -651,6 +652,7 @@ class ExerciseLibrary {
           'Jab-cross with full hip rotation on the cross and a clean '
           'return on both hands.',
       phase: SessionPhase.technical,
+      targetSequence: <int>[1, 2],
       defaultDurationSeconds: 180,
       difficulty: 2,
       categoryWeights: <SkillCategory, double>{
@@ -763,6 +765,7 @@ class ExerciseLibrary {
           'Lead hook: turn the foot, turn the hip, elbow at shoulder '
           'height, short arc.',
       phase: SessionPhase.technical,
+      targetSequence: <int>[3],
       defaultDurationSeconds: 180,
       difficulty: 3,
       categoryWeights: <SkillCategory, double>{
@@ -784,6 +787,7 @@ class ExerciseLibrary {
           'Small dip, drive up through the legs, short punch. No '
           'winding up.',
       phase: SessionPhase.technical,
+      targetSequence: <int>[5, 6],
       defaultDurationSeconds: 180,
       difficulty: 3,
       categoryWeights: <SkillCategory, double>{
@@ -804,6 +808,7 @@ class ExerciseLibrary {
           'Jab arriving with the step, closing distance without '
           'falling in.',
       phase: SessionPhase.technical,
+      targetSequence: <int>[1],
       defaultDurationSeconds: 180,
       difficulty: 3,
       categoryWeights: <SkillCategory, double>{
@@ -825,6 +830,7 @@ class ExerciseLibrary {
           'Two jabs with different intent: the first measures, the '
           'second means it.',
       phase: SessionPhase.technical,
+      targetSequence: <int>[1, 1],
       defaultDurationSeconds: 180,
       difficulty: 3,
       categoryWeights: <SkillCategory, double>{
@@ -845,6 +851,7 @@ class ExerciseLibrary {
           'Pivot away while landing the lead hook on someone coming '
           'forward.',
       phase: SessionPhase.technical,
+      targetSequence: <int>[3],
       defaultDurationSeconds: 180,
       difficulty: 4,
       categoryWeights: <SkillCategory, double>{

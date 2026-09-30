@@ -17,6 +17,7 @@ class FaultCode {
   static const guardSlowRecovery = 'GUARD_005';
   static const guardBothHandsLow = 'GUARD_006';
   static const guardChinExposed = 'GUARD_007';
+  static const guardElbowsOut = 'GUARD_008';
 
   // Rotation (§11.2)
   static const rotInsufficient = 'ROT_001';
@@ -68,4 +69,10 @@ class FaultCode {
   // Muscular tension / lack of relaxation (beginner faults surfaced by the
   // CoachMe coach labels; no detector rule yet)
   static const tenseUpperBody = 'TENSE_001';
+
+  // Punch mechanics — shape of the punch itself: height, plane, arm angle.
+  // Surfaced by the technique checkpoints of combination/technical drills.
+  static const punchBelowShoulder = 'PUNCH_001';
+  static const punchHookArmAngle = 'PUNCH_002';
+  static const punchHookNotLevel = 'PUNCH_003';
 }

@@ -20,6 +20,7 @@ class Exercise {
     this.equipmentNotes,
     this.cues = const <String>[],
     this.setupCue,
+    this.targetSequence,
   });
 
   /// Stable identifier used by templates to reference this exercise.
@@ -49,6 +50,11 @@ class Exercise {
 
   /// One line describing how to set the drill up, spoken before it starts.
   final String? setupCue;
+
+  /// For punch drills, the punches worked (1 jab … 6 rear uppercut). Its
+  /// rounds are graded against those punches' technique checkpoints. Null for
+  /// exercises that aren't about a punch (slips, pivots, conditioning).
+  final List<int>? targetSequence;
 
   List<SkillCategory> get categories {
     final sorted = categoryWeights.keys.toList()

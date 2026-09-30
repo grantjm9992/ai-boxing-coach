@@ -129,3 +129,43 @@ int nanArgmax(List<double> values) {
 bool _hasNan(List<double> v) => v.any((e) => e.isNaN);
 
 double _norm(List<double> v) => math.sqrt(v[0] * v[0] + v[1] * v[1]);
+
+/// Shoulder travel of [side] relative to the hips (torso-lengths) between
+/// [startIndex] and [peakIndex] — how much the body turned into a punch. The
+/// max of the in-plane swing (x/y, a side camera) and the depth drive (z, a
+/// front camera); relative to the hip centre so a step isn't mistaken for
+/// rotation. Null if neither axis is measurable. Shared by the hip-rotation
+/// rule and the drill checkpoints.
+double? shoulderDrive(
+  PoseSequence sequence,
+  Side side,
+  int startIndex,
+  int peakIndex,
+  double scale,
+) {
+  final startF = sequence.frames[startIndex];
+  final peakF = sequence.frames[peakIndex];
+  final s0 = framePoint(startF, side.shoulder);
+  final s1 = framePoint(peakF, side.shoulder);
+  final h0 = hipCenter(startF);
+  final h1 = hipCenter(peakF);
+
+  var inplane = double.nan;
+  final anyNan = <List<double>>[s0, s1, h0, h1].any(_hasNan);
+  if (!anyNan) {
+    final v1 = <double>[s1[0] - h1[0], s1[1] - h1[1]];
+    final v0 = <double>[s0[0] - h0[0], s0[1] - h0[1]];
+    inplane = distance(v1, v0) / scale;
+  }
+
+  // Depth drive (front camera): MediaPipe z toward the lens.
+  final z0 = startF.get(side.shoulder)?.z ?? double.nan;
+  final z1 = peakF.get(side.shoulder)?.z ?? double.nan;
+  final depth = (z0.isNaN || z1.isNaN) ? double.nan : (z1 - z0).abs() / scale;
+
+  final drives = <double>[
+    if (!inplane.isNaN) inplane,
+    if (!depth.isNaN) depth,
+  ];
+  return drives.isEmpty ? null : drives.reduce(math.max);
+}

@@ -16,6 +16,13 @@ void main() {
       expect(p.school, isNull);
     });
 
+    test('toDrill carries a drill target', () {
+      const p = UserProfile();
+      expect(p.toDrill(targetSequence: <int>[1, 2, 3]).targetSequence,
+          <int>[1, 2, 3]);
+      expect(p.toDrill().targetSequence, isNull);
+    });
+
     test('toDrill carries stance, style and school', () {
       const p = UserProfile(
         stance: Stance.southpaw,
