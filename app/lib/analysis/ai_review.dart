@@ -48,10 +48,17 @@ class AiReview {
               whyItMatters: issue.whyItMatters,
               correction: issue.correction,
               suggestedDrill: issue.suggestedDrill,
+              checkpoint: issue.checkpoint,
             ),
     ]..sort((a, b) {
-        final bySeverity = b.severity.rank.compareTo(a.severity.rank);
-        return bySeverity != 0 ? bySeverity : b.confidence.compareTo(a.confidence);
+        // A failed drill checkpoint ranks a severity level higher: it's what
+        // the drill is for.
+        final byWeight = _weight(b).compareTo(_weight(a));
+        if (byWeight != 0) return byWeight;
+        final byCheckpoint =
+            (b.checkpoint != null ? 1 : 0).compareTo(a.checkpoint != null ? 1 : 0);
+        if (byCheckpoint != 0) return byCheckpoint;
+        return b.confidence.compareTo(a.confidence);
       });
 
     final kept = <AiPriorityIssue>[];
@@ -65,6 +72,11 @@ class AiReview {
     }
     return kept;
   }
+
+  /// A finding's ranking weight: its severity, plus one level for a failed
+  /// drill checkpoint.
+  static int _weight(AiPriorityIssue issue) =>
+      issue.severity.rank + (issue.checkpoint != null ? 1 : 0);
 
   /// The moment label for a finding: what was seen, then the cue — the same
   /// shape as the rules' coaching text.
@@ -94,6 +106,10 @@ class AiReview {
         return SkillCategory.rhythm;
       case 'COMBO':
         return SkillCategory.combinations;
+      case 'PUNCH':
+        return code.toUpperCase() == 'PUNCH_001'
+            ? SkillCategory.straight
+            : SkillCategory.hooks;
       case 'GUARD':
       case 'REC':
       default:
@@ -150,6 +166,7 @@ class AiReview {
       aiReport: report,
       analysisVersion: rules.analysisVersion,
       sessionType: rules.sessionType,
+      checkpointTallies: rules.checkpointTallies,
     );
   }
 

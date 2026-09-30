@@ -170,4 +170,41 @@ void main() {
     expect(AiReview.categoryFor('HEAD_001'), SkillCategory.headMovement);
     expect(AiReview.categoryFor('OTHER'), SkillCategory.defence);
   });
+
+  group('drill checkpoints', () {
+    test('a report finding keeps its checkpoint id through parsing', () {
+      final report = AiCoachReport.tryParse(
+        '{"summary":"s","priority_issues":[{"code":"GUARD_003",'
+        '"severity":"MEDIUM","confidence":0.8,"timestamps":[3],'
+        '"observation":"o","correction":"c","checkpoint":"cross_lead_hand_home"},'
+        '{"code":"FOOT_001","severity":"LOW","confidence":0.8,"timestamps":[4],'
+        '"observation":"o","correction":"c","checkpoint":""}]}',
+      )!;
+      expect(report.priorityIssues[0].checkpoint, 'cross_lead_hand_home');
+      expect(report.priorityIssues[1].checkpoint, isNull);
+    });
+
+    test('a failed checkpoint outranks a general fault of the same severity, '
+        'and ties with one a level worse', () {
+      final report = AiCoachReport(
+        summary: 's',
+        priorityIssues: <AiPriorityIssue>[
+          issue('FOOT_004', severity: Severity.moderate, confidence: 0.95),
+          issue('FOOT_001', severity: Severity.major, confidence: 0.7,
+              timestamps: const <double>[20]),
+          AiPriorityIssue(
+            code: 'GUARD_003',
+            severity: Severity.moderate,
+            confidence: 0.7,
+            timestamps: const <double>[30],
+            observation: 'o',
+            correction: 'c',
+            checkpoint: 'cross_lead_hand_home',
+          ),
+        ],
+      );
+      final order = AiReview.shownFindings(report).map((i) => i.code).toList();
+      expect(order, <String>['GUARD_003', 'FOOT_001', 'FOOT_004']);
+    });
+  });
 }

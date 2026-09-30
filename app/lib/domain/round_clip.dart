@@ -17,6 +17,7 @@ class RoundClip {
     this.roundsInPhase,
     this.durationMs,
     this.title,
+    this.targetSequence,
   });
 
   /// Identifies the session run this clip came from — a timestamp-based id
@@ -44,6 +45,11 @@ class RoundClip {
   /// The round's headline (theme or exercise label) for the review list.
   final String? title;
 
+  /// The punches a combination/technical drill round was working (see
+  /// DrillContext.targetSequence), so re-analysis grades the same checkpoints.
+  /// Null for free work.
+  final List<int>? targetSequence;
+
   /// "Round 3 of 5" style label, matching the session UI.
   String get positionLabel {
     if (roundNumber == null) return phase.label;
@@ -60,6 +66,7 @@ class RoundClip {
     roundsInPhase: roundsInPhase,
     durationMs: durationMs ?? this.durationMs,
     title: title,
+    targetSequence: targetSequence,
   );
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -72,6 +79,7 @@ class RoundClip {
     'roundsInPhase': roundsInPhase,
     'durationMs': durationMs,
     'title': title,
+    if (targetSequence != null) 'targetSequence': targetSequence,
   };
 
   static RoundClip? fromJson(Map<String, Object?> json) {
@@ -100,6 +108,10 @@ class RoundClip {
       roundsInPhase: (json['roundsInPhase'] as num?)?.toInt(),
       durationMs: (json['durationMs'] as num?)?.toInt(),
       title: json['title'] as String?,
+      targetSequence: (json['targetSequence'] as List<Object?>?)
+          ?.whereType<num>()
+          .map((n) => n.toInt())
+          .toList(),
     );
   }
 }

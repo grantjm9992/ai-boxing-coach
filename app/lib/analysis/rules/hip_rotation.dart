@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import '../context.dart';
 import '../error_codes.dart';
 import '../geometry.dart' as geo;
@@ -49,7 +47,13 @@ class HipRotationRule extends Rule {
       // Only the rear straight is driven by rotation this way.
       if (punch.punchType != PunchType.straight) continue;
       if (punch.peakReach < cfg.minPeakReach) continue;
-      final drive = _shoulderDrive(context, rear, punch.startIndex, punch.peakIndex);
+      final drive = geo.shoulderDrive(
+        seq,
+        rear,
+        punch.startIndex,
+        punch.peakIndex,
+        context.bodyScale,
+      );
       if (drive == null) continue;
       if (drive < cfg.minShoulderDrive) {
         observations.add(
@@ -69,44 +73,5 @@ class HipRotationRule extends Rule {
       }
     }
     return observations;
-  }
-
-  /// Rear-shoulder travel relative to the hips (torso-lengths): the max of the
-  /// in-plane swing and the depth drive. Null if neither axis is measurable.
-  double? _shoulderDrive(
-    AnalysisContext context,
-    Side side,
-    int startIndex,
-    int peakIndex,
-  ) {
-    final seq = context.sequence;
-    final scale = context.bodyScale;
-    final startF = seq.frames[startIndex];
-    final peakF = seq.frames[peakIndex];
-
-    final s0 = geo.framePoint(startF, side.shoulder);
-    final s1 = geo.framePoint(peakF, side.shoulder);
-    final h0 = geo.hipCenter(startF);
-    final h1 = geo.hipCenter(peakF);
-    var inplane = double.nan;
-    final anyNan = <List<double>>[s0, s1, h0, h1].any((p) => p.any((v) => v.isNaN));
-    if (!anyNan) {
-      // distance(s1 - h1, s0 - h0) / scale
-      final v1 = <double>[s1[0] - h1[0], s1[1] - h1[1]];
-      final v0 = <double>[s0[0] - h0[0], s0[1] - h0[1]];
-      inplane = geo.distance(v1, v0) / scale;
-    }
-
-    // Depth drive (front camera): MediaPipe z toward the lens.
-    final z0 = startF.get(side.shoulder)?.z ?? double.nan;
-    final z1 = peakF.get(side.shoulder)?.z ?? double.nan;
-    final depth =
-        (z0.isNaN || z1.isNaN) ? double.nan : (z1 - z0).abs() / scale;
-
-    final drives = <double>[
-      if (!inplane.isNaN) inplane,
-      if (!depth.isNaN) depth,
-    ];
-    return drives.isEmpty ? null : drives.reduce(math.max);
   }
 }

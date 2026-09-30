@@ -5,7 +5,9 @@ import '../analysis/drill.dart';
 import '../analysis/round_analysis.dart';
 import '../domain/round_clip.dart';
 import 'ai/ai_settings_store.dart';
+import 'ai/vision_model.dart';
 import 'analysis_progress.dart';
+import 'analysis_store.dart';
 import 'debug_log.dart';
 import 'keep_awake.dart';
 import 'profile_store.dart';
@@ -115,6 +117,98 @@ class BackgroundAnalysis {
     _toast(analysis != null
         ? '${label ?? 'Round'} analysed — open History to review'
         : "${label ?? 'Round'} couldn't be analysed — tap the round to retry");
+  }
+
+  /// The AI step alone, for a round whose pose + rules analysis is already
+  /// saved — a combination drill, which is analysed on the spot so the drill
+  /// result shows at once. Runs the profile's AI mode ([RoundCoach]) over the
+  /// saved analysis and pose (no second tracking pass) and saves the enriched
+  /// analysis back, so the drill screen and the review screen pick it up.
+  ///
+  /// Does nothing in offline mode or with no model available. Returns the
+  /// enriched analysis, or null when there was none. [store], [coach] and
+  /// [mode] are injectable for tests; production resolves them.
+  Future<RoundAnalysis?> reviewWithAi(
+    RoundClip clip, {
+    required DrillContext drill,
+    String? label,
+    AnalysisStore? store,
+    RoundCoach? coach,
+    AnalysisMode? mode,
+  }) async {
+    final resolvedMode = mode ?? (await const ProfileStore().load()).analysisMode;
+    if (!resolvedMode.usesAi) return null;
+    final resolvedCoach = coach ??
+        resolveRoundCoach(
+          mode: resolvedMode,
+          config: await const AiSettingsStore().load(),
+        );
+    if (!resolvedCoach.canCoach(resolvedMode)) return null;
+
+    final saved = store ?? AnalysisStore();
+    final analysis =
+        await saved.loadAnalysis(clip.sessionId, clip.segmentIndex);
+    final pose = await saved.loadPose(clip.sessionId, clip.segmentIndex);
+    if (analysis == null || pose == null) return null;
+
+    final key = keyFor(clip);
+    _mark(key, true);
+    final releaseAwake = KeepAwake.instance.acquire('AI review $key');
+    _setProgress(
+      key,
+      AnalysisProgress.start(
+        resolvedMode,
+        stage: resolvedMode == AnalysisMode.fullFrame
+            ? AnalysisStage.uploading
+            : AnalysisStage.reviewing,
+      ),
+    );
+    RoundAnalysis? enriched;
+    String? failure;
+    try {
+      final coaching = await resolvedCoach.coach(
+        mode: resolvedMode,
+        videoPath: clip.path,
+        analysis: analysis,
+        drill: drill,
+        durationMs: pose.durationMs,
+        onProgress: (stage, fraction) {
+          final current = progress.value[key];
+          if (current != null) {
+            _setProgress(key, current.advance(stage, fraction));
+          }
+        },
+      );
+      if (coaching != null) {
+        final current = progress.value[key];
+        if (current != null) {
+          _setProgress(key, current.advance(AnalysisStage.saving, null));
+        }
+        enriched = coaching.applyTo(analysis, durationMs: pose.durationMs);
+        await saved.save(
+          clip.sessionId,
+          clip.segmentIndex,
+          analysis: enriched,
+          sequence: pose,
+        );
+      }
+    } on VisionModelException catch (error) {
+      failure = error.message;
+    } on Object catch (error) {
+      failure = '$error';
+    } finally {
+      releaseAwake();
+      _setProgress(key, null);
+      _mark(key, false);
+    }
+    if (failure != null) {
+      DebugLog.instance.log('AI review failed for $key: $failure', tag: 'bg');
+    }
+    _toast(enriched != null
+        ? "${label ?? 'Drill'}: the AI coach's review is ready"
+        : "${label ?? 'Drill'}: AI review unavailable"
+            '${failure == null ? '' : ' — $failure'}');
+    return enriched;
   }
 
   Future<RoundAnalyzer> _buildAnalyzer() async {

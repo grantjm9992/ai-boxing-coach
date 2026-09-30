@@ -33,6 +33,7 @@ class UserProfile {
     Set<String> focus = const <String>{},
     String notes = '',
     SessionType sessionType = SessionType.freeTraining,
+    List<int>? targetSequence,
   }) =>
       DrillContext(
         stance: stance,
@@ -41,6 +42,7 @@ class UserProfile {
         sessionType: sessionType,
         focus: focus,
         notes: notes,
+        targetSequence: targetSequence,
       );
 
   UserProfile copyWith({

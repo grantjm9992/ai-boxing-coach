@@ -235,4 +235,68 @@ void main() {
     expect(mp4.mimeType, 'video/mp4');
     expect(mov.mimeType, 'video/quicktime');
   });
+
+  group('drill checkpoints', () {
+    const drill = DrillContext(targetSequence: <int>[1, 2, 3], notes: '1-2-3');
+
+    test('the structured input carries the drill target and its checkpoints',
+        () {
+      final input = CoachingPrompt.structuredInput(analysis(), drill);
+      final target = input['drill_target']! as Map<String, Object?>;
+      expect(target['sequence'], <int>[1, 2, 3]);
+      expect(target['punches'], <String>['Jab', 'Cross', 'Lead hook']);
+      final ids = <Object?>[
+        for (final c in target['checkpoints']! as List<Object?>)
+          (c! as Map<String, Object?>)['id'],
+      ];
+      expect(ids, containsAll(<String>[
+        'jab_snap_back',
+        'cross_lead_hand_home',
+        'lead_hook_arm_90',
+      ]));
+      // Free work has no target.
+      expect(CoachingPrompt.structuredInput(analysis(), const DrillContext()),
+          isNot(contains('drill_target')));
+    });
+
+    test('Full AI review is told to grade the checkpoints first and tag them',
+        () {
+      final req = CoachingPrompt.fullVideoRequest(
+        analysis(),
+        drill,
+        videoPath: '/clips/drill.mp4',
+      );
+      expect(req.userPrompt, contains('This round is a drill of 1-2-3'));
+      expect(req.userPrompt, contains('[cross_lead_hand_home]'));
+      expect(req.userPrompt, contains('the rear shoulder rolls up'));
+      expect(req.systemPrompt, contains('drill_target'));
+      expect(req.systemPrompt, contains('"checkpoint"'));
+      final issues = (CoachingPrompt.fullVideoResponseSchema['properties']!
+          as Map<String, Object?>)['priority_issues']! as Map<String, Object?>;
+      final props = (issues['items']! as Map<String, Object?>)['properties']!
+          as Map<String, Object?>;
+      expect(props, contains('checkpoint'));
+    });
+
+    test('the key-moment prompt leads with the checkpoints', () {
+      final a = analysis();
+      final bursts = CoachingPrompt.keyframeBursts(a, durationMs: 10000);
+      final req = CoachingPrompt.keyframeRequest(
+        a,
+        drill,
+        bursts,
+        <VisionImage>[VisionImage(bytes: Uint8List.fromList(<int>[0]))],
+      );
+      expect(req.userPrompt, contains('This round is a drill of 1-2-3'));
+      expect(req.userPrompt, contains('checkpoints first'));
+      // No target, no brief.
+      final free = CoachingPrompt.keyframeRequest(
+        a,
+        const DrillContext(),
+        bursts,
+        const <VisionImage>[],
+      );
+      expect(free.userPrompt, isNot(contains('drill of')));
+    });
+  });
 }

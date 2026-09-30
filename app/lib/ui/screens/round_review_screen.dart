@@ -359,7 +359,11 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
         } else {
           final analysis = PoseOnlyAdapter().analyse(
             result.sequence,
-            _profile.toDrill(sessionType: widget.clip.phase.sessionType),
+            _profile.toDrill(
+              sessionType: widget.clip.phase.sessionType,
+              notes: widget.clip.title ?? '',
+              targetSequence: widget.clip.targetSequence,
+            ),
           );
           setState(() {
             _result = result;
@@ -411,7 +415,11 @@ class _RoundPlayerScreenState extends State<_RoundPlayerScreen> {
     }
     setSource('AI (${mode.value}) running…');
     try {
-      final drill = profile.toDrill(sessionType: widget.clip.phase.sessionType);
+      final drill = profile.toDrill(
+        sessionType: widget.clip.phase.sessionType,
+        notes: widget.clip.title ?? '',
+        targetSequence: widget.clip.targetSequence,
+      );
       final coaching = await coach.coach(
         mode: mode,
         videoPath: widget.clip.path,

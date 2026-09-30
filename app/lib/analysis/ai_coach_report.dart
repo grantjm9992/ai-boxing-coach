@@ -20,7 +20,13 @@ class AiPriorityIssue {
     this.timestamps = const <double>[],
     this.whyItMatters = '',
     this.suggestedDrill = '',
+    this.checkpoint,
   });
+
+  /// The drill checkpoint this finding fails (a TechniqueCheckpoint id), when
+  /// the round was a drill and the finding is one of its checkpoints. Those
+  /// outweigh general findings.
+  final String? checkpoint;
 
   /// Stable fault code (taxonomy, error_codes.dart) — identity, not display.
   final String code;
@@ -41,6 +47,7 @@ class AiPriorityIssue {
     'why_it_matters': whyItMatters,
     'correction': correction,
     'suggested_drill': suggestedDrill,
+    if (checkpoint != null) 'checkpoint': checkpoint,
   };
 
   /// Strict per-issue parse. Requires a code, a mappable severity and a
@@ -66,6 +73,10 @@ class AiPriorityIssue {
       whyItMatters: map['why_it_matters'] as String? ?? '',
       correction: correction,
       suggestedDrill: map['suggested_drill'] as String? ?? '',
+      checkpoint: switch (map['checkpoint']) {
+        final String id when id.trim().isNotEmpty => id.trim(),
+        _ => null,
+      },
     );
   }
 

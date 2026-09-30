@@ -300,6 +300,7 @@ class _SessionScreenState extends State<SessionScreen> {
     final drill = _profile.toDrill(
       notes: clip.title ?? '',
       sessionType: clip.phase.sessionType,
+      targetSequence: clip.targetSequence,
     );
     if (mounted) setState(() => _analysing.add(clip.segmentIndex));
     RoundAnalysis? analysis;

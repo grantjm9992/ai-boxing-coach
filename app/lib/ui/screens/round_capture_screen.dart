@@ -30,10 +30,15 @@ class RoundCaptureResult {
     required this.analysis,
     required this.durationMs,
     this.clip,
+    this.drill,
   });
 
   final RoundAnalysis? analysis;
   final double durationMs;
+
+  /// The drill context the round was analysed under (profile + target), so a
+  /// follow-up step — the drill's background AI review — uses the same one.
+  final DrillContext? drill;
 
   /// The saved [RoundClip], when the capture ran the full analyzer and kept the
   /// video (shadow rounds). Null for the pose-only combination-drill path.
@@ -58,6 +63,7 @@ class RoundCaptureScreen extends StatefulWidget {
     this.maxDuration,
     this.focus = const <String>{},
     this.notes = '',
+    this.targetSequence,
     this.recorder,
     this.estimator,
     this.analyseOverride,
@@ -95,6 +101,11 @@ class RoundCaptureScreen extends StatefulWidget {
 
   final Set<String> focus;
   final String notes;
+
+  /// The punches a combination/technical drill is working — graded against
+  /// their technique checkpoints (DrillContext.targetSequence). Null for free
+  /// work like shadow boxing.
+  final List<int>? targetSequence;
 
   final RoundRecorder? recorder;
   final PoseEstimator? estimator;
@@ -271,6 +282,7 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
       sessionType: widget.sessionType,
       focus: widget.focus,
       notes: widget.notes,
+      targetSequence: widget.targetSequence,
     );
   }
 
@@ -294,7 +306,11 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
         durationMs = result.sequence.durationMs;
       }
     }
-    return RoundCaptureResult(analysis: analysis, durationMs: durationMs);
+    return RoundCaptureResult(
+      analysis: analysis,
+      durationMs: durationMs,
+      drill: drill,
+    );
   }
 
   /// Deep path: keep the video in [ClipStore] so the round can be reviewed,
@@ -334,6 +350,7 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
       roundNumber: 1,
       durationMs: durationMs.round(),
       title: widget.title,
+      targetSequence: widget.targetSequence,
     );
     await clipStore.add(clip);
 
@@ -341,7 +358,11 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
       // Slow analysis happens in the background (caller's job) — hand back the
       // clip immediately so the user isn't blocked.
       return RoundCaptureResult(
-          analysis: null, durationMs: durationMs, clip: clip);
+        analysis: null,
+        durationMs: durationMs,
+        clip: clip,
+        drill: drill,
+      );
     }
 
     // Inline pose-only analysis (drill): fast, gives combination feedback, and
@@ -361,7 +382,11 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
     }
     _logAnalysis(analysis);
     return RoundCaptureResult(
-        analysis: analysis, durationMs: durationMs, clip: clip);
+      analysis: analysis,
+      durationMs: durationMs,
+      clip: clip,
+      drill: drill,
+    );
   }
 
   /// Dumps the whole analysis to the debug log (Profile → Debug log) so the full

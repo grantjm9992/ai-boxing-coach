@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 
-import '../../analysis/session_type.dart';
+import '../../analysis/ai_review.dart';
+import '../../analysis/checkpoint_evaluation.dart';
+import '../../analysis/checkpoints.dart';
 import '../../analysis/drill_matching.dart';
+import '../../analysis/round_analysis.dart';
+import '../../analysis/session_type.dart';
 import '../../data/combination_library.dart';
+import '../../domain/round_clip.dart';
+import '../../services/analysis_progress.dart';
 import '../../services/analytics.dart';
+import '../../services/background_analysis.dart';
 import '../../services/clip_store.dart';
 import '../theme.dart';
+import '../widgets/analysis_progress_card.dart';
 import '../widgets/duration_selector.dart';
 import 'round_capture_screen.dart';
 import 'round_review_screen.dart';
@@ -21,11 +29,15 @@ class CombinationDetailScreen extends StatefulWidget {
     super.key,
     required this.combo,
     this.result,
+    this.aiReview,
     this.onStartDrill,
   });
 
   final CombinationDef combo;
   final DrillResult? result;
+
+  /// Seeds the drill's AI review alongside [result] (restoring a view, tests).
+  final RoundAnalysis? aiReview;
 
   /// Test seam: overrides launching the live recorder when "Start drill" is
   /// tapped. Production leaves this null and pushes [CombinationDrillScreen].
@@ -45,10 +57,18 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
   /// back / re-analysed like a session or shadow round.
   String? _lastSessionId;
 
+  /// The last drill round's clip, while its background AI review may run.
+  RoundClip? _lastClip;
+
+  /// The last drill round's analysis once the AI review has landed (null
+  /// until then, and in offline mode).
+  RoundAnalysis? _aiReview;
+
   @override
   void initState() {
     super.initState();
     _result = widget.result;
+    _aiReview = widget.aiReview;
     AnalyticsScope.instance.log(
       AnalyticsEvent.combinationSelected,
       <String, Object?>{'id': widget.combo.id},
@@ -73,6 +93,8 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
           maxDuration: _duration,
           focus: const <String>{'combinations'},
           notes: combo.numberLabel,
+          // Graded against this combination's technique checkpoints.
+          targetSequence: combo.numbers,
           // Keep the clip + persist the (pose-only) analysis so the drill round
           // can be watched back and re-analysed, like a session round.
           clipStore: _clipStore,
@@ -85,6 +107,7 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
     final result = evaluateDrill(
       combo.numbers,
       capture.analysis?.combinationAnalyses ?? const [],
+      checkpoints: capture.analysis?.checkpointTallies ?? const [],
     );
     for (final attempt in result.attempts) {
       AnalyticsScope.instance.log(AnalyticsEvent.combinationAttemptDetected,
@@ -96,7 +119,34 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
         <String, Object?>{'combo': combo.id},
       );
     }
-    setState(() => _result = result);
+    setState(() {
+      _result = result;
+      _lastClip = capture.clip;
+      _aiReview = null;
+    });
+    _startAiReview(capture);
+  }
+
+  /// In an AI mode, the drill's AI review runs in the background over the
+  /// round just analysed (BackgroundAnalysis.reviewWithAi) — the on-device
+  /// result is already on screen. Offline mode: nothing happens.
+  void _startAiReview(RoundCaptureResult capture) {
+    final clip = capture.clip;
+    final drill = capture.drill;
+    if (clip == null || drill == null) return;
+    BackgroundAnalysis.instance
+        .reviewWithAi(
+          clip,
+          drill: drill,
+          label: 'Drill ${widget.combo.numberLabel}',
+        )
+        .then((enriched) {
+          if (!mounted || enriched == null) return;
+          // Only if it's still the latest drill on screen.
+          if (_lastClip?.sessionId != clip.sessionId) return;
+          setState(() => _aiReview = enriched);
+        })
+        .ignore();
   }
 
   @override
@@ -134,6 +184,12 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
               height: 1.4,
             ),
           ),
+          if (combo.checkpoints.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 24),
+            const _SectionHeader('What the coach is looking for'),
+            const SizedBox(height: 8),
+            _CheckpointList(checkpoints: combo.checkpoints),
+          ],
           if (combo.coachingPoints.isNotEmpty) ...<Widget>[
             const SizedBox(height: 24),
             const _SectionHeader('Coaching points'),
@@ -144,7 +200,11 @@ class _CombinationDetailScreenState extends State<CombinationDetailScreen> {
             const SizedBox(height: 28),
             const _SectionHeader('Your drill'),
             const SizedBox(height: 8),
-            _DrillResultView(result: result),
+            _DrillResultView(
+              result: result,
+              clip: _lastClip,
+              aiReview: _aiReview,
+            ),
             if (_lastSessionId != null) ...<Widget>[
               const SizedBox(height: 12),
               OutlinedButton.icon(
@@ -276,13 +336,32 @@ class _PunchChip extends StatelessWidget {
 }
 
 class _DrillResultView extends StatelessWidget {
-  const _DrillResultView({required this.result});
+  const _DrillResultView({required this.result, this.clip, this.aiReview});
 
   final DrillResult result;
+
+  /// The drill's clip — its background AI review, while running, shows here.
+  final RoundClip? clip;
+
+  /// The drill's analysis after the AI review (null until it lands).
+  final RoundAnalysis? aiReview;
+
+  /// The checkpoints the AI's shown findings failed; null when there's no
+  /// structured AI review (offline, key-moment mode, or not back yet).
+  Set<String>? get _aiFlagged {
+    final report = aiReview?.aiReport;
+    if (report == null) return null;
+    return <String>{
+      for (final finding in AiReview.shownFindings(report))
+        if (finding.checkpoint != null) finding.checkpoint!,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     final avg = result.averageScore;
+    final aiFlagged = _aiFlagged;
+    final coaching = aiReview?.modelCoaching;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -295,10 +374,162 @@ class _DrillResultView extends StatelessWidget {
                   '${avg == null ? '' : ' · avg technique ${avg.round()}/100'}.',
           style: const TextStyle(color: AppTheme.textPrimary, fontSize: 15),
         ),
+        if (result.checkpoints.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 16),
+          const _SectionHeader('Checkpoints'),
+          const SizedBox(height: 8),
+          for (final tally in result.checkpoints)
+            _CheckpointRow(
+              tally: tally,
+              aiFlagged: aiFlagged?.contains(tally.checkpoint.id),
+            ),
+        ],
+        if (clip case final drillClip?)
+          ValueListenableBuilder<Map<String, AnalysisProgress>>(
+            valueListenable: BackgroundAnalysis.instance.progress,
+            builder: (context, _, _) {
+              final running =
+                  BackgroundAnalysis.instance.progressFor(drillClip);
+              if (running == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                child: Row(
+                  children: <Widget>[
+                    AnalysisProgressBadge(progress: running),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'The AI coach is reviewing this drill.',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        if (coaching != null && coaching.trim().isNotEmpty) ...<Widget>[
+          const SizedBox(height: 16),
+          const _SectionHeader('AI coach'),
+          const SizedBox(height: 8),
+          Text(
+            coaching,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 15,
+              height: 1.4,
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         for (var i = 0; i < result.attempts.length; i++)
           _AttemptRow(index: i + 1, attempt: result.attempts[i]),
       ],
+    );
+  }
+}
+
+/// Colour for a checkpoint held on some reps but not most.
+const Color _partial = Color(0xFFE0A33A);
+
+/// The drill's checkpoints grouped by punch, as the standard to aim for.
+class _CheckpointList extends StatelessWidget {
+  const _CheckpointList({required this.checkpoints});
+
+  final List<DrillCheckpoint> checkpoints;
+
+  @override
+  Widget build(BuildContext context) {
+    final children = <Widget>[];
+    String? punch;
+    for (final dc in checkpoints) {
+      if (dc.punchName != punch) {
+        punch = dc.punchName;
+        children.add(Padding(
+          padding: EdgeInsets.only(top: children.isEmpty ? 0 : 10, bottom: 6),
+          child: Text(
+            punch,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ));
+      }
+      children.add(_Bullet(
+        dc.checkpoint.label,
+        detail: dc.checkpoint.detail,
+        tag: dc.checkpoint.measurable ? null : 'AI review',
+      ));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+}
+
+/// One checkpoint's result across the drill round: passed/graded reps, or a
+/// note that the AI review grades it from the video.
+class _CheckpointRow extends StatelessWidget {
+  const _CheckpointRow({required this.tally, this.aiFlagged});
+
+  final CheckpointTally tally;
+
+  /// The AI review's verdict: true = it flagged this checkpoint, false = it
+  /// reviewed the drill and didn't, null = no structured AI review.
+  final bool? aiFlagged;
+
+  @override
+  Widget build(BuildContext context) {
+    final rate = tally.passRate;
+    final ai = aiFlagged;
+    final (IconData icon, Color color) = switch ((rate, ai)) {
+      // Not gradable on-device: the AI's verdict, when there is one.
+      (null, true) => (Icons.cancel, AppTheme.accent),
+      (null, false) => (Icons.check_circle, AppTheme.rest),
+      (null, null) => (Icons.videocam_outlined, AppTheme.textSecondary),
+      (final double r, _) when r >= 0.8 => (Icons.check_circle, AppTheme.rest),
+      (final double r, _) when r >= 0.5 => (Icons.error_outline, _partial),
+      _ => (Icons.cancel, AppTheme.accent),
+    };
+    final String trailing;
+    if (rate != null) {
+      trailing = '${tally.passed}/${tally.graded}'
+          '${ai == true ? ' · AI flagged' : ''}';
+    } else if (ai != null) {
+      trailing = ai ? 'AI: missed' : 'AI: OK';
+    } else {
+      trailing =
+          tally.checkpoint.checkpoint.measurable ? 'Not seen' : 'AI review';
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '${tally.checkpoint.punchName} · ${tally.checkpoint.checkpoint.label}',
+              style: const TextStyle(color: AppTheme.textPrimary, height: 1.3),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            trailing,
+            style: TextStyle(
+              color: rate == null && ai == null ? AppTheme.textSecondary : color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -357,9 +588,15 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _Bullet extends StatelessWidget {
-  const _Bullet(this.text);
+  const _Bullet(this.text, {this.detail, this.tag});
 
   final String text;
+
+  /// A second, quieter line under [text].
+  final String? detail;
+
+  /// A small pill after [text] (e.g. "AI review").
+  final String? tag;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -372,13 +609,55 @@ class _Bullet extends StatelessWidget {
           child: Icon(Icons.circle, size: 6, color: AppTheme.accent),
         ),
         Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 15,
-              height: 1.35,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text.rich(
+                TextSpan(
+                  text: text,
+                  children: <InlineSpan>[
+                    if (tag != null)
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceAlt,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            tag!,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 15,
+                  height: 1.35,
+                ),
+              ),
+              if (detail != null) ...<Widget>[
+                const SizedBox(height: 2),
+                Text(
+                  detail!,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ],

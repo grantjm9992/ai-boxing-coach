@@ -131,6 +131,7 @@ class RoundRecordingController {
       roundsInPhase: segment.roundsInPhase,
       durationMs: durationMs,
       title: segment.title,
+      targetSequence: segment.exercise.targetSequence,
     );
     await clipStore.add(clip);
     onClipSaved?.call(clip);

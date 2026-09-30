@@ -1,3 +1,4 @@
+import '../analysis/checkpoints.dart';
 import '../analysis/combination.dart';
 
 /// The instructional combination library (brief §14).
@@ -40,6 +41,10 @@ class CombinationDef {
   /// Per-punch display names, e.g. ["Jab", "Cross", "Lead hook"].
   List<String> get punchNames =>
       numbers.map(punchNameForNumber).toList();
+
+  /// What the drill is looking for, punch by punch — graded on-device where
+  /// the pose allows and by the AI review from the video.
+  List<DrillCheckpoint> get checkpoints => Checkpoints.forSequence(numbers);
 }
 
 /// Display name for a punch number, using the default numbering (brief §7).
