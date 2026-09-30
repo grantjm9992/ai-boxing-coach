@@ -1,9 +1,11 @@
+import 'package:boxing_coach/analysis/ai_coach_report.dart';
 import 'package:boxing_coach/analysis/checkpoint_evaluation.dart';
 import 'package:boxing_coach/analysis/checkpoints.dart';
 import 'package:boxing_coach/analysis/combination.dart';
 import 'package:boxing_coach/analysis/combination_analysis.dart';
 import 'package:boxing_coach/analysis/drill_matching.dart';
 import 'package:boxing_coach/analysis/punch.dart';
+import 'package:boxing_coach/analysis/round_analysis.dart';
 import 'package:boxing_coach/data/combination_library.dart';
 import 'package:boxing_coach/ui/screens/combination_detail_screen.dart';
 import 'package:boxing_coach/ui/screens/combination_library_screen.dart';
@@ -90,6 +92,54 @@ void main() {
     expect(find.text('2/3'), findsOneWidget);
     // Graded from the video only — the list and the result both say so.
     expect(find.text('AI review'), findsNWidgets(2));
+  });
+
+  testWidgets('the drill\'s AI review shows its read and grades the '
+      'video-only checkpoints', (tester) async {
+    _useTallSurface(tester);
+    final combo = CombinationLibrary.byId('combo_1_2_3')!;
+    DrillCheckpoint byId(String id) =>
+        combo.checkpoints.firstWhere((c) => c.id == id);
+    final result = evaluateDrill(
+      <int>[1, 2, 3],
+      <CombinationAnalysis>[_analysis(<int>[1, 2, 3], 88)],
+      checkpoints: <CheckpointTally>[
+        CheckpointTally(checkpoint: byId('jab_snap_back'), passed: 3),
+        CheckpointTally(checkpoint: byId('cross_elbows_in'), unmeasured: 3),
+      ],
+    );
+    final aiReview = RoundAnalysis(
+      overallSummary: 's',
+      modelCoaching: 'Sharp jab. Tuck those elbows on the cross.',
+      aiReport: const AiCoachReport(
+        summary: 'Sharp jab. Tuck those elbows on the cross.',
+        priorityIssues: <AiPriorityIssue>[
+          AiPriorityIssue(
+            code: 'GUARD_008',
+            severity: Severity.moderate,
+            confidence: 0.8,
+            timestamps: <double>[5],
+            observation: 'Your elbows flare on the cross.',
+            correction: 'Tuck them in.',
+            checkpoint: 'cross_elbows_in',
+          ),
+        ],
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CombinationDetailScreen(
+          combo: combo,
+          result: result,
+          aiReview: aiReview,
+        ),
+      ),
+    );
+    expect(find.text('AI COACH'), findsOneWidget);
+    expect(find.text('Sharp jab. Tuck those elbows on the cross.'),
+        findsOneWidget);
+    expect(find.text('AI: missed'), findsOneWidget);
+    expect(find.text('3/3'), findsOneWidget);
   });
 }
 

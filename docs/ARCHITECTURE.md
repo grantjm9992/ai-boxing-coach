@@ -16,7 +16,7 @@ Dart rule engine mirrors, used for calibration, not shipped in the app.
 | [`SESSION_ENGINE.md`](SESSION_ENGINE.md) | Templates → plan → the timed session, coach cues, voice |
 | [`RECORDING_STORAGE.md`](RECORDING_STORAGE.md) | Camera recording, clip store, 7-day retention, local persistence |
 | [`POSE_ANALYSIS.md`](POSE_ANALYSIS.md) | Native pose plugin, the Dart rule engine, punch classification, metrics |
-| [`COMBINATIONS.md`](COMBINATIONS.md) | Combination detection, execution scoring, drills + library (V2) |
+| [`COMBINATIONS.md`](COMBINATIONS.md) | Combination detection, execution scoring, drills + library, technique checkpoints, drill AI review (V2) |
 | [`AI_INTEGRATION.md`](AI_INTEGRATION.md) | Analysis modes, the vision-model seam, coaching prompts, the structured advanced path |
 | [`ANALYTICS.md`](ANALYTICS.md) | V2 analytics event taxonomy + the regression-dataset scaffold |
 | [`V2_PLAN.md`](V2_PLAN.md) | The V2 hybrid-analysis build, phase by phase |

@@ -10,7 +10,9 @@ Code: `app/lib/services/ai/`, `app/lib/analysis/analysis_mode.dart`,
 
 ## Analysis modes
 
-Chosen in the profile, applied to every technical round
+Chosen in the profile, applied to every analysed round — session rounds,
+shadow and imported rounds, and combination drills (whose AI step runs in the
+background after the instant on-device result; see below)
 (`analysis/analysis_mode.dart`):
 
 | Mode | `value` | What runs | Cost |
@@ -19,10 +21,11 @@ Chosen in the profile, applied to every technical round
 | **Pose + AI on key moments** | `keyframe` | Offline first, then a model reviews the handful of frames the rules flagged (plus the pose read as text). | A few frames per round. |
 | **Full AI review** | `full_frame` | Offline first, then the whole round's video goes to Gemini at 24 fps (Gemini's maximum) with the flagged moments, for the model to confirm or correct. | Richest, most expensive. |
 
-`AnalysisMode.usesAi` is true for anything but offline. Both AI modes show the
-**same review UX**: the highlighted moments (frames + labels) always come from
-the on-device rules; the mode only changes what the model is shown before it
-writes the coaching.
+`AnalysisMode.usesAi` is true for anything but offline. Both AI modes use the
+same review screen. In key-moment mode the highlighted moments (frames +
+labels) come from the on-device rules and the model adds its read; in Full AI
+review the model's confident findings replace the rules' and become the
+moments.
 
 ## The vision-model seam
 
@@ -101,8 +104,19 @@ which frames get sent are unit-tested without a model.
   endpoint, which can't take a video — it falls back to the keyframe read.
 
 The AI step lives in `RoundCoach` (`services/round_coach.dart`), shared by the
-background pipeline and the review screen's re-run; `resolveRoundCoach` builds
-it from the profile's mode and the AI settings.
+background pipeline, the review screen's re-run and the drill AI review;
+`resolveRoundCoach` builds it from the profile's mode and the AI settings.
+
+**Drills.** A combination drill is analysed on the spot (pose + rules +
+checkpoints, no AI) so its result shows at once; in an AI mode
+`BackgroundAnalysis.reviewWithAi` then runs the AI step alone over the saved
+analysis and pose and saves the result back. When the round has a drill target
+(`DrillContext.targetSequence` — combination drills and technical exercises),
+the structured input carries `drill_target` (the technique checkpoints and
+their on-device results), both prompts lead with a punch-by-punch brief, and
+Full AI review tags checkpoint failures (`checkpoint` on each finding), which
+`AiReview` ranks a severity level higher. See
+[COMBINATIONS.md](COMBINATIONS.md#technique-checkpoints-drill-standards).
 
 The model's coaching is attached to the `RoundAnalysis` as `modelCoaching`. If
 there's no model configured, or the call throws, the AI modes fall back to the

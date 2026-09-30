@@ -30,10 +30,15 @@ class RoundCaptureResult {
     required this.analysis,
     required this.durationMs,
     this.clip,
+    this.drill,
   });
 
   final RoundAnalysis? analysis;
   final double durationMs;
+
+  /// The drill context the round was analysed under (profile + target), so a
+  /// follow-up step — the drill's background AI review — uses the same one.
+  final DrillContext? drill;
 
   /// The saved [RoundClip], when the capture ran the full analyzer and kept the
   /// video (shadow rounds). Null for the pose-only combination-drill path.
@@ -301,7 +306,11 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
         durationMs = result.sequence.durationMs;
       }
     }
-    return RoundCaptureResult(analysis: analysis, durationMs: durationMs);
+    return RoundCaptureResult(
+      analysis: analysis,
+      durationMs: durationMs,
+      drill: drill,
+    );
   }
 
   /// Deep path: keep the video in [ClipStore] so the round can be reviewed,
@@ -349,7 +358,11 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
       // Slow analysis happens in the background (caller's job) — hand back the
       // clip immediately so the user isn't blocked.
       return RoundCaptureResult(
-          analysis: null, durationMs: durationMs, clip: clip);
+        analysis: null,
+        durationMs: durationMs,
+        clip: clip,
+        drill: drill,
+      );
     }
 
     // Inline pose-only analysis (drill): fast, gives combination feedback, and
@@ -369,7 +382,11 @@ class _RoundCaptureScreenState extends State<RoundCaptureScreen> {
     }
     _logAnalysis(analysis);
     return RoundCaptureResult(
-        analysis: analysis, durationMs: durationMs, clip: clip);
+      analysis: analysis,
+      durationMs: durationMs,
+      clip: clip,
+      drill: drill,
+    );
   }
 
   /// Dumps the whole analysis to the debug log (Profile → Debug log) so the full
