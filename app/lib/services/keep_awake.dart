@@ -46,8 +46,14 @@ class KeepAwake {
   void _set(bool on, String reason) {
     DebugLog.instance.log('screen keep-awake ${on ? 'on' : 'off'} ($reason)',
         tag: 'app');
-    _toggle(on).catchError((Object error) {
-      DebugLog.instance.log('wakelock toggle failed: $error', tag: 'app');
-    });
+    void failed(Object error) =>
+        DebugLog.instance.log('wakelock toggle failed: $error', tag: 'app');
+    // Best effort: no wakelock (no plugin in tests, an unsupported platform)
+    // must never break the work that asked for it.
+    try {
+      _toggle(on).catchError(failed);
+    } on Object catch (error) {
+      failed(error);
+    }
   }
 }

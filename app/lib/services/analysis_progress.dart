@@ -40,15 +40,24 @@ class AnalysisProgress {
     this.fraction,
   });
 
-  /// A fresh analysis in [mode], just starting to track.
-  factory AnalysisProgress.start(AnalysisMode mode, {DateTime? now}) {
+  /// A fresh analysis in [mode], starting at [stage] — tracking for a new
+  /// round; a later stage when the earlier ones already ran (a drill's AI
+  /// review reuses the pose it tracked on the spot).
+  factory AnalysisProgress.start(
+    AnalysisMode mode, {
+    AnalysisStage stage = AnalysisStage.tracking,
+    DateTime? now,
+  }) {
     final at = now ?? DateTime.now();
     return AnalysisProgress(
       mode: mode,
-      stage: AnalysisStage.tracking,
+      stage: stage,
       startedAt: at,
       stageStartedAt: at,
-      fraction: 0,
+      fraction: stage == AnalysisStage.uploading ||
+              stage == AnalysisStage.tracking
+          ? 0
+          : null,
     );
   }
 

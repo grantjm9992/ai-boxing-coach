@@ -24,6 +24,13 @@ Feature areas referenced below have their own deep-dive docs — see
   each checkpoint's pass rate. Technical exercises (jab mechanics, one-two,
   hook/uppercut mechanics, stepping/double jab, check hook) carry their punch
   target so session rounds are graded the same way. See COMBINATIONS.md.
+- **Combination drills get the AI review.** In an AI analysis mode, after the
+  instant on-device result the drill's AI review runs in the background over
+  the saved round (no second tracking pass), with the drill's checkpoints in
+  the prompt. The drill screen shows a progress badge while it runs, then the
+  AI coach's read and its verdict on each checkpoint — including the ones the
+  pose can't measure (elbows in, uppercut leg drive). Uses one weekly AI
+  analysis per drill; offline mode is unchanged.
 
 ### Changed
 - **Full AI review returns up to 7 findings, each with its own moment.** The
