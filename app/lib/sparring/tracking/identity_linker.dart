@@ -268,7 +268,7 @@ class IdentityLinker {
         final x = ordered[i], y = ordered[j];
         final together = math.min(x.end, y.end) - math.max(x.start, y.start) + 1;
         if (together <= 0) continue;
-        final size = (x.scale.isFinite ? x.scale : 0) + (y.scale.isFinite ? y.scale : 0);
+        final size = (x.scale.isFinite ? x.scale : 0.0) + (y.scale.isFinite ? y.scale : 0.0);
         final score = together * size;
         if (score > bestScore) {
           bestScore = score;
