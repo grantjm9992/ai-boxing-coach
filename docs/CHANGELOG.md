@@ -31,6 +31,17 @@ Feature areas referenced below have their own deep-dive docs — see
   AI coach's read and its verdict on each checkpoint — including the ones the
   pose can't measure (elbows in, uppercut leg drive). Uses one weekly AI
   analysis per drill; offline mode is unchanged.
+- **Sparring mode** — a separate pipeline; nothing in shadow boxing, drills,
+  imports or sessions changes. Film a session ringside in landscape (rounds,
+  rest timer, bells). Both fighters are tracked with their identity kept
+  through crossings and clinches. The tracker works over the whole round with
+  kit colours, body shape and continuity, and leaves unclear stretches out
+  rather than guessing. Each fighter gets their own corrections and stats, and
+  the Together tab shows distance, exchanges, counters, guard under fire and
+  defence. Before any of that, tap "which one is you" once, and use
+  "check who's who" when the tracker wasn't sure. An optional AI review covers
+  both fighters (one analysis per round, same weekly allowance). See
+  [`SPARRING.md`](SPARRING.md).
 
 ### Changed
 - **Full AI review returns up to 7 findings, each with its own moment.** The

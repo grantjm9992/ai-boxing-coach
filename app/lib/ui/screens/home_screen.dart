@@ -5,6 +5,7 @@ import '../../domain/feature_flags.dart';
 import '../../domain/session_phase.dart';
 import '../../domain/session_settings.dart';
 import '../../domain/session_template.dart';
+import '../../sparring/ui/sparring_home_section.dart';
 import '../format.dart';
 import '../theme.dart';
 import '../widgets/category_widgets.dart';
@@ -72,6 +73,12 @@ class HomeScreen extends StatelessWidget {
                   _ComboTile(combo: combo),
               ],
             ),
+          // Sparring: its own pipeline (lib/sparring/), landscape throughout.
+          const _HomeSection(
+            title: 'Sparring',
+            icon: Icons.people_alt_outlined,
+            children: <Widget>[SparringHomeSection()],
+          ),
         ],
       ),
     );
