@@ -25,8 +25,8 @@ class TrackletBuilderConfig {
   /// Bodies whose shoulders and hips are less visible than this are dropped.
   final double minQuality;
 
-  /// Two bodies whose boxes overlap more than this are not linked at all that
-  /// frame — the clinch / crossing case where the detector can merge or swap
+  /// Two bodies whose core boxes (no arms) overlap more than this are not
+  /// linked at all that frame — the clinch / crossing case where the detector can merge or swap
   /// limbs. Tracklets near them end.
   final double overlapIou;
 
@@ -121,7 +121,7 @@ class TrackletBuilder {
       final overlapped = <int>{};
       for (var i = 0; i < usable.length; i++) {
         for (var j = i + 1; j < usable.length; j++) {
-          if (usable[i].box.iou(usable[j].box) > cfg.overlapIou) {
+          if (usable[i].coreBox.iou(usable[j].coreBox) > cfg.overlapIou) {
             overlapped..add(i)..add(j);
           }
         }
@@ -130,7 +130,7 @@ class TrackletBuilder {
         overlap[p] = true;
         final survivors = <_Active>[];
         for (final a in active) {
-          final near = overlapped.any((i) => a.lastBox.iou(usable[i].box) > 0.05);
+          final near = overlapped.any((i) => a.lastBox.iou(usable[i].coreBox) > 0.05);
           if (near) {
             close(a);
           } else {
@@ -300,7 +300,7 @@ class _Active {
     tracklet.add(position, c);
     lastPosition = position;
     lastHip = hip;
-    lastBox = c.box;
+    lastBox = c.coreBox;
   }
 
   /// Where the hip should be at [position]: constant velocity, damped (a

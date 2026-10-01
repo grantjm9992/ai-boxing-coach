@@ -76,6 +76,38 @@ class PoseCandidate {
     return PoseBox(x0, y0, x1, y1);
   }
 
+  /// Box around the body's core — head, shoulders, hips and legs, not the
+  /// arms. Sparring arms reach into the other fighter's box all the time; the
+  /// cores only overlap when the bodies themselves do (clinch, crossing).
+  late final PoseBox coreBox = _boxOf(const <Landmark>[
+    Landmark.nose,
+    Landmark.leftEar,
+    Landmark.rightEar,
+    Landmark.leftShoulder,
+    Landmark.rightShoulder,
+    Landmark.leftHip,
+    Landmark.rightHip,
+    Landmark.leftKnee,
+    Landmark.rightKnee,
+    Landmark.leftAnkle,
+    Landmark.rightAnkle,
+  ]);
+
+  PoseBox _boxOf(List<Landmark> landmarks) {
+    var x0 = double.infinity, y0 = double.infinity;
+    var x1 = double.negativeInfinity, y1 = double.negativeInfinity;
+    for (final lm in landmarks) {
+      final kp = _visible(lm);
+      if (kp == null) continue;
+      x0 = math.min(x0, kp.x);
+      y0 = math.min(y0, kp.y);
+      x1 = math.max(x1, kp.x);
+      y1 = math.max(y1, kp.y);
+    }
+    if (!x0.isFinite) return const PoseBox(0, 0, 0, 0);
+    return PoseBox(x0, y0, x1, y1);
+  }
+
   /// Mean visibility of the shoulders and hips — how solid this body is.
   late final double quality = _quality();
 
