@@ -49,8 +49,10 @@ supabase secrets set \
 - `AI_VIDEO_MAX_FPS` is the server-side cap on the fps the app asks for
   (default and maximum 24 — Gemini rejects anything higher).
 - `AI_VIDEO_MAX_BYTES` caps the upload (default 500 MB).
-- `AI_VIDEO_MEDIA_RESOLUTION` is optional; unset uses Gemini's default
-  (~258 tokens/frame), `MEDIA_RESOLUTION_LOW` is ~66.
+- `AI_VIDEO_MEDIA_RESOLUTION` is optional. Unset uses Gemini's default, which
+  for video on current models **is** the low setting (~66–70 tokens/frame);
+  `MEDIA_RESOLUTION_HIGH` is ~258–280 tokens/frame for finer detail at about
+  4× the cost.
 
 Redeploy after changing code: `supabase functions deploy analyze`.
 
@@ -84,9 +86,10 @@ App side: `CoachVideoModel` (`app/lib/services/ai/coach_video_model.dart`).
 Unit tests for the Gemini helpers: `deno test supabase/functions/analyze/video_test.ts`.
 
 **Cost:** one Full AI review is one weekly analysis, but costs far more tokens
-than a key-moment one — roughly frames × tokens-per-frame (≈258 at default
-resolution, ≈66 at `MEDIA_RESOLUTION_LOW`). A 3-minute round at 24 fps is
-~4,300 frames: ≈1.1 M tokens at default resolution, ≈0.29 M at low.
+than a key-moment one — roughly frames × tokens-per-frame (≈66–70 at the
+default, low, video resolution; ≈258–280 at high). A 3-minute round at 24 fps
+is ~4,300 frames: ≈0.3 M tokens at the default, ≈1.1 M at high — the latter is
+past a 1 M-token context, so keep high resolution for short clips only.
 
 ## Behaviour
 - **Reserve → call model → refund on failure**, so a failed/timed-out model call

@@ -17,6 +17,7 @@ Dart rule engine mirrors, used for calibration, not shipped in the app.
 | [`RECORDING_STORAGE.md`](RECORDING_STORAGE.md) | Camera recording, clip store, 7-day retention, local persistence |
 | [`POSE_ANALYSIS.md`](POSE_ANALYSIS.md) | Native pose plugin, the Dart rule engine, punch classification, metrics |
 | [`COMBINATIONS.md`](COMBINATIONS.md) | Combination detection, execution scoring, drills + library (V2) |
+| [`SPARRING_PLAN.md`](SPARRING_PLAN.md) | Proposal: sparring mode as a separate pipeline — tracking and analysing both fighters with correct identity, interaction metrics, AI review, consent, phasing |
 | [`AI_INTEGRATION.md`](AI_INTEGRATION.md) | Analysis modes, the vision-model seam, coaching prompts, the structured advanced path |
 | [`ANALYTICS.md`](ANALYTICS.md) | V2 analytics event taxonomy + the regression-dataset scaffold |
 | [`V2_PLAN.md`](V2_PLAN.md) | The V2 hybrid-analysis build, phase by phase |
