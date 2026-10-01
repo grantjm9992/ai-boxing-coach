@@ -1,0 +1,61 @@
+# Sparring mode checks: the isolation guard (a sparring change may not edit the
+# single-person pipeline), the analyzer over the sparring code, the whole test
+# suite (the existing tests must pass untouched) and the sparring edge
+# function's tests. Fast feedback without building an APK.
+name: Sparring checks
+
+on:
+  push:
+    branches: ["feat/sparring**"]
+  pull_request:
+    paths:
+      - "app/lib/sparring/**"
+      - "app/test/sparring/**"
+      - "app/packages/sparring_pose/**"
+      - "supabase/functions/sparring/**"
+      - "supabase/migrations/*sparring*"
+  workflow_dispatch:
+
+jobs:
+  isolation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Sparring stays separate
+        run: bash scripts/check_sparring_isolation.sh origin/main
+
+  flutter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Analyze sparring
+        run: flutter analyze --no-fatal-infos lib/sparring test/sparring lib/ui/screens/home_screen.dart lib/ui/screens/history_screen.dart
+      - name: Sparring tests
+        run: flutter test test/sparring
+      - name: Whole suite (existing tests untouched)
+        run: flutter test
+
+  edge-function:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Test the sparring function
+        working-directory: supabase/functions
+        run: |
+          echo '{"imports":{"https://esm.sh/@supabase/supabase-js@2":"npm:@supabase/supabase-js@2"}}' > /tmp/import_map.json
+          deno check --import-map /tmp/import_map.json sparring/index.ts
+          deno test --import-map /tmp/import_map.json sparring/
