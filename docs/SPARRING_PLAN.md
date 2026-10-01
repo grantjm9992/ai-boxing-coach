@@ -4,16 +4,27 @@ Status: **proposal**, nothing built. Written against `main` at #52 (Full AI
 review findings); the technique-checkpoint work in #53 is referenced where it
 matters.
 
+## Requirements (confirmed)
+
+1. **Both fighters are tracked and analysed** — not just the user.
+2. **Identity must be right.** Fighter A must stay fighter A for the whole
+   round — through circling, crossovers and clinches. A punch, a stat or a
+   correction must never be attributed to the wrong person.
+3. **A separate pipeline.** Shadow boxing, combination drills, imported rounds
+   and full sessions stay **exactly as they are**: no behaviour change, no
+   shared code edited for sparring's sake. Sparring gets its own capture,
+   pose extraction, tracking, analysis, storage, sync, AI review and screens.
+
 ## Summary
 
-Yes — the whole pipeline is built for **one person**, and the assumption runs
-from the native plugin to the review screen:
+Today the whole pipeline is built for **one person**, from the native plugin
+to the review screen:
 
 1. **The native pose plugin asks MediaPipe for one pose and keeps only the
    first.** Android `setNumPoses(1)` + `poses[0]`; iOS `numPoses = 1` +
-   `landmarks.first`. A second fighter in frame is ignored, and when tracking
-   is lost (a crossover, a clinch) the one pose returned can jump to the other
-   fighter mid-round without anything downstream noticing.
+   `landmarks.first`. A second fighter is ignored, and when tracking is lost
+   (a crossover, a clinch) the one pose returned can jump to the other fighter
+   mid-round without anything downstream noticing.
 2. **Every data type downstream holds one body per frame** (`RawPoseFrame`,
    `PoseFrame`, `PoseSequence`), and every analyser (`AnalysisContext`, body
    scale, punch detection, rules, combinations, checkpoints) runs over that one
@@ -24,264 +35,364 @@ from the native plugin to the review screen:
    measured as *lateral* nose spread — in profile a slip moves the head toward
    or away from the lens, which a single camera barely sees).
 
-Making sparring work is mostly not about the engine; it's three new problems:
-**knowing who is who** across a round (tracking + picking out the user),
-**measuring the interaction** between two fighters (distance, exchanges,
-counters, defence), and **consent**, because the partner is filmed, measured
-and — in the AI modes — uploaded.
+Rather than widen that pipeline, sparring is built **alongside it**: a new
+native package that extracts every pose per frame, a new tracker that
+resolves identity over the **whole round** (it's a recorded clip, so future
+frames are available — far more reliable than live tracking), and a sparring
+module that analyses each fighter's track by *calling* the existing pure
+analysis code with sparring-specific settings, without editing it.
 
-**Recommendation:** run sparring **AI-led, pose-assisted**. Pose does what it's
-reliable at — finding both fighters, tracking who is who, output, distance,
-guard height, timing — and the Full AI review judges what a single 2D camera
-can't (landed punches, defence quality, decisions), told exactly which fighter
-is the user. Start with a **2–3 day spike on real sparring footage** that
-decides go/no-go before any product work.
+**Recommendation:** AI-led, pose-assisted. Pose does what it's reliable at —
+both fighters' identity, output, punch mix, distance, guard height, timing —
+and the Full AI review judges what one 2D camera can't (landed punches,
+defence quality, decisions), told exactly who is who. Start with a
+**3–4 day spike on real sparring footage** with an identity-accuracy gate
+before any product work.
+
+## Isolation: a separate pipeline
+
+```
+                ┌─────────────── existing (unchanged) ───────────────┐
+ shadow / drill │ RoundCaptureScreen → pose_landmarker (1 pose) →     │
+ import/session │ PoseSequence → PoseOnlyAdapter → RoundAnalysis →    │
+                │ AnalysisStore / ClipStore → BackgroundAnalysis →    │
+                │ RoundCoach → round_sync → History                   │
+                └─────────────────────────────────────────────────────┘
+
+                ┌─────────────────── sparring (new) ──────────────────┐
+ sparring       │ SparringCaptureScreen → sparring_pose (all poses +  │
+                │ appearance) → FighterTracker (tracklets → 2 ids) →  │
+                │ per-fighter PoseSequence ─┬→ SparringAnalyzer       │
+                │                           └→ (calls the existing    │
+                │                              rule engine read-only) │
+                │ → SparringStore → SparringJobs → SparringCoach →    │
+                │ sparring_sync → Sparring history                    │
+                └─────────────────────────────────────────────────────┘
+```
+
+**Rules of the separation**
+
+- **New code lives in its own places:** `app/packages/sparring_pose/` (native),
+  `app/lib/sparring/` (Dart: models, tracker, analysis, stores, jobs, AI,
+  sync, UI), `supabase/functions/sparring/`, `supabase/migrations/*_sparring*.sql`.
+- **Existing code may be *used*, never *changed*, for sparring.** Pure,
+  stateless pieces are called with sparring's own parameters: `PoseSequence`,
+  `geometry.dart`, `PunchDetector`, `RuleEngine(rules)` with sparring-chosen
+  rule instances and configs, `AnalysisContext(styleProfile: …)` with a
+  sparring-only profile, `KeepAwake`, `AppForeground`, `AnalysisProgressCard`,
+  the proxy's Gemini helpers (`video.ts`, imported read-only). Where sparring
+  needs different behaviour, it gets its own class in `lib/sparring/` — no
+  flags or branches added to shared code.
+- **Not reused** (they encode the single-person pipeline): `pose_landmarker`
+  plugin, `MediaPipePoseEstimator`, `PoseOnlyAdapter`, `RoundAnalysis`,
+  `RoundClip`, `ClipStore`, `AnalysisStore`, `BackgroundAnalysis`,
+  `RoundCoach`/`AiReview`, `round_sync`/`BackfillQueue`, `SessionType`,
+  `SessionRecord`, the `analyze` edge function.
+- **The only edits outside the sparring folders** are the entry points:
+  a Sparring section on the home screen, a Sparring tab in History,
+  `pubspec.yaml` (the new package), `main.dart` only if a route needs
+  registering, and docs.
+- **Guarded in CI:** the existing test suite (goldens, analyzer, prompt,
+  screen tests) must pass untouched, and a CI check fails a sparring PR that
+  modifies files outside the allowed list above.
+
+**Cost of the separation:** some duplication — chiefly the native video
+decode loop (MediaCodec/AVFoundation, ~200 lines per platform) copied into
+`sparring_pose`. Accepted on purpose: it means sparring work can never break
+the shipping pose path. Consolidating later is an option, not a requirement.
 
 ## What sparring feedback should cover
 
-The user's own technique under pressure (guard, retraction, balance —
-the existing engine), plus what only sparring has:
-
 | Area | Examples | Pose can measure | Needs AI / not measurable in 2D |
 | --- | --- | --- | --- |
-| Output | punches thrown per minute, per fighter; work-rate share | ✅ per track | — |
+| Each fighter's technique | guard height, hand return, balance, punch mix | ✅ per fighter (side-view-valid rules only) | — |
+| Output | punches thrown per minute per fighter; work-rate share | ✅ | — |
 | Distance | time at long / mid / inside range; who closes, who backs up | ✅ hip-centre separation in body-lengths | ring position (no ring model) |
 | Exchanges | who starts, who finishes, length | ✅ timing of both fighters' punches | who "won" it |
-| Counters | user punches within ~0.6 s of the partner's | ✅ timing | quality |
-| Defence | slip / roll / block / parry / step back in response | ⚠️ partial (rolls, step-backs, guard raise; slips are mostly depth in side view) | ✅ |
-| Punch-and-stay | user's head still after their own combination while the partner fires back | ⚠️ head displacement in-plane only | ✅ |
-| Guard under fire | user's guard height while the partner punches | ✅ | — |
+| Counters | punches within ~0.6 s of the other's | ✅ timing | quality |
+| Defence | slip / roll / block / parry / step back in response | ⚠️ partial (rolls, step-backs, guard raise; slips are mostly depth side-on) | ✅ |
+| Punch-and-stay | head still after own combination while the other fires back | ⚠️ in-plane only | ✅ |
+| Guard under fire | guard height while the other punches | ✅ | — |
 | Landed punches | | ❌ 2D overlap ≠ contact (depth ambiguity) | ✅ |
-| Partner tendencies | "kept landing the right over your jab" | ⚠️ patterns from punch types | ✅ |
+| Tendencies | "kept landing the right over the jab" | ⚠️ patterns from punch types | ✅ |
 
-## Where the single-person assumption lives
+## Where the single-person assumption lives (and what sparring does instead)
 
-| Layer | Where | Today | Change |
-| --- | --- | --- | --- |
-| Native pose (Android) | `pose_landmarker/android/…/PoseLandmarkerPlugin.kt` `createLandmarker`, `frameToMap` | `setNumPoses(1)`; serialises `poses[0]` only | `numPoses` from the call args (1 default, 2 for sparring); serialise every pose with its presence score |
-| Native pose (iOS) | `pose_landmarker/ios/Classes/PoseLandmarkerPlugin.swift` | `options.numPoses = 1`; `result.landmarks.first` | same as Android |
-| Wire format | `pose_landmarker/lib/pose_landmarker.dart` `RawPoseFrame` | `{i, t, lm: [33 × 4]}` | add `poses: [{lm, score}]`; keep `lm` (= first pose) so old builds/tools still parse |
-| Dart pose types | `analysis/pose.dart`, `analysis/pose_estimation.dart` | `PoseFrame` = one `keypoints` map; `PoseSequence` = one person | keep both **unchanged as the per-person type**; add `MultiPoseFrame` (unordered poses) → tracker → one `PoseSequence` per track |
-| Estimator service | `services/pose_estimator.dart` | yields one `PoseSequence` | `analyseMulti(...)` yielding a `TrackedRound` (tracks + ambiguous frames) |
-| Analysis engine | `analysis/context.dart`, `features.dart`, `rules/*`, `combination*.dart`, `pose_only_adapter.dart` | one sequence; body scale = median torso of "the" person | **no structural change** — run it on the user's track. Add a side-view style profile for sparring (below) |
-| Rule geometry | `rules/head_movement.dart` (lateral nose spread), `rules/footwork.dart`, `rules/body_lean.dart`, … | thresholds tuned for a front-on camera | a `SessionType.sparring` / side-view profile that disables or re-tunes rules blind in profile; a per-track view classifier (facing left / right / camera) |
-| Capture | `main.dart` orientation lock, `camera_round_recorder.dart` (`ResolutionPreset.high` = 720p), `round_capture_screen.dart`, `camera_check_screen.dart` | portrait only, 720p, "get your whole body in frame" | landscape for sparring (two bodies side by side), 1080p (each fighter is smaller in frame), two-person framing guidance |
-| Session model | `analysis/session_type.dart` | no sparring type | `SessionType.sparring` (`SPARRING`) + a multi-round template (rounds × length + rest) |
-| AI review | `services/ai/coaching_prompt.dart`, `round_coach.dart`, `analysis/ai_review.dart` | prompts say "the fighter"; nothing tells the model which person to judge | a sparring prompt + schema that identifies the user (description + box track) and adds exchanges/defence; findings stay the same shape so `AiReview` and moments reuse |
-| Storage & sync | `services/analysis_store.dart`, `services/sync/round_sync.dart`, Supabase `analyses` / `pose` bucket | one `pose.json` and one analysis per round | user track always; partner track only with consent; a `sparring` JSON block (interaction metrics, exchanges) on the analysis row or its own table |
-| Review UI | `ui/widgets/skeleton_painter.dart`, `round_review_screen.dart`, History cards | one skeleton | two skeletons (user in accent, partner grey), a sparring summary card (output, range, exchanges, counters) |
-| Python reference | `src/boxing_coach/pose_estimation/mediapipe_estimator.py` | legacy `mp.solutions.pose` — **single-person by design** | only if parity is wanted: move to the Tasks `PoseLandmarker` with `num_poses`. Recommend sparring stays **Dart-first** (as the V2 additions are) |
-| Evaluation | `annotations/schemas/ground_truth.schema.json`, CoachMe dataset | `exercise` enum has no sparring; labels are per single fighter; CoachMe is single-person | `exercise: sparring`, labels keyed by fighter, interaction events; a small own-footage sparring set |
+| Layer | Existing (stays as is) | Sparring replacement |
+| --- | --- | --- |
+| Native pose | `pose_landmarker`: Android `setNumPoses(1)` + `poses[0]`; iOS `numPoses = 1` + `landmarks.first` | `sparring_pose`: `numPoses = 2`, every pose serialised with presence score, bounding box and an appearance descriptor (below) |
+| Wire format | `{i, t, lm}` — one body | `{i, t, poses: [{lm, score, box, app}]}` |
+| Pose types | `PoseFrame`, `PoseSequence` — one person | `MultiPoseFrame` (unordered candidates) → `FighterTracker` → one existing `PoseSequence` **per fighter** (with gaps where the fighter wasn't resolvable) |
+| Estimator service | `MediaPipePoseEstimator` → one sequence | `SparringPoseExtractor` → `TrackedRound` |
+| Analysis | `PoseOnlyAdapter` (front-on thresholds, drills, checkpoints) | `SparringAnalyzer`: per-fighter technique via `RuleEngine` with side-view-valid rules + configs and a sparring `StyleProfile`; interaction metrics over both fighters |
+| Rule geometry | `head_movement` (lateral nose spread), parts of `footwork`, `body_lean` tuned front-on | not run in sparring until re-validated side-on; sparring-specific rules in `lib/sparring/rules/` where needed |
+| Capture | portrait, 720p, `RoundCaptureScreen` | `SparringCaptureScreen`: landscape, 1080p, rounds + rest timer, two-person framing guidance |
+| Session model | `SessionType`, `SessionRecord`, `RoundClip` | `SparringSession`, `SparringRound`, `SparringClip` |
+| Storage | `ClipStore`, `AnalysisStore` | `SparringClipStore` (own retention), `SparringStore` (tracks, analysis, identity decisions) |
+| Background jobs | `BackgroundAnalysis` | `SparringJobs` (same keep-awake / progress patterns, own state) |
+| AI review | `RoundCoach`, `CoachingPrompt`, `AiReview`; `analyze` edge function | `SparringCoach`, sparring prompt + schema; `sparring` edge function reusing `video.ts` |
+| Sync | `round_sync`, `BackfillQueue`, `analyses` / `keyframes` / `pose` bucket | `sparring_sync` + own queue; `sparring_sessions` / `sparring_rounds` / `sparring_fighters` tables; `sparring` bucket |
+| Review UI | one skeleton; `RoundReviewScreen`; History cards | `SparringReviewScreen`: two colour-coded skeletons, per-fighter tabs, exchanges; Sparring tab in History |
+| Python reference | legacy `mp.solutions.pose` (single-person by design) | none; sparring is Dart-first. Evaluation tools in `evaluation/sparring/` |
+| Evaluation | single-fighter labels, CoachMe front-on | identity labels + per-fighter faults + interaction events on own footage |
 
-## The hard problems
+## Tracking both fighters correctly
 
-### A. Who is who (tracking + picking out the user)
+This is the core of the feature and gets the most engineering. The
+advantage: rounds are **recorded**, so tracking runs offline over the whole
+clip, using frames both before and after any ambiguity.
 
-MediaPipe returns up to `numPoses` bodies per frame **in no guaranteed order and
-with no identity**. A tracker has to stitch them into two consistent people:
+### Why naive tracking fails
 
-- **Frame-to-frame assignment.** With two people it's a 2×2 choice: keep or swap,
-  whichever minimises torso-centre distance + bounding-box overlap change from
-  the previous frame. Pure Dart, unit-testable on synthetic crossings.
-- **Crossovers and clinches.** Fighters circle and swap sides; in a clinch the
-  bodies overlap and MediaPipe merges or swaps limbs. Frames where the two
-  bodies' boxes overlap heavily, or one pose drops out, are marked
-  **ambiguous** and excluded from metrics; identity is re-established after
-  separation with a **signature**: body proportions (height, torso length,
-  shoulder width in body-scale units) and, if needed, shorts/top colour sampled
-  from a few grabbed frames (`FrameGrabber` already exists).
-- **Which one is the user.** Cheapest reliable UX: after the first round's
-  analysis, show a clear frame with both skeletons and ask **"Which one is
-  you?"** (one tap); later rounds of the same session re-identify by signature
-  and confirm only if unsure. Alternative before recording: "start on the left".
+MediaPipe returns up to two bodies per frame **in no guaranteed order and with
+no identity**. Matching each frame to the previous one by position works
+while the fighters are apart, and fails exactly when it matters: when they
+cross (circling, pivots), when one occludes the other, and in clinches, where
+the detector can merge two bodies into one skeleton or swap limbs between them.
 
-### B. Side-on camera geometry
+### Design: tracklets, then identities
+
+1. **Extract every candidate with evidence.** Per frame, per detected body:
+   33 landmarks, presence score, bounding box, and an **appearance
+   descriptor** computed natively during the same decode pass (no second
+   decode): colour histograms of the torso and shorts regions, which the pose
+   tells us where to sample. Shorts and top colours are the strongest
+   identity cue in a boxing gym.
+2. **Reject corrupt poses.** A candidate is dropped when its skeleton is
+   implausible: bone lengths far from that fighter's running median, left/right
+   limbs crossed in a way bodies can't, too few visible landmarks. This is what
+   catches merged-skeleton clinch frames.
+3. **Build tracklets.** Link candidates frame to frame only while it's
+   unambiguous: predicted position (constant velocity on hip centre and box),
+   box overlap and appearance distance, as a 2 × 2 assignment with a strict
+   gate. A tracklet **ends** — rather than guesses — when boxes overlap
+   heavily, a body drops out for more than a few frames, or the assignment
+   margin is small. A round becomes a few dozen clean tracklets.
+4. **Link tracklets into the two fighters, over the whole round.** Each
+   tracklet is labelled A or B to maximise agreement of appearance (colour
+   histograms), body shape (scale-free limb-length ratios: forearm/upper arm,
+   shin/thigh, shoulder width/torso) and spatial-temporal continuity (where
+   each fighter was just before and after the gap). With two identities this
+   is a binary labelling solved exactly (min-cut / dynamic programming over
+   time), and every link gets a **margin** = how much better the chosen
+   labelling is than swapping it.
+5. **Cross-check with facing.** Side-on, each fighter faces the other; a
+   change in who is on the left without the facing directions flipping is a
+   swap signal.
+6. **Mark what can't be resolved.** Frames where neither fighter can be
+   assigned with confidence (deep clinch) are **ambiguous**: excluded from
+   every metric, punch count and finding, and reported ("12 s of clinch not
+   analysed").
+
+### Making sure it's right
+
+- **Confirm who's who.** After round 1 the user taps "which one is you" on a
+  clear frame with both skeletons. That picks the label; later rounds of the
+  session re-identify by appearance + shape and ask only if unsure.
+- **Review uncertain links.** Any link below the margin threshold is shown
+  after analysis: two or three thumbnails with colour-coded skeletons around
+  the gap, and a "swap" button. Re-running the metrics afterwards is cheap —
+  the tracks are stored, nothing is re-extracted.
+- **Never guess silently.** A punch, exchange or finding inside an ambiguous
+  window is dropped, not attributed.
+- **The AI is told who is who.** The sparring prompt identifies both fighters
+  by appearance *and* a bounding-box track for each (normalised, 2 Hz), so it
+  can't mix them up through crossovers either.
+
+### Targets and validation
+
+| Metric | Target |
+| --- | --- |
+| Identity switches after user confirmation | **0** per round |
+| Automatic identity accuracy (IDF1) on non-ambiguous frames | ≥ 98% |
+| Frames marked ambiguous (non-clinch sparring) | ≤ 5% |
+| Punches attributed to the wrong fighter (labelled set) | 0 |
+
+Measured on a labelled set of own sparring rounds: identity labelled at 1 Hz
+with a small labelling tool in `evaluation/sparring/`. Recorded multi-pose
+dumps of real rounds (crossovers, clinches) plus synthetic crossings become
+**regression fixtures** for the tracker in CI, the way the shadow pipeline has
+its goldens.
+
+## The other hard problems
+
+### Side-on camera geometry
 
 Front-on shadow boxing shows slips as lateral head movement and stance width
-as left-right foot spread. Side-on, both become depth. Needs:
+as left-right foot spread; side-on both become depth. Sparring needs a
+**facing classifier** per fighter, a **sparring style profile** (its own, in
+`lib/sparring/`) that runs only rules valid in profile — `guard_return`,
+`hands_up`, in-plane rotation, punch detection, balance — and re-calibration of
+those thresholds on own sparring footage.
 
-- a **view classifier** per track (which way the fighter faces, from
-  shoulder/hip widths and nose position relative to the ears);
-- a **sparring style profile** (`style_profiles.dart` pattern) that disables or
-  re-tunes rules blind in profile — `head_movement` (lateral spread), parts of
-  `footwork` and `body_lean` — and keeps the reliable ones (`guard_return`,
-  `hands_up`, `hip_rotation` in-plane, punch detection, balance);
-- re-calibration of the thresholds that stay, on own sparring footage (the
-  CoachMe optimiser only has single-person, front-on data).
+### Landed punches
 
-### C. Landed punches
+In 2D a fist overlapping the other fighter's head is as likely 30 cm in front
+of it. Pose can only say "a punch peaked near the head/body" (**candidate**);
+whether it landed is the AI review's call (it sees the reaction). Reported as
+the AI's estimate, never as a measured count.
 
-In 2D a fist overlapping the partner's head is as likely 30 cm in front of it.
-Pose can only say "a punch peaked near the partner's head/body"
-(**candidate**); whether it landed is for the AI review, which sees the
-reaction (head snap, step back). Report it as the AI's estimate, never as a
-measured count.
+### Defensive events
 
-### D. Defensive events
+The combination library already defers slips/rolls to "their own event model"
+(COMBINATIONS.md → Not yet). Sparring needs it: an event = one fighter's
+punch → the other's response within ~300 ms (guard raise, roll = head drops,
+step back = hip centre retreats, slip = head displacement, mostly depth side-on).
+Pose grades the in-plane ones; the AI grades the rest.
 
-The library already excludes slips/rolls ("they need their own event model",
-COMBINATIONS.md → Not yet). Sparring makes that model necessary: an event =
-partner punch → user response within ~300 ms (guard raise, roll = head drops,
-step back = hip-centre retreats, slip = head displacement, mostly depth in
-profile). Pose can grade the in-plane ones; the AI grades the rest.
-
-### E. Compute on the phone
+### Compute on the phone
 
 Today a 2-minute round (3,601 frames at 33 ms) takes ~200 s on Grant's phone
-(~55 ms/frame, CPU — the GPU delegate is disabled because it crashes
-`createFromOptions` on some devices). MediaPipe runs the landmark model once
-per detected person, so two fighters roughly **double** that: a 3-minute
-sparring round ≈ 6–7 minutes of tracking; a 3 × 3 session ≈ 20 minutes.
-Mitigations, in order of value:
+(~55 ms/frame, CPU — the GPU delegate is disabled because it crashes on some
+devices). Two bodies roughly double the landmark work, the appearance
+descriptor adds a little, and the **full** model is preferable to lite for two
+smaller figures. Estimate for a 3-minute round: ~5–8 min at 20 fps.
+Mitigations: sample sparring at **20 fps** (tracking continuity suffers below
+that), analyse each round in the background **during the rest minute**, and
+revisit the GPU delegate on a device allow-list. The tracker itself is cheap.
 
-1. sample sparring at **15 fps** (`sampleEvery` 66 ms) — halves it, and is
-   enough for output, distance and timing; the AI review sees the video at
-   24 fps anyway;
-2. analyse each round **in the background as soon as it ends** (the rest
-   minute is free compute; `BackgroundAnalysis` + keep-awake already exist);
-3. revisit the GPU delegate on a device allow-list.
+### Consent and privacy
 
-### F. Consent and privacy
-
-The partner is filmed, their pose is measured and stored, and in the AI modes
-the video (with them in it) is uploaded to Google. Needed before shipping:
+Both fighters are filmed, measured and stored, and in the AI modes the video is
+uploaded to Google. Needed before shipping:
 
 - a **consent step** in sparring setup ("My sparring partner agreed to be
   filmed and analysed"), stored with the session;
-- without consent: **AI modes off** for that session (the upload necessarily
-  contains the partner), partner track **not stored or synced** (the user's
-  track is enough for their own metrics);
+- without consent: AI review off for that session, the partner's track not
+  stored or synced (their metrics shown once, then discarded);
 - privacy policy + Play **Data safety** updates (data about people other than
-  the user), and the account-deletion path covering partner data.
+  the user), and account deletion covering sparring data.
 
-### G. AI context and cost
+### AI context and cost
 
 On current Gemini models video defaults to **low media resolution, ~66–70
 tokens per frame**. A 3-minute round at 24 fps ≈ 4,300 frames ≈ **0.3 M
-tokens**, well inside a 1 M context. Keep one request per round (a whole
-3 × 3 session at 24 fps ≈ 0.9 M tokens is too close to the limit).
-At Flash-Lite input prices (~$0.30 / M) that's roughly **$0.09 per round**; on
-Flash ($0.75 / M until 31 Dec 2026, then $1.50) $0.23–0.45. Each round uses one
-weekly AI analysis under the current quota.
+tokens**, well inside a 1 M context; one request per round (a 3 × 3 session at
+once would be ~0.9 M, too close). Roughly **$0.09 per round** on Flash-Lite
+input, $0.23–0.45 on Flash. Whether it draws on the same weekly quota is a
+decision below.
 
 ## Proposed design
 
 ### Capture
 
-- **Sparring** on the home screen: rounds (default 3), length (2–3 min), rest
-  (1 min), partner consent, then the existing pre-flight
-  (`RoundCaptureScreen` / session engine) per round with a rest timer between.
-- **Landscape** for sparring capture only (unlock orientation on that screen),
-  **1080p**, placement guidance: ring-side, ~waist height, far enough that
-  both fighters stay head-to-feet in frame while they move.
-- Each round is a clip (`RoundClip` with `SessionType.sparring`); its analysis
-  starts in the background as soon as the round ends.
+- **Sparring** on the home screen → setup: rounds (default 3), length
+  (2–3 min), rest (1 min), names/colours for the two fighters (optional, helps
+  the AI), partner consent.
+- `SparringCaptureScreen`: **landscape**, **1080p**, placement guidance
+  (ring-side, ~waist height, far enough that both stay head-to-feet in frame
+  while moving), rest timer between rounds, one `SparringClip` per round.
+- Each round's extraction + tracking starts in the background as soon as it
+  ends (`SparringJobs`).
 
-### Pose and tracking
+### Pose extraction and tracking
 
-- Plugin: `numPoses` parameter (1 | 2) passed from Dart; wire format gains
-  `poses`; `lm` kept for compatibility.
-- `analysis/tracking.dart` (new, pure Dart): `MultiPoseFrame` →
-  `PoseTracker` (2-way assignment + ambiguity flags + signature re-ID) →
-  `TrackedRound { Map<int, PoseSequence> tracks; Set<int> ambiguousFrames;
-  Map<int, TrackSignature> signatures }`.
-- Subject selection: `userTrackId` chosen by tap (round 1) or signature match
-  (later rounds), stored on the session.
+- `sparring_pose` package: `numPoses = 2`, full model, 20 fps sampling, emits
+  `MultiPoseFrame`s with landmarks, score, box and appearance descriptor.
+- `lib/sparring/tracking/`: `TrackletBuilder`, `IdentityLinker`,
+  `FighterTracker` → `TrackedRound { fighters: {A, B} → PoseSequence,
+  ambiguous: frame ranges, links: [{at, margin, decision}] }`.
+- Identity decisions (user tap, swaps) stored with the round in `SparringStore`.
 
 ### Analysis
 
-- **User:** the existing `PoseOnlyAdapter` on the user's track, with
-  `SessionType.sparring` and the side-view profile. Everything downstream
-  (corrections, moments, checkpoints if ever wanted) keeps working.
-- **Interaction:** `analysis/sparring.dart` (new) over both tracks:
-  distance timeline and range bands, output per fighter, exchanges, counters,
-  guard under fire, punch-and-stay candidates, landed **candidates**. Result:
-  `SparringAnalysis` persisted alongside the user's `RoundAnalysis`.
-- **Partner:** punch counts and types only (for output and tendencies); no
-  technique corrections for someone who isn't the user.
+- **Each fighter:** `RuleEngine` with the side-view-valid rules and the
+  sparring `StyleProfile`, over that fighter's `PoseSequence` → technique
+  observations, punch list, punch mix. Labelled **You** and **Partner** (or
+  names).
+- **Interaction** (`lib/sparring/analysis/interaction.dart`): distance
+  timeline and range bands, output per fighter, exchanges, counters, guard
+  under fire, punch-and-stay candidates, landed **candidates**, all excluding
+  ambiguous windows.
+- Result: `SparringRoundAnalysis { fighters: {A, B} → FighterAnalysis,
+  interaction, exchanges, ambiguousSeconds }`.
 
 ### AI review
 
-- `CoachingPrompt.sparringVideoRequest`: identifies the user by description
-  ("the fighter in black shorts, on the left at the start") **and** by a
-  bounding-box track sampled at 2 Hz (normalised, from the tracker) so the
-  model can't confuse them through crossovers; carries the user's measurements
-  and the interaction metrics.
-- Schema: the existing findings (same shape, so `AiReview` and moments reuse
-  them, all about the user) + `exchanges` (start, end, who started, summary),
-  `defence` (per partner attack sampled: response, verdict), `landed_estimate`
-  per fighter, `partner_patterns` (what the partner did that worked).
-- Moments: findings as today; exchanges become extra moments on the review
-  screen.
+- `SparringCoach` + sparring prompt: both fighters identified by description
+  and per-fighter box tracks; the measurements for both and the interaction
+  metrics as JSON; the tracker's ambiguous windows flagged.
+- Schema: findings **per fighter** (same shape as today's, plus `fighter`),
+  `exchanges` (start, end, who started, summary), `defence` (sampled attacks:
+  response, verdict), `landed_estimate` per fighter, `patterns` per fighter.
+- `supabase/functions/sparring/`: upload + generate routes reusing `video.ts`
+  (read-only import), its own quota accounting if the decision below is
+  "separate".
 
 ### Data and sync
 
-- `SessionType.sparring`; `RoundClip` carries `userTrackId` and consent flag.
-- `AnalysisStore`: `pose.json` = user track (as now); `partner.pose.json` only
-  with consent; `sparring.json` for `SparringAnalysis`.
-- Supabase: a `sparring` JSONB column on `analyses` (or a `sparring_rounds`
-  table) for the interaction metrics; partner pose uploaded only with consent;
-  migration + RLS as existing tables.
-- History: a sparring card per session — per-round output, range split,
-  exchanges, counters, AI summary.
+- `SparringStore` (on device): clip, per-fighter `pose.json`, `tracked.json`
+  (tracklets + links), `analysis.json`, identity decisions.
+- Supabase (new migration): `sparring_sessions`, `sparring_rounds`,
+  `sparring_fighters` (per-round, per-fighter metrics; the partner's row only
+  with consent), keyframes in a `sparring` bucket; RLS as the existing tables.
+- Own sync queue (`sparring_sync`), same durability pattern as `BackfillQueue`
+  but separate state.
 
 ### UI
 
-- Review screen: two skeletons (user accent, partner muted), toggle partner
-  overlay; sparring summary panel; exchanges as moments.
-- Progress card: unchanged stages (tracking now covers two people); show
-  "Round 2 analysing" per round in the session view.
+- `SparringReviewScreen`: video with both skeletons (user accent, partner
+  muted, toggle each), per-fighter tabs (technique, output, punch mix), an
+  interaction panel (range split, exchanges, counters), exchanges and findings
+  as moments, and "Check who's who" when a link was uncertain.
+- History: a **Sparring** tab listing sparring sessions from `SparringStore` /
+  `sparring_sessions` — the existing session list is untouched.
 
-## What does not need to change
+## What does not change
 
-The engine's rules, combinations and checkpoints (they run per person), the
-`RoundCoach` / `AiReview` seam, the proxy's video routes, `BackgroundAnalysis`,
-keep-awake, the progress card, the sync queue's shape, the review screen's
-moments plumbing.
+Everything in the existing pipeline: `pose_landmarker`, `PoseOnlyAdapter`,
+rules and their thresholds, combinations and checkpoints, `RoundAnalysis`,
+`RoundClip`, `ClipStore`, `AnalysisStore`, `BackgroundAnalysis`,
+`RoundCoach` / `AiReview`, the `analyze` function, `round_sync`, `SessionType`,
+the session engine and templates, the review screen, the existing History list
+and progress stats.
 
 ## Phasing
 
-Estimates are focused development days, rough, and assume the spike passes.
+Estimates are focused development days, rough.
 
 | Phase | Scope | Est. | Gate / output |
 | --- | --- | --- | --- |
-| **0 · Spike** | `numPoses = 2` behind a flag, dump multi-pose JSON; prototype tracker; run on 3–5 real sparring rounds (own gym footage, landscape, 1080p) | 2–3 | Both fighters detected in ≥ 90% of non-clinch frames; ≤ 1 unrecovered identity swap per round; tracking time ≤ 2.5× real time at 15 fps. **Go / no-go** |
-| **1 · Capture + tracking** | plugin + wire format, `PoseTracker`, `TrackedRound`, sparring capture flow (landscape, rounds/rest, consent), "which one is you?", user analysis with the side-view profile, two-skeleton review, storage | 8–12 | Sparring rounds recorded and analysed for the user |
-| **2 · AI sparring review** | sparring prompt + schema, user identification by description + box track, exchanges/defence/landed estimate in the review | 3–5 | Full AI review of a sparring round about the right fighter |
-| **3 · Interaction metrics** | distance/range, output, exchanges, counters, guard under fire, sparring card in History, sync | 5–8 | Measured sparring stats per round and session |
-| **4 · Defence events + evaluation** | defensive event model, landed candidates, labelled sparring set, threshold calibration, Python parity if wanted | 10+ | Calibrated, evaluated sparring analysis |
+| **0 · Spike** | `sparring_pose` prototype (2 poses + boxes + appearance) on Android; tracklets + linking prototype; 5 real sparring rounds (landscape, 1080p) labelled for identity | 3–4 | IDF1 ≥ 98% on non-ambiguous frames, ≤ 1 swap per round before confirmation, ≤ 5% ambiguous outside clinches, extraction ≤ 3× real time. **Go / no-go** |
+| **1 · Pipeline + tracking** | `sparring_pose` (Android + iOS), `FighterTracker` with tests and recorded fixtures, `SparringCaptureScreen`, consent, `SparringStore`, `SparringJobs`, "which one is you", "check who's who", per-fighter technique, two-skeleton review, CI isolation check | 12–16 | Both fighters tracked and analysed, identity confirmed |
+| **2 · AI sparring review** | `SparringCoach`, prompt + schema, `sparring` edge function, per-fighter findings, exchanges/defence/landed estimates | 4–6 | Full AI review of a round, about the right fighter |
+| **3 · Interaction + history + sync** | distance, output, exchanges, counters, guard under fire; Sparring tab; migration + `sparring_sync` | 6–9 | Measured sparring stats per round and session, synced |
+| **4 · Defence events + evaluation** | defensive event model, landed candidates, labelled sparring set, threshold calibration | 10+ | Calibrated, evaluated sparring analysis |
 
 Phase 2 can ship before Phase 3: with tracking in place, the AI review alone
-gives useful sparring feedback while the on-device interaction metrics follow.
+gives useful sparring feedback for both fighters.
 
 ## Decisions needed
 
-1. **AI-led vs pose-led.** Recommended AI-led (pose for identity and the
-   measurable stats). Pose-only sparring would be limited to output, distance,
-   timing and the user's guard.
-2. **Partner data.** Analyse and store the partner (needed for output share,
-   exchanges, partner tendencies) only with consent — or never store the
-   partner's pose, computing interaction metrics on the fly.
-3. **Identity UX.** One tap after round 1 (recommended) vs "start on the left"
-   before recording.
-4. **Camera.** One phone, side-on, landscape (recommended) — a second phone is
+1. **AI quota.** Does a sparring round draw on the same weekly AI allowance
+   (a 3 × 3 session = 3 analyses), or its own?
+2. **Partner feedback.** Show the partner full technique corrections, or only
+   their stats (output, punch mix, guard) — they're not the one who asked?
+3. **Partner data without consent.** Recommended: analyse once on-device,
+   show, then discard (nothing stored or uploaded, AI off).
+4. **Identity UX.** One tap after round 1 + "check who's who" on uncertain
+   links (recommended), vs asking fighters to start on fixed sides.
+5. **Camera.** One phone, side-on, landscape (recommended); a second phone is
    the multi-camera roadmap, not this.
-5. **Quota.** Does a sparring round cost one weekly AI analysis like any other
-   round (a 3 × 3 session = 3)?
 
 ## Risks
 
-- **MediaPipe in clinches** — merged or swapped limbs; mitigated by ambiguity
-  flags, not solved. Clinch-heavy sparring yields less measured data.
-- **Small fighters in frame** — two full bodies in a landscape frame are
-  roughly half the pixel height of one front-on fighter in portrait; landmark
-  jitter rises. 1080p helps; the spike measures it.
-- **Compute and battery** — two people at 15 fps is still minutes per round;
-  the rest minute absorbs part of it.
-- **Rule validity side-on** — some existing rules will mislead until re-tuned;
-  the sparring profile must default to *off* for anything not re-validated.
+- **Identity in long clinches** — mitigated by ending tracklets and relinking
+  after separation, not solved during the clinch; clinch-heavy rounds yield
+  less measured data (reported, not guessed).
+- **Similar kit** — two fighters in the same colours weaken the appearance
+  cue; body shape and continuity carry it, and uncertain links go to the user.
+  Setup can suggest different colours.
+- **Small figures in frame** — two full bodies in landscape are about half the
+  pixel height of one front-on fighter in portrait; landmark jitter rises.
+  1080p and the full model help; the spike measures it.
+- **Compute and battery** — minutes per round; the rest minute absorbs part.
+- **Rule validity side-on** — the sparring profile runs only rules
+  re-validated in profile.
+- **Duplication** — the copied native decode loop must get any important fix
+  in both places until (optionally) consolidated.
 - **Privacy** — partner consent and data-safety changes are a launch
-  requirement, not polish.
+  requirement.
 
 ## Sources
 
