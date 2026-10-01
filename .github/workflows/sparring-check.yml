@@ -39,12 +39,35 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      # Failures are also posted as annotations (in chunks), so they can be
+      # read from the API without downloading the logs.
       - name: Analyze sparring
-        run: flutter analyze --no-fatal-infos lib/sparring test/sparring lib/ui/screens/home_screen.dart lib/ui/screens/history_screen.dart
+        run: |
+          flutter analyze --no-fatal-infos lib/sparring test/sparring lib/ui/screens/home_screen.dart lib/ui/screens/history_screen.dart > analyze.txt 2>&1 || {
+            cat analyze.txt
+            grep -E "(error|warning) •" analyze.txt | split -l 25 - chunk_
+            for f in chunk_*; do echo "::error title=analyze::$(sed ':a;N;$!ba;s/\n/%0A/g' "$f")"; done
+            exit 1
+          }
+          cat analyze.txt
       - name: Sparring tests
-        run: flutter test test/sparring
+        run: |
+          flutter test test/sparring > sparring_tests.txt 2>&1 || {
+            cat sparring_tests.txt
+            grep -vE "^[0-9:]+ \+[0-9]+.*: (loading|.*)$" sparring_tests.txt | grep -v "^$" | head -400 | split -l 40 - tchunk_
+            for f in tchunk_*; do echo "::error title=tests::$(sed ':a;N;$!ba;s/\n/%0A/g;s/%/%25/g' "$f" | sed 's/%250A/%0A/g')"; done
+            exit 1
+          }
+          tail -5 sparring_tests.txt
       - name: Whole suite (existing tests untouched)
-        run: flutter test
+        run: |
+          flutter test > all_tests.txt 2>&1 || {
+            grep -E "\[E\]|Expected|Actual|Error|error:" all_tests.txt | head -200 | split -l 40 - achunk_
+            for f in achunk_*; do echo "::error title=suite::$(sed ':a;N;$!ba;s/\n/%0A/g' "$f")"; done
+            tail -40 all_tests.txt
+            exit 1
+          }
+          tail -5 all_tests.txt
 
   edge-function:
     runs-on: ubuntu-latest
