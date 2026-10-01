@@ -210,8 +210,9 @@ class IdentityLinker {
 
     var choice = best.choice;
     // Without a reference A is whoever is on the left when both are first
-    // seen together; keep that convention stable.
-    if (reference == null || reference.length < 2) {
+    // seen together; keep that convention stable — unless the user has made
+    // decisions, which define the labels themselves.
+    if ((reference == null || reference.length < 2) && forced.isEmpty) {
       if (_aStartsOnRight(ordered, choice)) {
         choice = <int>[for (final c in choice) c < 0 ? c : 1 - c];
         templates = <FighterLabel, IdentityTemplate>{
