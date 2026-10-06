@@ -1,5 +1,5 @@
 /* =========================================================================
-   AI Boxing Coach — site interactions
+   AI Cornerman — site interactions
    Vanilla JS, no dependencies. Everything degrades gracefully.
    ========================================================================= */
 (function () {

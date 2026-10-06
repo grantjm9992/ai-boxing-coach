@@ -1,6 +1,6 @@
-# AI Boxing Coach — marketing website
+# AI Cornerman — marketing website
 
-A fast, dependency-free static marketing site for the AI Boxing Coach app.
+A fast, dependency-free static marketing site for the AI Cornerman app.
 Dark sports-tech aesthetic, one electric-red brand accent, mobile-first, built
 to the design brief.
 
