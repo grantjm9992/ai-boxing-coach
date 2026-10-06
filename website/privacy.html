@@ -14,19 +14,14 @@
 <main class="legal">
   <a class="legal__back" href="index.html">← AI Cornerman</a>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: 24 August 2026</p>
+  <p class="updated">Last updated: 6 October 2026</p>
 
-  <div class="callout">
-    <p><strong>Draft — have a professional review this before launch.</strong> It
-    describes how the app actually handles data today, but it is not legal advice.
-    Replace the bracketed operator name and domain with your details.</p>
-  </div>
 
   <p>This policy explains what the AI Cornerman mobile app and this website
   (together, the <strong>Service</strong>) collect, why, who we share it with, and
   the choices you have. The Service is operated by <strong>Grant James MacDonald</strong>,
   based in Spain (the <strong>“we”</strong> in this policy). You can reach us at
-  <a href="mailto:phisoluciones.es@gmail.com">phisoluciones.es@gmail.com</a>.</p>
+  <a href="mailto:info@aicornerman.com">info@aicornerman.com</a>.</p>
 
   <h2>1. What we collect</h2>
   <h3>Account information</h3>
@@ -38,8 +33,10 @@
   <ul>
     <li><strong>Video of your round</strong> is recorded by your phone camera and
     analysed <strong>on your device</strong>. The full video is <strong>not
-    uploaded</strong> — it stays on your phone and is automatically deleted after
-    about 7 days.</li>
+    uploaded to our backend</strong> — it stays on your phone and is automatically
+    deleted after about 7 days. The only exception is if you turn on
+    <strong>Full AI review</strong> (see section 3), which sends the round's video
+    to our AI provider for analysis.</li>
     <li>From the analysis we upload <strong>still keyframe images</strong> (short
     bursts of frames around moments the app flags) and <strong>pose data</strong>
     (numeric body-landmark positions) to our backend, so your history and coaching
@@ -71,10 +68,22 @@
   <ul>
     <li><strong>Supabase</strong> — our backend (authentication, database and file
     storage). Your account, pose data, keyframe images and analyses are stored here.</li>
-    <li><strong>AI model provider (Google — Gemini)</strong> — to generate your
-    coaching feedback, the app sends the <strong>keyframe images</strong> and the
-    analysis context to our AI provider. Handling is subject to that provider's
-    terms. We send only what's needed to produce feedback.</li>
+    <li><strong>Google (Gemini API)</strong> — our AI provider. It is only used if
+    you choose an AI analysis mode in your profile; the default
+    <strong>Offline</strong> mode sends nothing to it.
+      <ul>
+        <li><strong>Pose + AI on key moments</strong>: we send the
+        <strong>keyframe images</strong> the app flagged, plus your
+        <strong>pose data</strong> and analysis context (detected issues, stance,
+        style and school).</li>
+        <li><strong>Full AI review</strong>: your phone uploads the
+        <strong>round's full video</strong> directly to Google, together with the
+        same pose data and analysis context. We ask Google to delete the video as
+        soon as the feedback is generated; if that request fails, Google deletes
+        it automatically within 48 hours.</li>
+      </ul>
+    Google processes this data to generate your coaching feedback, under its
+    Gemini API terms. We send only what's needed to produce feedback.</li>
     <li><strong>Google Play / Apple</strong> — app distribution and, if you buy a
     subscription in future, payment processing.</li>
   </ul>
@@ -88,7 +97,9 @@
 
   <h2>5. How long we keep it</h2>
   <ul>
-    <li>Round videos: on your device only, deleted after ~7 days.</li>
+    <li>Round videos: on your device, deleted after ~7 days. If you use Full AI
+    review, the copy sent to Google is deleted once the feedback is generated
+    (at most 48 hours).</li>
     <li>Account, pose data, keyframes and analyses: until you delete them or your
     account.</li>
     <li>Waitlist emails: until you ask us to remove them or the beta ends.</li>
@@ -115,7 +126,7 @@
   <p>We'll update this page when our practices change and revise the date above.</p>
 
   <h2>10. Contact</h2>
-  <p>Questions or requests: <a href="mailto:phisoluciones.es@gmail.com">phisoluciones.es@gmail.com</a>.</p>
+  <p>Questions or requests: <a href="mailto:info@aicornerman.com">info@aicornerman.com</a>.</p>
 
   <p style="margin-top:40px"><a class="legal__back" href="terms.html">Terms of Service →</a></p>
 </main>
