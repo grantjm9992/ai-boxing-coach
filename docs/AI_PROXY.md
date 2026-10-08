@@ -54,6 +54,18 @@ supabase secrets set \
 
 Redeploy after changing code: `supabase functions deploy analyze`.
 
+### 5. Sparring review — a second function
+Sparring mode has its own function (`supabase/functions/sparring/`) so the
+`analyze` function stays untouched. It uses the same Gemini helpers, the same
+secrets and the **same weekly allowance** (one analysis per round). Run
+migration `0005_sparring.sql`, then:
+```bash
+supabase functions deploy sparring
+```
+Optional: `AI_SPARRING_MODEL` (defaults to `AI_VIDEO_MODEL`). It allows up to
+16,384 output tokens (two fighters' findings) and uploads up to 800 MB (1080p
+landscape rounds). See [`SPARRING.md`](SPARRING.md).
+
 ## How the app targets it
 `OpenAiCompatibleVisionModel` appends `/chat/completions` to its base URL, so the
 app points at:

@@ -10,6 +10,7 @@ import '../../services/background_analysis.dart';
 import '../../services/clip_store.dart';
 import '../../services/session_history_store.dart';
 import '../../services/sync/history_reader.dart';
+import '../../sparring/ui/sparring_history.dart';
 import '../format.dart';
 import '../theme.dart';
 import '../widgets/analysis_progress_card.dart';
@@ -72,9 +73,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('History')),
-      body: FutureBuilder<_HistoryData>(
+    // Sessions (unchanged) and Sparring, which lists sparring's own store.
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('History'),
+          bottom: const TabBar(
+            tabs: <Widget>[Tab(text: 'Sessions'), Tab(text: 'Sparring')],
+          ),
+        ),
+        body: TabBarView(
+          children: <Widget>[_sessions(), const SparringHistoryList()],
+        ),
+      ),
+    );
+  }
+
+  Widget _sessions() {
+    return FutureBuilder<_HistoryData>(
         future: _data,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
@@ -111,8 +128,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ],
           );
         },
-      ),
-    );
+      );
   }
 
   Map<SkillCategory, Duration> _asBreakdown(Map<String, int> seconds) {
